@@ -11,76 +11,63 @@ export default function ThemeSwitcher() {
   return (
     <motion.button
       onClick={toggleTheme}
-      className="theme-switcher"
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       aria-label={`Switch to ${isZesty ? 'Eventra' : 'Zesty'}`}
-      title={`Switch to ${isZesty ? 'Eventra' : 'Zesty'}`}
       style={{
+        position: 'relative',
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
-        padding: '6px 6px 6px 8px',
+        background: 'rgba(0, 0, 0, 0.4)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        padding: '4px',
         borderRadius: '50px',
-        border: 'none',
         cursor: 'pointer',
-        background: 'transparent',
+        boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)',
+        backdropFilter: 'blur(16px)',
+        width: '180px',
+        height: '44px',
+        justifyContent: 'space-between',
+        outline: 'none',
       }}
     >
-      {/* Track */}
+      {/* Animated Active Pill Background */}
       <motion.div
-        style={{
-          width: '64px',
-          height: '32px',
-          borderRadius: '16px',
-          position: 'relative',
-          display: 'flex',
-          alignItems: 'center',
-          padding: '3px',
-        }}
+        initial={false}
         animate={{
-          background: isZesty
-            ? 'linear-gradient(135deg, #FF6B35, #F7931E)'
-            : 'linear-gradient(135deg, #9B59B6, #E91E63)',
+          x: isZesty ? 0 : 86,
+          background: isZesty 
+            ? 'linear-gradient(135deg, #FF5A1F, #F7931E)' 
+            : 'linear-gradient(135deg, #9B59B6, #E91E63)'
         }}
-        transition={{ duration: 0.5 }}
-      >
-        {/* Thumb */}
-        <motion.div
-          style={{
-            width: '26px',
-            height: '26px',
-            borderRadius: '13px',
-            backgroundColor: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '14px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-          }}
-          animate={{ x: isZesty ? 0 : 32 }}
-          transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-        >
-          {isZesty ? '🍕' : '🎭'}
-        </motion.div>
-      </motion.div>
-
-      {/* Label */}
-      <motion.span
+        transition={{ type: 'spring', stiffness: 350, damping: 25 }}
         style={{
-          fontSize: '13px',
-          fontWeight: 600,
-          fontFamily: 'var(--font-display)',
-          color: 'var(--text-primary)',
-          minWidth: '52px',
+          position: 'absolute',
+          top: '4px',
+          bottom: '4px',
+          left: '4px',
+          width: '84px',
+          borderRadius: '40px',
+          boxShadow: 'var(--glow)',
+          zIndex: 0,
         }}
-        key={theme}
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        {isZesty ? 'Zesty' : 'Eventra'}
-      </motion.span>
+      />
+
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '50%', color: isZesty ? '#fff' : 'var(--text-muted)' }}>
+        <motion.span 
+           animate={{ opacity: isZesty ? 1 : 0.7 }}
+           style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-display)', letterSpacing: '0.8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          🍕 ZESTY
+        </motion.span>
+      </div>
+
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '50%', color: !isZesty ? '#fff' : 'var(--text-muted)' }}>
+         <motion.span 
+           animate={{ opacity: !isZesty ? 1 : 0.7 }}
+           style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-display)', letterSpacing: '0.8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          🎭 EVENTRA
+        </motion.span>
+      </div>
     </motion.button>
   );
 }

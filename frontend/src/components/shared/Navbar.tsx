@@ -40,59 +40,57 @@ export default function Navbar() {
         WebkitBackdropFilter: 'var(--navbar-blur)',
         backgroundColor: 'var(--navbar-bg)',
         borderBottom: '1px solid var(--border)',
+        boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
       }}
       initial={{ y: -80 }}
       animate={{ y: 0 }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
     >
       <div style={{
-        maxWidth: '1280px',
+        maxWidth: '1440px',
         margin: '0 auto',
-        padding: '0 24px',
+        padding: '0 32px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        height: '64px',
+        height: '80px',
       }}>
         {/* Logo */}
-        <Link href={isZesty ? '/zesty' : '/eventra'} style={{ textDecoration: 'none' }}>
+        <Link href="/" style={{ textDecoration: 'none' }}>
           <motion.div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
-            whileHover={{ scale: 1.02 }}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             <span style={{
-              fontSize: '24px',
-              fontWeight: 800,
+              fontSize: '28px',
+              fontWeight: 900,
               fontFamily: 'var(--font-display)',
               background: 'var(--gradient-primary)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
+              letterSpacing: '-0.5px',
             }}>
               Platforma
             </span>
-            <motion.span
-              key={theme}
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
+            <motion.div
+              layout
               style={{
-                fontSize: '11px',
-                fontWeight: 600,
-                padding: '2px 8px',
-                borderRadius: '12px',
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
                 background: 'var(--primary)',
-                color: 'white',
-                fontFamily: 'var(--font-body)',
+                boxShadow: 'var(--glow)'
               }}
-            >
-              {isZesty ? 'ZESTY' : 'EVENTRA'}
-            </motion.span>
+            />
           </motion.div>
         </Link>
+        
+        {/* Dynamic Center Theme Switcher */}
+        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }} className="desktop-nav">
+           <ThemeSwitcher />
+        </div>
 
         {/* Desktop Navigation */}
         <div style={{
@@ -103,78 +101,95 @@ export default function Navbar() {
           className="desktop-nav"
         >
           {/* Nav Links */}
-          <div style={{ display: 'flex', gap: '24px' }} className="nav-links-desktop">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                style={{
-                  color: 'var(--text-secondary)',
-                  fontWeight: 500,
-                  fontSize: '14px',
-                  fontFamily: 'var(--font-body)',
-                  textDecoration: 'none',
-                  transition: 'color 0.2s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--primary)')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
-              >
-                {link.label}
-              </Link>
-            ))}
+          <div style={{ display: 'flex', gap: '28px' }} className="nav-links-desktop">
+            <AnimatePresence mode="popLayout">
+              {links.map((link) => (
+                <motion.div
+                  key={link.href + link.label}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Link
+                    href={link.href}
+                    style={{
+                      color: 'var(--text-secondary)',
+                      fontWeight: 500,
+                      fontSize: '15px',
+                      fontFamily: 'var(--font-body)',
+                      textDecoration: 'none',
+                      transition: 'color 0.3s',
+                      position: 'relative',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'var(--text-primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'var(--text-secondary)';
+                    }}
+                  >
+                    {link.label}
+                  </Link>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
+
+          <div style={{ width: '1px', height: '24px', background: 'var(--border)' }}></div>
 
           {/* Search */}
           <motion.button
             onClick={() => setSearchOpen(!searchOpen)}
-            whileHover={{ scale: 1.1 }}
+            whileHover={{ scale: 1.1, color: 'var(--text-primary)' }}
             whileTap={{ scale: 0.9 }}
             style={{
               background: 'none',
               border: 'none',
               cursor: 'pointer',
               color: 'var(--text-secondary)',
-              fontSize: '20px',
+              fontSize: '22px',
               display: 'flex',
+              transition: 'color 0.3s',
             }}
           >
             <HiSearch />
           </motion.button>
 
-          {/* Theme Switcher */}
-          <ThemeSwitcher />
-
           {/* Auth */}
           {isAuthenticated ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <motion.button
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.1, color: 'var(--text-primary)' }}
                 style={{
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
                   color: 'var(--text-secondary)',
-                  fontSize: '20px',
+                  fontSize: '22px',
                   display: 'flex',
+                  transition: 'color 0.3s',
                 }}
               >
                 <HiBell />
               </motion.button>
               <motion.button
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.05, borderColor: 'var(--primary)' }}
                 onClick={logout}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  background: 'var(--surface-variant)',
+                  gap: '8px',
+                  background: 'var(--surface)',
                   border: '1px solid var(--border)',
-                  borderRadius: '20px',
-                  padding: '6px 12px',
+                  borderRadius: '30px',
+                  padding: '8px 16px',
                   cursor: 'pointer',
                   color: 'var(--text-primary)',
-                  fontSize: '13px',
+                  fontSize: '14px',
+                  fontWeight: 600,
                   fontFamily: 'var(--font-body)',
+                  transition: 'border-color 0.3s',
                 }}
               >
                 <HiUser />
@@ -184,18 +199,19 @@ export default function Navbar() {
           ) : (
             <Link href="/login">
               <motion.button
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.05, boxShadow: 'var(--glow)' }}
                 whileTap={{ scale: 0.95 }}
                 style={{
                   background: 'var(--gradient-primary)',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '8px',
-                  padding: '8px 20px',
-                  fontSize: '14px',
+                  borderRadius: '30px',
+                  padding: '10px 24px',
+                  fontSize: '15px',
                   fontWeight: 600,
                   cursor: 'pointer',
                   fontFamily: 'var(--font-body)',
+                  transition: 'box-shadow 0.3s',
                 }}
               >
                 Sign In
@@ -213,7 +229,7 @@ export default function Navbar() {
               border: 'none',
               cursor: 'pointer',
               color: 'var(--text-primary)',
-              fontSize: '24px',
+              fontSize: '28px',
               display: 'none',
             }}
           >
@@ -231,27 +247,30 @@ export default function Navbar() {
             exit={{ height: 0, opacity: 0 }}
             style={{
               borderTop: '1px solid var(--border)',
-              padding: '12px 24px',
-              maxWidth: '1280px',
-              margin: '0 auto',
+              padding: '16px 32px',
+              background: 'var(--navbar-bg)',
+              backdropFilter: 'var(--navbar-blur)',
             }}
           >
-            <input
-              type="text"
-              placeholder={isZesty ? 'Search restaurants, cuisines...' : 'Search events, concerts...'}
-              autoFocus
-              style={{
-                width: '100%',
-                padding: '10px 16px',
-                borderRadius: '8px',
-                border: '1px solid var(--border)',
-                background: 'var(--surface)',
-                color: 'var(--text-primary)',
-                fontSize: '14px',
-                fontFamily: 'var(--font-body)',
-                outline: 'none',
-              }}
-            />
+            <div style={{ maxWidth: '1440px', margin: '0 auto' }}>
+              <input
+                type="text"
+                placeholder={isZesty ? 'Search restaurants, cuisines...' : 'Search events, concerts...'}
+                autoFocus
+                style={{
+                  width: '100%',
+                  padding: '14px 20px',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border)',
+                  background: 'rgba(0,0,0,0.5)',
+                  color: 'var(--text-primary)',
+                  fontSize: '16px',
+                  fontFamily: 'var(--font-body)',
+                  outline: 'none',
+                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
+                }}
+              />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -266,9 +285,12 @@ export default function Navbar() {
             style={{
               borderTop: '1px solid var(--border)',
               backgroundColor: 'var(--surface)',
-              padding: '16px 24px',
+              padding: '24px 32px',
             }}
           >
+            <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+               <ThemeSwitcher />
+            </div>
             {links.map((link) => (
               <Link
                 key={link.href}
@@ -276,10 +298,10 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 style={{
                   display: 'block',
-                  padding: '12px 0',
+                  padding: '16px 0',
                   color: 'var(--text-primary)',
-                  fontWeight: 500,
-                  fontSize: '16px',
+                  fontWeight: 600,
+                  fontSize: '18px',
                   textDecoration: 'none',
                   borderBottom: '1px solid var(--border-light)',
                 }}
@@ -287,20 +309,17 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <div style={{ padding: '16px 0' }}>
-              <ThemeSwitcher />
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       <style jsx global>{`
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
           .nav-links-desktop { display: none !important; }
-          .mobile-menu-btn { display: flex !important; }
         }
-        @media (min-width: 769px) {
-          .mobile-menu-btn { display: none !important; }
+        @media (max-width: 768px) {
+          .desktop-nav > div:not(.mobile-menu-btn) { display: none !important; }
+          .mobile-menu-btn { display: flex !important; }
         }
       `}</style>
     </motion.nav>

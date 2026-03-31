@@ -78,10 +78,21 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASE_URL = config('DATABASE_URL', default='')
 
 if DATABASE_URL:
-    # PostgreSQL
-    import dj_database_url  # noqa: F811
+    # PostgreSQL - parse URL manually (no dj-database-url dependency needed)
+    from urllib.parse import urlparse
+    _db = urlparse(DATABASE_URL)
     DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL)
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': _db.path.lstrip('/'),
+            'USER': _db.username,
+            'PASSWORD': _db.password,
+            'HOST': _db.hostname,
+            'PORT': _db.port or 5432,
+            'OPTIONS': {
+                'sslmode': 'require',
+            },
+        }
     }
 else:
     # SQLite fallback for development
