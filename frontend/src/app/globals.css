@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/* ============================================
+   PLATFORMA - Global Styles & Theme Variables
+   ============================================ */
+
+/* ---- Zesty Theme (Food Delivery) ---- */
+[data-theme="zesty"] {
+  --primary: #FF6B35;
+  --primary-light: #FFF5E6;
+  --primary-dark: #CC4400;
+  --secondary: #F7931E;
+  --accent: #00B4A6;
+  --background: #FAFAFA;
+  --surface: #FFFFFF;
+  --surface-variant: #F5F5F5;
+  --text-primary: #1A1A1A;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --border: #E0E0E0;
+  --border-light: #F0F0F0;
+  --success: #4CAF50;
+  --warning: #FFC107;
+  --error: #F44336;
+  --info: #2196F3;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.12);
+  --font-display: 'Poppins', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --gradient-primary: linear-gradient(135deg, #FF6B35, #F7931E);
+  --gradient-hero: linear-gradient(135deg, #FF6B35 0%, #FF8F5E 50%, #F7931E 100%);
+  --navbar-bg: rgba(255,255,255,0.95);
+  --navbar-blur: blur(12px);
+  --card-hover-transform: translateY(-4px);
+}
+
+/* ---- Eventra Theme (Event Management) ---- */
+[data-theme="eventra"] {
+  --primary: #9B59B6;
+  --primary-light: #F3E5F5;
+  --primary-dark: #6A1B9A;
+  --secondary: #E91E63;
+  --accent: #00D4FF;
+  --background: #0F0F1E;
+  --surface: #1A1A2E;
+  --surface-variant: #16213E;
+  --text-primary: #F5F5F5;
+  --text-secondary: #B0B0B0;
+  --text-muted: #777777;
+  --border: #2A2A3E;
+  --border-light: #1E1E32;
+  --success: #4CAF50;
+  --warning: #FFC107;
+  --error: #F44336;
+  --info: #2196F3;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.5);
+  --font-display: 'Montserrat', sans-serif;
+  --font-body: 'Space Grotesk', sans-serif;
+  --gradient-primary: linear-gradient(135deg, #9B59B6, #E91E63);
+  --gradient-hero: linear-gradient(135deg, #0F0F1E 0%, #1A1A2E 50%, #16213E 100%);
+  --navbar-bg: rgba(15,15,30,0.95);
+  --navbar-blur: blur(12px);
+  --card-hover-transform: translateY(-4px);
+}
+
+/* ---- Base Styles ---- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--background);
+  color: var(--text-primary);
+  transition: background-color 0.5s ease, color 0.5s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* ---- Theme Transition ---- */
+[data-theme] * {
+  transition-property: background-color, color, border-color, box-shadow;
+  transition-duration: 0.4s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---- Scrollbar ---- */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ---- Selection ---- */
+::selection {
+  background-color: var(--primary);
+  color: white;
+}
+
+/* ---- Focus Ring ---- */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ---- Links ---- */
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+a:hover {
+  opacity: 0.85;
+}
