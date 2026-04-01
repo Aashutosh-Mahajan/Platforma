@@ -18,7 +18,7 @@ from core.models import Payment
 
 class RestaurantViewSet(viewsets.ReadOnlyModelViewSet):
     """List and retrieve restaurants."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     search_fields = ['name', 'cuisine_types']
     ordering_fields = ['rating', 'delivery_fee', 'delivery_time_max', 'review_count']

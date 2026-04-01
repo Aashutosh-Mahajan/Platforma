@@ -5,10 +5,12 @@ import { motion } from 'framer-motion';
 import ClientLayout from '@/components/ClientLayout';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { HiMail, HiLockClosed, HiEye, HiEyeOff } from 'react-icons/hi';
 
 function LoginContent() {
   const { login } = useAuth();
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,9 +23,16 @@ function LoginContent() {
     setLoading(true);
     try {
       await login(email, password);
-      window.location.href = '/';
-    } catch {
-      setError('Invalid email or password.');
+      const redirectTo = typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get('redirect') || '/'
+        : '/';
+      router.replace(redirectTo);
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        setError('Invalid email or password.');
+      } else {
+        setError('Unable to sign in right now. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

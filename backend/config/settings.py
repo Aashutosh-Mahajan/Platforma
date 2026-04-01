@@ -9,7 +9,7 @@ from decouple import config, Csv
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ====================
-# CORE SETTINGS
+# CORE SETTINGS 
 # ====================
 SECRET_KEY = config('DJANGO_SECRET_KEY', default='django-insecure-platforma-dev-key')
 DEBUG = config('DJANGO_DEBUG', default=True, cast=bool)
@@ -75,33 +75,12 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # ====================
 # DATABASE
 # ====================
-DATABASE_URL = config('DATABASE_URL', default='')
-
-if DATABASE_URL:
-    # PostgreSQL - parse URL manually (no dj-database-url dependency needed)
-    from urllib.parse import urlparse
-    _db = urlparse(DATABASE_URL)
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': _db.path.lstrip('/'),
-            'USER': _db.username,
-            'PASSWORD': _db.password,
-            'HOST': _db.hostname,
-            'PORT': _db.port or 5432,
-            'OPTIONS': {
-                'sslmode': 'require',
-            },
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
-else:
-    # SQLite fallback for development
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+}
 
 # ====================
 # AUTH

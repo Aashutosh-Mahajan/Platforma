@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import api, { clearStoredAuth, getStoredTokens } from '@/utils/api';
 
 interface User {
   id: number;
@@ -21,7 +22,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 interface RegisterData {
@@ -39,24 +40,43 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [tokens, setTokens] = useState<{ access: string; refresh: string } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window === 'undefined') return null;
+
+    const savedUser = localStorage.getItem('platforma-user');
+    if (!savedUser) return null;
+
+    try {
+      return JSON.parse(savedUser) as User;
+    } catch {
+      return null;
+    }
+  });
+
+  const [tokens, setTokens] = useState<{ access: string; refresh: string } | null>(() => getStoredTokens());
+  const isLoading = false;
+
+  const resetAuthState = useCallback(() => {
+    setUser(null);
+    setTokens(null);
+    clearStoredAuth();
+  }, []);
 
   useEffect(() => {
-    const savedTokens = localStorage.getItem('platforma-tokens');
-    const savedUser = localStorage.getItem('platforma-user');
-    if (savedTokens && savedUser) {
+    const validateSession = async () => {
+      if (!tokens || !user) return;
+
       try {
-        setTokens(JSON.parse(savedTokens));
-        setUser(JSON.parse(savedUser));
+        const profileRes = await api.get('/users/profile/');
+        setUser(profileRes.data);
+        localStorage.setItem('platforma-user', JSON.stringify(profileRes.data));
       } catch {
-        localStorage.removeItem('platforma-tokens');
-        localStorage.removeItem('platforma-user');
+        resetAuthState();
       }
-    }
-    setIsLoading(false);
-  }, []);
+    };
+
+    void validateSession();
+  }, [resetAuthState, tokens, user]);
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await axios.post(`${API_URL}/auth/login/`, { email, password });
@@ -81,17 +101,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('platforma-user', JSON.stringify(res.data.user));
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     if (tokens?.refresh) {
-      axios.post(`${API_URL}/auth/logout/`, { refresh: tokens.refresh }, {
+      await axios.post(`${API_URL}/auth/logout/`, { refresh: tokens.refresh }, {
         headers: { Authorization: `Bearer ${tokens.access}` },
       }).catch(() => {});
     }
-    setUser(null);
-    setTokens(null);
-    localStorage.removeItem('platforma-tokens');
-    localStorage.removeItem('platforma-user');
-  }, [tokens]);
+
+    resetAuthState();
+  }, [tokens, resetAuthState]);
 
   return (
     <AuthContext.Provider value={{
@@ -119,7 +137,7 @@ export function useAuth() {
       isLoading: true,
       login: async () => {},
       register: async () => {},
-      logout: () => {},
+      logout: async () => {},
     };
   }
   return context;

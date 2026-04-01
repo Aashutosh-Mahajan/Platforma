@@ -2,17 +2,24 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import ThemeSwitcher from './ThemeSwitcher';
-import { HiMenu, HiX, HiSearch, HiUser, HiBell } from 'react-icons/hi';
+import { HiMenu, HiX, HiSearch, HiUser, HiBell, HiLogout } from 'react-icons/hi';
 
 export default function Navbar() {
-  const { theme, isZesty } = useTheme();
+  const { isZesty } = useTheme();
   const { isAuthenticated, user, logout } = useAuth();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/login');
+  };
 
   const zestyLinks = [
     { href: '/zesty', label: 'Home' },
@@ -175,7 +182,7 @@ export default function Navbar() {
               </motion.button>
               <motion.button
                 whileHover={{ scale: 1.05, borderColor: 'var(--primary)' }}
-                onClick={logout}
+                onClick={() => void handleLogout()}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -195,28 +202,69 @@ export default function Navbar() {
                 <HiUser />
                 {user?.first_name || 'Account'}
               </motion.button>
-            </div>
-          ) : (
-            <Link href="/login">
               <motion.button
-                whileHover={{ scale: 1.05, boxShadow: 'var(--glow)' }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.05 }}
+                onClick={() => void handleLogout()}
                 style={{
-                  background: 'var(--gradient-primary)',
-                  color: 'white',
-                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
                   borderRadius: '30px',
-                  padding: '10px 24px',
-                  fontSize: '15px',
-                  fontWeight: 600,
+                  padding: '8px 14px',
                   cursor: 'pointer',
-                  fontFamily: 'var(--font-body)',
-                  transition: 'box-shadow 0.3s',
+                  color: 'var(--text-secondary)',
+                  fontSize: '13px',
+                  fontWeight: 600,
                 }}
               >
-                Sign In
+                <HiLogout />
+                Logout
               </motion.button>
-            </Link>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <Link href="/register">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
+                    background: 'transparent',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '30px',
+                    padding: '10px 20px',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-body)',
+                  }}
+                >
+                  Sign Up
+                </motion.button>
+              </Link>
+              <Link href="/login">
+                <motion.button
+                  whileHover={{ scale: 1.05, boxShadow: 'var(--glow)' }}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
+                    background: 'var(--gradient-primary)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '30px',
+                    padding: '10px 24px',
+                    fontSize: '15px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-body)',
+                    transition: 'box-shadow 0.3s',
+                  }}
+                >
+                  Sign In
+                </motion.button>
+              </Link>
+            </div>
           )}
 
           {/* Mobile Menu Button */}
@@ -309,6 +357,60 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
+            {!isAuthenticated ? (
+              <>
+                <Link
+                  href="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  style={{
+                    display: 'block',
+                    padding: '16px 0',
+                    color: 'var(--text-primary)',
+                    fontWeight: 600,
+                    fontSize: '18px',
+                    textDecoration: 'none',
+                    borderBottom: '1px solid var(--border-light)',
+                  }}
+                >
+                  Sign Up
+                </Link>
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  style={{
+                    display: 'block',
+                    padding: '16px 0',
+                    color: 'var(--text-primary)',
+                    fontWeight: 600,
+                    fontSize: '18px',
+                    textDecoration: 'none',
+                    borderBottom: '1px solid var(--border-light)',
+                  }}
+                >
+                  Sign In
+                </Link>
+              </>
+            ) : null}
+            {isAuthenticated ? (
+              <button
+                onClick={() => {
+                  void handleLogout();
+                  setMobileMenuOpen(false);
+                }}
+                style={{
+                  width: '100%',
+                  marginTop: '16px',
+                  border: '1px solid var(--border)',
+                  background: 'transparent',
+                  color: 'var(--text-primary)',
+                  borderRadius: '10px',
+                  padding: '12px',
+                  cursor: 'pointer',
+                }}
+              >
+                Logout
+              </button>
+            ) : null}
           </motion.div>
         )}
       </AnimatePresence>
