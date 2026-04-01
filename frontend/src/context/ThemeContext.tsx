@@ -15,22 +15,21 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('zesty');
-  const [mounted, setMounted] = useState(false);
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === 'undefined') return 'zesty';
 
-  useEffect(() => {
     const saved = localStorage.getItem('platforma-theme') as Theme | null;
-    if (saved && (saved === 'zesty' || saved === 'eventra')) {
-      setThemeState(saved);
+    if (saved === 'zesty' || saved === 'eventra') {
+      return saved;
     }
-    setMounted(true);
-  }, []);
+
+    return 'zesty';
+  });
 
   useEffect(() => {
-    if (!mounted) return;
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('platforma-theme', theme);
-  }, [theme, mounted]);
+  }, [theme]);
 
   const toggleTheme = useCallback(() => {
     setThemeState(prev => (prev === 'zesty' ? 'eventra' : 'zesty'));
@@ -39,11 +38,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setTheme = useCallback((t: Theme) => {
     setThemeState(t);
   }, []);
-
-  // Prevent flash of unstyled content
-  if (!mounted) {
-    return <div style={{ visibility: 'hidden' }}>{children}</div>;
-  }
 
   return (
     <ThemeContext.Provider value={{

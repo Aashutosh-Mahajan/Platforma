@@ -5,7 +5,7 @@ import { motion, AnimatePresence, Variants } from 'framer-motion';
 import Link from 'next/link';
 import ClientLayout from '@/components/ClientLayout';
 import { useTheme } from '@/context/ThemeContext';
-import { HiArrowRight, HiLocationMarker, HiTicket } from 'react-icons/hi';
+import { HiArrowRight, HiTicket } from 'react-icons/hi';
 
 const staggerContainer: Variants = {
   hidden: { opacity: 0 },

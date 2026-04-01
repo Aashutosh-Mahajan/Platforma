@@ -19,7 +19,7 @@ from core.models import Payment
 
 class EventViewSet(viewsets.ReadOnlyModelViewSet):
     """List and retrieve events."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     search_fields = ['name', 'venue_name', 'category']
     ordering_fields = ['event_date', 'rating', '-event_date']

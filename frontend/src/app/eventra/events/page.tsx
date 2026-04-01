@@ -1,92 +1,173 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import ClientLayout from '@/components/ClientLayout';
-import { HiStar, HiCalendar, HiLocationMarker, HiFilter, HiSearch, HiTicket } from 'react-icons/hi';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import api from '@/utils/api';
+import type { ApiListResponse, EventItem } from '@/types/domain';
+import { HiCalendar, HiLocationMarker, HiSearch, HiTicket } from 'react-icons/hi';
+
+type EventDetail = EventItem & {
+  ticket_types: Array<{ id: number; quantity_available: number }>;
+};
 
 function EventsContent() {
-  const events = [
-    { id: 1, name: 'Coldplay: Music of the Spheres', cat: 'Concert', venue: 'DY Patil Stadium', date: 'Apr 15, 2026', price: '₹1,500', emoji: '🎵', rating: 4.8, seats: '15,000' },
-    { id: 2, name: 'Avengers: Secret Wars', cat: 'Movie', venue: 'PVR Cinemas, Juhu', date: 'May 1, 2026', price: '₹350', emoji: '🎬', rating: 4.9, seats: '450' },
-    { id: 3, name: 'IPL Final 2026', cat: 'Sports', venue: 'Wankhede Stadium', date: 'May 28, 2026', price: '₹2,000', emoji: '⚽', rating: 4.7, seats: '33,000' },
-    { id: 4, name: 'Zakir Khan Live', cat: 'Comedy', venue: 'NCPA', date: 'Apr 22, 2026', price: '₹800', emoji: '😂', rating: 4.6, seats: '1,200' },
-    { id: 5, name: 'Hamilton Musical', cat: 'Theater', venue: 'Royal Opera House', date: 'Jun 10, 2026', price: '₹1,200', emoji: '🎭', rating: 4.8, seats: '800' },
-    { id: 6, name: 'Tech Summit 2026', cat: 'Expo', venue: 'BKC Convention', date: 'Jul 5, 2026', price: '₹500', emoji: '🎪', rating: 4.3, seats: '5,000' },
-    { id: 7, name: 'AR Rahman Concert', cat: 'Concert', venue: 'NSCI Dome', date: 'Aug 12, 2026', price: '₹1,800', emoji: '🎵', rating: 4.9, seats: '8,000' },
-    { id: 8, name: 'Food & Wine Festival', cat: 'Dining', venue: 'Mahalaxmi Racecourse', date: 'Sep 1, 2026', price: '₹600', emoji: '🍽️', rating: 4.4, seats: '3,000' },
-  ];
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [bookingEventId, setBookingEventId] = useState<number | null>(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const response = await api.get<ApiListResponse<EventItem>>('/eventra/events/');
+        setEvents(response.data.results);
+      } catch {
+        setError('Unable to load events. Please check backend connection and login session.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void fetchEvents();
+  }, []);
+
+  const filteredEvents = useMemo(() => {
+    const lower = query.trim().toLowerCase();
+    if (!lower) return events;
+
+    return events.filter((event) => {
+      return event.name.toLowerCase().includes(lower) || event.venue_name.toLowerCase().includes(lower);
+    });
+  }, [events, query]);
+
+  const quickBook = async (eventId: number) => {
+    setBookingEventId(eventId);
+    setError('');
+
+    try {
+      const eventRes = await api.get<EventDetail>(`/eventra/events/${eventId}/`);
+      const firstAvailable = eventRes.data.ticket_types.find((ticketType) => ticketType.quantity_available > 0);
+
+      if (!firstAvailable) {
+        setError('No tickets are currently available for this event.');
+        return;
+      }
+
+      await api.post('/eventra/bookings/', {
+        event_id: eventId,
+        payment_method: 'credit_card',
+        tickets: [{ ticket_type_id: firstAvailable.id, quantity: 1 }],
+      });
+
+      window.location.href = '/eventra/bookings';
+    } catch {
+      setError('Could not complete booking right now. Please try again.');
+    } finally {
+      setBookingEventId(null);
+    }
+  };
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '32px 24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 700, fontFamily: 'var(--font-display)' }}>All Events</h1>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px',
-            borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)',
-          }}>
-            <HiSearch style={{ color: 'var(--text-muted)' }} />
-            <input placeholder="Search events..." style={{
-              border: 'none', background: 'transparent', color: 'var(--text-primary)',
-              fontSize: '14px', outline: 'none', width: '150px', fontFamily: 'var(--font-body)',
-            }} />
-          </div>
-          <motion.button whileHover={{ scale: 1.05 }} style={{
-            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px',
-            borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)',
-            cursor: 'pointer', color: 'var(--text-primary)', fontSize: '14px',
-          }}>
-            <HiFilter /> Filter
-          </motion.button>
+        <h1 style={{ fontSize: '28px', fontWeight: 700, fontFamily: 'var(--font-display)' }}>Live Events</h1>
+
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 16px',
+          borderRadius: '8px',
+          border: '1px solid var(--border)',
+          background: 'var(--surface)',
+          minWidth: '260px',
+        }}>
+          <HiSearch style={{ color: 'var(--text-muted)' }} />
+          <input
+            placeholder="Search by event or venue"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            style={{ border: 'none', background: 'transparent', color: 'var(--text-primary)', width: '100%', outline: 'none' }}
+          />
         </div>
       </div>
 
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px',
-      }}>
-        {events.map((e, i) => (
-          <motion.div key={e.id}
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-            whileHover={{ y: -4, boxShadow: 'var(--shadow-lg)' }}
-            style={{
-              borderRadius: '16px', overflow: 'hidden', background: 'var(--surface)',
-              border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)',
-            }}
+      {error ? <p style={{ color: 'var(--error)', marginBottom: '16px' }}>{error}</p> : null}
+      {loading ? <p style={{ color: 'var(--text-secondary)' }}>Loading events...</p> : null}
+
+      {!loading && !filteredEvents.length ? (
+        <div style={{ border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', background: 'var(--surface)', color: 'var(--text-secondary)' }}>
+          No events found.
+        </div>
+      ) : null}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+        {filteredEvents.map((event, index) => (
+          <motion.div
+            key={event.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.04 }}
+            style={{ borderRadius: '16px', overflow: 'hidden', background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}
           >
-            <Link href={`/eventra/events/${e.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-              <div style={{
-                height: '170px',
-                background: 'linear-gradient(135deg, var(--surface-variant), var(--border))',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '56px', position: 'relative',
-              }}>
-                {e.emoji}
-                <span style={{
-                  position: 'absolute', top: '12px', left: '12px', background: 'var(--primary)',
-                  color: 'white', fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '6px',
-                }}>{e.cat}</span>
+            <div style={{
+              height: '170px',
+              background: 'linear-gradient(135deg, rgba(155,89,182,0.22), rgba(233,30,99,0.08))',
+              display: 'grid',
+              placeItems: 'center',
+              color: 'var(--text-secondary)',
+              fontWeight: 700,
+              padding: '12px',
+              textAlign: 'center',
+            }}>
+              {event.name}
+            </div>
+
+            <div style={{ padding: '16px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 600, fontFamily: 'var(--font-display)' }}>{event.name}</h3>
+              <p style={{ color: 'var(--text-secondary)', marginTop: '6px', marginBottom: '10px', fontSize: '13px' }}>{event.category}</p>
+
+              <div style={{ display: 'grid', gap: '6px', color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '12px' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <HiCalendar /> {new Date(event.event_date).toLocaleString()}
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <HiLocationMarker /> {event.venue_name}
+                </span>
               </div>
-              <div style={{ padding: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: 600, fontFamily: 'var(--font-display)', flex: 1 }}>{e.name}</h3>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '2px', color: 'var(--warning)', fontSize: '13px', fontWeight: 600 }}>
-                    <HiStar /> {e.rating}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', margin: '8px 0 12px', color: 'var(--text-secondary)', fontSize: '13px' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><HiCalendar style={{ color: 'var(--accent)' }} /> {e.date}</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><HiLocationMarker style={{ color: 'var(--secondary)' }} /> {e.venue}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '16px' }}>From {e.price}</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--accent)', fontWeight: 500 }}>
-                    <HiTicket /> {e.seats} seats
-                  </span>
-                </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', color: 'var(--text-muted)', fontSize: '12px' }}>
+                <span>Available seats: {event.available_seats}</span>
+                <span>Rating: {event.rating}</span>
               </div>
-            </Link>
+
+              <button
+                onClick={() => void quickBook(event.id)}
+                disabled={bookingEventId === event.id}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '10px',
+                  background: 'var(--gradient-primary)',
+                  color: '#fff',
+                  cursor: bookingEventId === event.id ? 'wait' : 'pointer',
+                  opacity: bookingEventId === event.id ? 0.7 : 1,
+                  fontWeight: 700,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <HiTicket /> {bookingEventId === event.id ? 'Booking...' : 'Quick Book'}
+              </button>
+            </div>
           </motion.div>
         ))}
       </div>
@@ -95,5 +176,11 @@ function EventsContent() {
 }
 
 export default function EventsPage() {
-  return <ClientLayout><EventsContent /></ClientLayout>;
+  return (
+    <ClientLayout>
+      <ProtectedRoute>
+        <EventsContent />
+      </ProtectedRoute>
+    </ClientLayout>
+  );
 }

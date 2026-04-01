@@ -1,83 +1,191 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import ClientLayout from '@/components/ClientLayout';
-import { HiStar, HiClock, HiTruck, HiFilter, HiSearch } from 'react-icons/hi';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import api from '@/utils/api';
+import type { ApiListResponse, Restaurant } from '@/types/domain';
+import { HiClock, HiTruck, HiSearch } from 'react-icons/hi';
+
+type RestaurantDetail = Restaurant & {
+  menu_items: Array<{ id: number }>;
+};
 
 function RestaurantsContent() {
-  const restaurants = [
-    { id: 1, name: 'Pizza Paradise', cuisine: 'Italian, Continental', rating: 4.5, time: '25-40', fee: 40, image: '🍕', reviews: 250 },
-    { id: 2, name: 'Burger Barn', cuisine: 'American, Fast Food', rating: 4.3, time: '20-30', fee: 30, image: '🍔', reviews: 180 },
-    { id: 3, name: 'Sushi Star', cuisine: 'Japanese', rating: 4.7, time: '30-45', fee: 50, image: '🍣', reviews: 320 },
-    { id: 4, name: 'Curry House', cuisine: 'Indian, North Indian', rating: 4.6, time: '25-35', fee: 35, image: '🍛', reviews: 410 },
-    { id: 5, name: 'Taco Fiesta', cuisine: 'Mexican', rating: 4.4, time: '20-30', fee: 0, image: '🌮', reviews: 150 },
-    { id: 6, name: 'Noodle Bar', cuisine: 'Chinese, Asian', rating: 4.2, time: '25-35', fee: 25, image: '🍜', reviews: 200 },
-    { id: 7, name: 'Green Bites', cuisine: 'Healthy, Salads', rating: 4.5, time: '15-25', fee: 20, image: '🥗', reviews: 130 },
-    { id: 8, name: 'Sweet Cravings', cuisine: 'Desserts, Bakery', rating: 4.8, time: '20-30', fee: 30, image: '🧁', reviews: 290 },
-  ];
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [orderingRestaurantId, setOrderingRestaurantId] = useState<number | null>(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchRestaurants = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const response = await api.get<ApiListResponse<Restaurant>>('/zesty/restaurants/');
+        setRestaurants(response.data.results);
+      } catch {
+        setError('Unable to load restaurants. Please check backend connection and login session.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void fetchRestaurants();
+  }, []);
+
+  const filteredRestaurants = useMemo(() => {
+    const lower = query.trim().toLowerCase();
+    if (!lower) return restaurants;
+
+    return restaurants.filter((restaurant) => {
+      return restaurant.name.toLowerCase().includes(lower) || restaurant.cuisine_types.toLowerCase().includes(lower);
+    });
+  }, [query, restaurants]);
+
+  const createQuickOrder = async (restaurantId: number) => {
+    setOrderingRestaurantId(restaurantId);
+    setError('');
+
+    try {
+      const detailRes = await api.get<RestaurantDetail>(`/zesty/restaurants/${restaurantId}/`);
+      const firstMenuItem = detailRes.data.menu_items.find((item) => Boolean(item.id));
+
+      if (!firstMenuItem) {
+        setError('This restaurant has no available menu items yet.');
+        return;
+      }
+
+      await api.post('/zesty/orders/', {
+        restaurant_id: restaurantId,
+        payment_method: 'credit_card',
+        items: [{ menu_item_id: firstMenuItem.id, quantity: 1 }],
+      });
+
+      window.location.href = '/zesty/orders';
+    } catch {
+      setError('Could not place order right now. Try again in a moment.');
+    } finally {
+      setOrderingRestaurantId(null);
+    }
+  };
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '32px 24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <h1 style={{ fontSize: '28px', fontWeight: 700, fontFamily: 'var(--font-display)' }}>
-          All Restaurants
+          Restaurants Near You
         </h1>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px',
-            borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)',
-          }}>
-            <HiSearch style={{ color: 'var(--text-muted)' }} />
-            <input placeholder="Search..." style={{
-              border: 'none', background: 'transparent', color: 'var(--text-primary)',
-              fontSize: '14px', outline: 'none', width: '150px', fontFamily: 'var(--font-body)',
-            }} />
-          </div>
-          <motion.button whileHover={{ scale: 1.05 }} style={{
-            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px',
-            borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)',
-            cursor: 'pointer', color: 'var(--text-primary)', fontSize: '14px',
-          }}>
-            <HiFilter /> Filter
-          </motion.button>
+
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 16px',
+          borderRadius: '8px',
+          border: '1px solid var(--border)',
+          background: 'var(--surface)',
+          minWidth: '260px',
+        }}>
+          <HiSearch style={{ color: 'var(--text-muted)' }} />
+          <input
+            placeholder="Search by name or cuisine"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--text-primary)',
+              fontSize: '14px',
+              outline: 'none',
+              width: '100%',
+              fontFamily: 'var(--font-body)',
+            }}
+          />
         </div>
       </div>
 
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px',
-      }}>
-        {restaurants.map((r, i) => (
-          <motion.div key={r.id}
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-            whileHover={{ y: -4, boxShadow: 'var(--shadow-lg)' }}
+      {error ? <p style={{ color: 'var(--error)', marginBottom: '16px' }}>{error}</p> : null}
+
+      {loading ? (
+        <p style={{ color: 'var(--text-secondary)' }}>Loading restaurants...</p>
+      ) : null}
+
+      {!loading && !filteredRestaurants.length ? (
+        <div style={{
+          border: '1px solid var(--border)',
+          borderRadius: '16px',
+          padding: '24px',
+          background: 'var(--surface)',
+          color: 'var(--text-secondary)',
+        }}>
+          No restaurants found.
+        </div>
+      ) : null}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+        {filteredRestaurants.map((restaurant, index) => (
+          <motion.div
+            key={restaurant.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.04 }}
             style={{
-              borderRadius: '16px', overflow: 'hidden', background: 'var(--surface)',
-              border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--shadow-sm)',
             }}
           >
-            <Link href={`/zesty/restaurants/${r.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-              <div style={{
-                height: '150px', background: 'var(--surface-variant)', display: 'flex',
-                alignItems: 'center', justifyContent: 'center', fontSize: '56px',
-              }}>{r.image}</div>
-              <div style={{ padding: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: 600, fontFamily: 'var(--font-display)' }}>{r.name}</h3>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: '2px', background: '#4CAF50',
-                    color: 'white', padding: '2px 6px', borderRadius: '6px', fontSize: '12px', fontWeight: 600,
-                  }}><HiStar /> {r.rating}</div>
-                </div>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '4px 0 12px' }}>{r.cuisine}</p>
-                <div style={{ display: 'flex', gap: '16px', color: 'var(--text-muted)', fontSize: '12px' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><HiClock /> {r.time} min</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><HiTruck /> {r.fee ? `₹${r.fee}` : 'FREE'}</span>
-                  <span>{r.reviews} reviews</span>
-                </div>
+            <div style={{
+              height: '150px',
+              background: 'linear-gradient(135deg, rgba(255,90,31,0.2), rgba(247,147,30,0.08))',
+              display: 'grid',
+              placeItems: 'center',
+              color: 'var(--text-secondary)',
+              fontWeight: 700,
+              padding: '12px',
+              textAlign: 'center',
+            }}>
+              {restaurant.name}
+            </div>
+
+            <div style={{ padding: '16px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 600, fontFamily: 'var(--font-display)' }}>{restaurant.name}</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '4px 0 12px' }}>{restaurant.cuisine_types}</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '10px' }}>{restaurant.address}</p>
+
+              <div style={{ display: 'flex', gap: '16px', color: 'var(--text-muted)', fontSize: '12px', marginBottom: '14px' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <HiClock /> {restaurant.delivery_time_min}-{restaurant.delivery_time_max} min
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <HiTruck /> {Number(restaurant.delivery_fee) ? `INR ${restaurant.delivery_fee}` : 'FREE'}
+                </span>
+                <span>{restaurant.review_count} reviews</span>
               </div>
-            </Link>
+
+              <button
+                onClick={() => void createQuickOrder(restaurant.id)}
+                disabled={orderingRestaurantId === restaurant.id}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '10px',
+                  background: 'var(--gradient-primary)',
+                  color: '#fff',
+                  cursor: orderingRestaurantId === restaurant.id ? 'wait' : 'pointer',
+                  opacity: orderingRestaurantId === restaurant.id ? 0.7 : 1,
+                  fontWeight: 700,
+                }}
+              >
+                {orderingRestaurantId === restaurant.id ? 'Placing order...' : 'Quick Order'}
+              </button>
+            </div>
           </motion.div>
         ))}
       </div>
@@ -86,5 +194,11 @@ function RestaurantsContent() {
 }
 
 export default function RestaurantsPage() {
-  return <ClientLayout><RestaurantsContent /></ClientLayout>;
+  return (
+    <ClientLayout>
+      <ProtectedRoute>
+        <RestaurantsContent />
+      </ProtectedRoute>
+    </ClientLayout>
+  );
 }
