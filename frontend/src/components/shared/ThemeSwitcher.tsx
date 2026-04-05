@@ -3,14 +3,26 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '@/context/ThemeContext';
+import { useRouter } from 'next/navigation';
 
 export default function ThemeSwitcher() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
+  const router = useRouter();
   const isZesty = theme === 'zesty';
+
+  const handleToggle = () => {
+    if (isZesty) {
+      setTheme('eventra');
+      router.push('/eventra');
+    } else {
+      setTheme('zesty');
+      router.push('/zesty');
+    }
+  };
 
   return (
     <motion.button
-      onClick={toggleTheme}
+      onClick={handleToggle}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       aria-label={`Switch to ${isZesty ? 'Eventra' : 'Zesty'}`}

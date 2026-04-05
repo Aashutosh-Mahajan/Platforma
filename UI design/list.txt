@@ -1,0 +1,54 @@
+
+[38;5;250m███████╗██╗  ██╗██╗██╗     ██╗     ███████╗[0m
+[38;5;248m██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝[0m
+[38;5;245m███████╗█████╔╝ ██║██║     ██║     ███████╗[0m
+[38;5;243m╚════██║██╔═██╗ ██║██║     ██║     ╚════██║[0m
+[38;5;240m███████║██║  ██╗██║███████╗███████╗███████║[0m
+[38;5;238m╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝[0m
+
+[90m┌[39m  [46m[30m skills [39m[49m
+[?25l[90m│[39m
+[32m◇[39m  Source: https://github.com/google-labs-code/stitch-skills.git
+[?25h[?25l[90m│[39m
+[35m◒[39m  Cloning repository[999D[J[35m◐[39m  Cloning repository[999D[J[35m◓[39m  Cloning repository[999D[J[35m◑[39m  Cloning repository[999D[J[35m◒[39m  Cloning repository[999D[J[35m◐[39m  Cloning repository[999D[J[35m◓[39m  Cloning repository[999D[J[35m◑[39m  Cloning repository[999D[J[35m◒[39m  Cloning repository.[999D[J[35m◐[39m  Cloning repository.[999D[J[35m◓[39m  Cloning repository.[999D[J[35m◑[39m  Cloning repository.[999D[J[35m◒[39m  Cloning repository.[999D[J[35m◐[39m  Cloning repository.[999D[J[35m◓[39m  Cloning repository.[999D[J[35m◑[39m  Cloning repository.[999D[J[35m◒[39m  Cloning repository..[999D[J[35m◐[39m  Cloning repository..[999D[J[35m◓[39m  Cloning repository..[999D[J[35m◑[39m  Cloning repository..[999D[J[35m◒[39m  Cloning repository..[999D[J[35m◐[39m  Cloning repository..[999D[J[35m◓[39m  Cloning repository..[999D[J[35m◑[39m  Cloning repository..[999D[J[35m◒[39m  Cloning repository...[999D[J[35m◐[39m  Cloning repository...[999D[J[35m◓[39m  Cloning repository...[999D[J[35m◑[39m  Cloning repository...[999D[J[35m◒[39m  Cloning repository...[999D[J[35m◐[39m  Cloning repository...[999D[J[35m◓[39m  Cloning repository...[999D[J[35m◑[39m  Cloning repository...[999D[J[35m◒[39m  Cloning repository...[999D[J[35m◐[39m  Cloning repository[999D[J[35m◓[39m  Cloning repository[999D[J[35m◑[39m  Cloning repository[999D[J[35m◒[39m  Cloning repository[999D[J[35m◐[39m  Cloning repository[999D[J[35m◓[39m  Cloning repository[999D[J[35m◑[39m  Cloning repository[999D[J[35m◒[39m  Cloning repository[999D[J[35m◐[39m  Cloning repository.[999D[J[35m◓[39m  Cloning repository.[999D[J[35m◑[39m  Cloning repository.[999D[J[35m◒[39m  Cloning repository.[999D[J[35m◐[39m  Cloning repository.[999D[J[35m◓[39m  Cloning repository.[999D[J[35m◑[39m  Cloning repository.[999D[J[35m◒[39m  Cloning repository.[999D[J[35m◐[39m  Cloning repository..[999D[J[35m◓[39m  Cloning repository..[999D[J[35m◑[39m  Cloning repository..[999D[J[35m◒[39m  Cloning repository..[999D[J[35m◐[39m  Cloning repository..[999D[J[35m◓[39m  Cloning repository..[999D[J[35m◑[39m  Cloning repository..[999D[J[35m◒[39m  Cloning repository..[999D[J[35m◐[39m  Cloning repository...[999D[J[35m◓[39m  Cloning repository...[999D[J[35m◑[39m  Cloning repository...[999D[J[32m◇[39m  Repository cloned
+[?25h[?25l[90m│[39m
+[999D[J[32m◇[39m  Found [32m8[39m skills
+[?25h
+[90m│[39m
+[32m◇[39m  [1mAvailable Skills[22m
+[90m│[39m
+[90m│[39m    [36mdesign-md[39m
+[90m│[39m
+[90m│[39m      [2mAnalyze Stitch projects and synthesize a semantic design system into DESIGN.md files[22m
+[90m│[39m
+[90m│[39m    [36menhance-prompt[39m
+[90m│[39m
+[90m│[39m      [2mTransforms vague UI ideas into polished, Stitch-optimized prompts. Enhances specificity, adds UI/UX keywords, injects design system context, and structures output for better generation results.[22m
+[90m│[39m
+[90m│[39m    [36mreact:components[39m
+[90m│[39m
+[90m│[39m      [2mConverts Stitch designs into modular Vite and React components using system-level networking and AST-based validation.[22m
+[90m│[39m
+[90m│[39m    [36mremotion[39m
+[90m│[39m
+[90m│[39m      [2mGenerate walkthrough videos from Stitch projects using Remotion with smooth transitions, zooming, and text overlays[22m
+[90m│[39m
+[90m│[39m    [36mshadcn-ui[39m
+[90m│[39m
+[90m│[39m      [2mExpert guidance for integrating and building applications with shadcn/ui components, including component discovery, installation, customization, and best practices.[22m
+[90m│[39m
+[90m│[39m    [36mstitch-design[39m
+[90m│[39m
+[90m│[39m      [2mUnified entry point for Stitch design work. Handles prompt enhancement (UI/UX keywords, atmosphere), design system synthesis (.stitch/DESIGN.md), and high-fidelity screen generation/editing via Stitch MCP.[22m
+[90m│[39m
+[90m│[39m    [36mstitch-loop[39m
+[90m│[39m
+[90m│[39m      [2mTeaches agents to iteratively build websites using Stitch with an autonomous baton-passing loop pattern[22m
+[90m│[39m
+[90m│[39m    [36mtaste-design[39m
+[90m│[39m
+[90m│[39m      [2mSemantic Design System Skill for Google Stitch. Generates agent-friendly DESIGN.md files that enforce premium, anti-generic UI standards — strict typography, calibrated color, asymmetric layouts, perpetual micro-motion, and hardware-accelerated performance.[22m
+
+[90m│[39m
+[90m└[39m  Use --skill <name> to install specific skills
+

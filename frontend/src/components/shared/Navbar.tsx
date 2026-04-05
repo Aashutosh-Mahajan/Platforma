@@ -18,7 +18,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     await logout();
-    router.replace('/login');
+    router.replace(isZesty ? '/zesty' : '/eventra');
   };
 
   const zestyLinks = [

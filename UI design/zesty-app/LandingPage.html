@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Zesty - India's #1 food delivery app</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline": "#8f6f6e",
+                        "surface-dim": "#dcd9d9",
+                        "inverse-surface": "#313030",
+                        "surface-container-high": "#eae7e7",
+                        "on-tertiary": "#ffffff",
+                        "surface-container": "#f0eded",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-primary-container": "#fffbff",
+                        "surface-bright": "#fcf9f8",
+                        "inverse-primary": "#ffb3b1",
+                        "surface": "#fcf9f8",
+                        "tertiary-fixed": "#f0dee0",
+                        "on-secondary-fixed": "#1b1b1b",
+                        "on-error-container": "#93000a",
+                        "tertiary": "#65595b",
+                        "surface-container-highest": "#e5e2e1",
+                        "tertiary-fixed-dim": "#d3c3c5",
+                        "inverse-on-surface": "#f3f0ef",
+                        "on-surface": "#1b1b1b",
+                        "on-tertiary-fixed-variant": "#4f4446",
+                        "secondary-fixed": "#e5e2e1",
+                        "on-secondary-container": "#636262",
+                        "primary": "#b7122a",
+                        "error": "#ba1a1a",
+                        "primary-container": "#db313f",
+                        "on-primary": "#ffffff",
+                        "tertiary-container": "#7f7173",
+                        "background": "#fcf9f8",
+                        "surface-variant": "#e5e2e1",
+                        "on-surface-variant": "#5b403f",
+                        "on-primary-fixed": "#410007",
+                        "secondary": "#5f5e5e",
+                        "on-primary-fixed-variant": "#92001c",
+                        "on-tertiary-fixed": "#22191b",
+                        "error-container": "#ffdad6",
+                        "on-background": "#1b1b1b",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#e2dfde",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed": "#ffdad8",
+                        "surface-tint": "#bb162c",
+                        "primary-fixed-dim": "#ffb3b1",
+                        "surface-container-low": "#f6f3f2",
+                        "on-tertiary-container": "#fffbff",
+                        "on-secondary-fixed-variant": "#474746",
+                        "outline-variant": "#e4bebc"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Lexend"],
+                        "body": ["Lexend"],
+                        "label": ["Lexend"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Lexend', sans-serif; }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .hero-gradient {
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url('{{DATA:IMAGE:IMAGE_3}}');
+            background-size: cover;
+            background-position: center;
+        }
+        .ambient-shadow {
+            box-shadow: 0px 20px 40px rgba(27, 27, 27, 0.06);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- TopNavBar -->
+<header class="absolute top-0 left-0 w-full z-50 flex justify-between items-center px-8 py-6 max-w-7xl mx-auto bg-transparent">
+<div class="text-3xl font-black text-white italic font-lexend tracking-tight">Zesty</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-white/90 font-medium hover:text-red-200 transition-colors" href="#">Add restaurant</a>
+<a class="text-white/90 font-medium hover:text-red-200 transition-colors" href="#">Log in</a>
+<a class="text-white/90 font-medium hover:text-red-200 transition-colors" href="#">Sign up</a>
+</nav>
+</header>
+<!-- Hero Section -->
+<section class="relative h-[665px] min-h-[600px] flex flex-col items-center justify-center text-center px-6 hero-gradient">
+<div class="max-w-4xl w-full">
+<h1 class="text-white text-5xl md:text-7xl font-black italic mb-4 tracking-tighter">Zesty</h1>
+<p class="text-white text-2xl md:text-3xl font-medium mb-12 opacity-95">India's #1 food delivery app</p>
+<!-- Search Bar (Glassmorphism) -->
+<div class="glass-effect p-2 rounded-2xl flex flex-col md:flex-row items-center gap-2 max-w-3xl mx-auto ambient-shadow">
+<div class="flex items-center bg-surface-container-lowest rounded-xl flex-1 px-4 py-3 w-full">
+<span class="material-symbols-outlined text-primary mr-2" data-icon="location_on">location_on</span>
+<input class="bg-transparent border-none focus:ring-0 text-on-surface w-full font-medium" placeholder="Mumbai, Maharashtra" type="text"/>
+<span class="material-symbols-outlined text-secondary ml-2" data-icon="arrow_drop_down">arrow_drop_down</span>
+</div>
+<div class="h-8 w-[1px] bg-white/20 hidden md:block"></div>
+<div class="flex items-center bg-surface-container-lowest rounded-xl flex-[2] px-4 py-3 w-full">
+<span class="material-symbols-outlined text-secondary mr-2" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-on-surface w-full font-medium" placeholder="Search for restaurant, cuisine or a dish" type="text"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Statistics Section (Better food for more people) -->
+<section class="bg-white py-20 px-8 relative overflow-hidden">
+<!-- Floating elements from IMAGE_2 -->
+<div class="absolute top-10 left-[10%] opacity-20 pointer-events-none">
+<svg fill="none" height="200" viewbox="0 0 200 200" width="200" xmlns="http://www.w3.org/2000/svg">
+<path d="M10 100C10 40 190 40 190 100C190 160 10 160 10 100Z" stroke="#FF5252" stroke-dasharray="4 4" stroke-width="1"></path>
+</svg>
+</div>
+<div class="absolute bottom-20 right-[5%] opacity-20 pointer-events-none transform rotate-45">
+<svg fill="none" height="300" viewbox="0 0 200 200" width="300" xmlns="http://www.w3.org/2000/svg">
+<path d="M10 100C10 40 190 40 190 100" stroke="#FF5252" stroke-dasharray="4 4" stroke-width="1"></path>
+</svg>
+</div>
+<div class="max-w-7xl mx-auto text-center relative z-10">
+<div class="grid grid-cols-1 md:grid-cols-3 items-center gap-12 mb-16">
+<!-- Burger Image Left -->
+<div class="hidden md:flex justify-center">
+<img alt="Burger" class="w-48 h-48 object-contain rounded-full shadow-lg transform -rotate-12" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA6QtA4EE05XvCQSJo3vUy3JmlextZMRID77kFFM67y_dZvi3tljFU1uiv36NMOohVswrm1Hfsk6cT7ZRq7tlBOZqnTh96V4Okj0URNu-LPknIT04qC3E_Rru5Fu0c7Z-AGSJLyuIBjOgq3MOoPGImBU5zJW3SHIkUSMq5omJq34laTQCPuNQiYCaHfUp3MaJ7P6qSQiSsGjQwWBP2TomshpjJJaYYImDdIRPCt0F7_GlndQRRjugVoyNu81I0SLTnlHXphnHOfHA"/>
+</div>
+<!-- Center Content -->
+<div class="flex flex-col items-center">
+<h2 class="text-4xl md:text-5xl font-black text-primary-container mb-6 leading-tight">Better food for<br/>more people</h2>
+<p class="text-on-surface-variant text-lg max-w-md mx-auto leading-relaxed">For over a decade, we've enabled our customers to discover new tastes, delivered right to their doorstep</p>
+</div>
+<!-- Dim Sum/Pizza Images Right -->
+<div class="hidden md:flex flex-col gap-8 items-center">
+<img alt="Sushi" class="w-40 h-40 object-cover rounded-full shadow-lg transform rotate-12" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOzmnpeUgKXh1rHSiAoc1lGmIANdTAGuuUvm4DvpoA9i_9jwuFalX2FwLFNc2561SXB3XIPVAqvbYQQGsosBWdxDOTs0juvSAsxV7Rxtd3OD-_Te1-vmYGU5uzx7HH0bnjGS3TAL7uaXyiiJKaVK9MhuAxsa47eSCK86B00PjdqfNVRU_1EVp0NmR049KHK7Q6k6PM2kIT19T-J-Lxa7s1G1IUJyWCG3HCq7XR_dfSBCxl6N4A60wI_ROzdK4NsL23VlIsq97Bjg"/>
+</div>
+</div>
+<!-- Stats Card -->
+<div class="bg-white rounded-3xl p-8 md:p-12 shadow-2xl max-w-5xl mx-auto flex flex-col md:flex-row justify-around items-center gap-12 border border-surface-container">
+<div class="flex items-center gap-6">
+<div class="text-left">
+<div class="text-3xl font-black text-on-surface">3,00,000+</div>
+<div class="text-on-surface-variant font-medium">restaurants</div>
+</div>
+<div class="bg-red-50 p-3 rounded-2xl">
+<span class="material-symbols-outlined text-primary text-4xl" data-icon="storefront">storefront</span>
+</div>
+</div>
+<div class="hidden md:block w-[1px] h-12 bg-surface-container-highest"></div>
+<div class="flex items-center gap-6">
+<div class="text-left">
+<div class="text-3xl font-black text-on-surface">800+</div>
+<div class="text-on-surface-variant font-medium">cities</div>
+</div>
+<div class="bg-red-50 p-3 rounded-2xl">
+<span class="material-symbols-outlined text-primary text-4xl" data-icon="location_on">location_on</span>
+</div>
+</div>
+<div class="hidden md:block w-[1px] h-12 bg-surface-container-highest"></div>
+<div class="flex items-center gap-6">
+<div class="text-left">
+<div class="text-3xl font-black text-on-surface">3 billion+</div>
+<div class="text-on-surface-variant font-medium">orders delivered</div>
+</div>
+<div class="bg-red-50 p-3 rounded-2xl">
+<span class="material-symbols-outlined text-primary text-4xl" data-icon="shopping_bag">shopping_bag</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Highlight Categories -->
+<main class="max-w-7xl mx-auto px-8 py-20">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24">
+<!-- Feature Card 1 -->
+<div class="group cursor-pointer rounded-2xl overflow-hidden bg-surface-container-lowest ambient-shadow transition-transform hover:-translate-y-2">
+<div class="h-48 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Close-up of a steaming hot artisanal pizza with melting mozzarella and fresh basil leaves on a rustic wooden board" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA6QtA4EE05XvCQSJo3vUy3JmlextZMRID77kFFM67y_dZvi3tljFU1uiv36NMOohVswrm1Hfsk6cT7ZRq7tlBOZqnTh96V4Okj0URNu-LPknIT04qC3E_Rru5Fu0c7Z-AGSJLyuIBjOgq3MOoPGImBU5zJW3SHIkUSMq5omJq34laTQCPuNQiYCaHfUp3MaJ7P6qSQiSsGjQwWBP2TomshpjJJaYYImDdIRPCt0F7_GlndQRRjugVoyNu81I0SLTnlHXphnHOfHA"/>
+</div>
+<div class="p-6">
+<h3 class="text-xl font-bold mb-1">Order Online</h3>
+<p class="text-on-surface-variant text-sm">Stay home and order to your doorstep</p>
+</div>
+</div>
+<!-- Feature Card 2 -->
+<div class="group cursor-pointer rounded-2xl overflow-hidden bg-surface-container-lowest ambient-shadow transition-transform hover:-translate-y-2">
+<div class="h-48 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Sophisticated restaurant interior with warm ambient lighting, elegant table settings, and blurred patrons enjoying a meal" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHqrFRhipIgypWnjmP-ZGj6DWJ1lQqc6XupdJ2XXYj67SzbApqvcmY_8uWdfES2AZJzToVBVKQTRmd1FVOiEgZzQRPT080zVCHZ-hjBddLvfdDQtoOkEmlfjmLeVM5Og1c4aMazT1mbrxFeXjobJlUeiAtF_ZCUi5VJWJFJmg8UkbtHa1l-Xih4ECwtT9X5tZECORdD83PvK0BUX11MXvJvS0FY56ejx2XlFCWDN6kBBoGPcHgB_9hcA3Xb8uBZT7vU_jrSsRimg"/>
+</div>
+<div class="p-6">
+<h3 class="text-xl font-bold mb-1">Dining</h3>
+<p class="text-on-surface-variant text-sm">View the city's favourite dining venues</p>
+</div>
+</div>
+<!-- Feature Card 3 -->
+<div class="group cursor-pointer rounded-2xl overflow-hidden bg-surface-container-lowest ambient-shadow transition-transform hover:-translate-y-2">
+<div class="h-48 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Vibrant urban nightlife scene with neon lights, a sleek modern bar counter, and colorful cocktails with artistic garnish" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCA4qJ9U5ojPE1ytAauzTDmsgWLTscvyabqEpOYEmTD_B88ZUwQ3WbwW5k-I72-8AwV1EOhODT60Iekcuq5UnbDdyVY121-KrBaUR8FxUX-ZKeBqNnnKTGVH0fyxE-x-03f8C4pv1fZfnwVozH50UOLiKzXGJQXLltcDmzZSgXUzWvsYF2M1sgZuZVHIZTENl07yT7jF8UioSQhc7zFUjIhph1QBC59i2sZvHC__WlQb5_CqmuqYqgywpOA3NrxO3I-ZhCcxPBuYQ"/>
+</div>
+<div class="p-6">
+<h3 class="text-xl font-bold mb-1">Nightlife</h3>
+<p class="text-on-surface-variant text-sm">Explore the city's top nightlife spots</p>
+</div>
+</div>
+</div>
+<!-- Collections Section -->
+<section class="mb-24">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h2 class="text-4xl font-black tracking-tight mb-2">Collections</h2>
+<p class="text-on-surface-variant text-lg">Explore curated lists of top restaurants, cafes, pubs, and bars in Mumbai, based on trends</p>
+</div>
+<a class="text-primary font-bold flex items-center group" href="#">
+                    All collections <span class="material-symbols-outlined ml-1 group-hover:translate-x-1 transition-transform" data-icon="arrow_right">arrow_right</span>
+</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<!-- Collection Item 1 -->
+<div class="relative h-80 rounded-xl overflow-hidden group cursor-pointer">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="Sushi" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOzmnpeUgKXh1rHSiAoc1lGmIANdTAGuuUvm4DvpoA9i_9jwuFalX2FwLFNc2561SXB3XIPVAqvbYQQGsosBWdxDOTs0juvSAsxV7Rxtd3OD-_Te1-vmYGU5uzx7HH0bnjGS3TAL7uaXyiiJKaVK9MhuAxsa47eSCK86B00PjdqfNVRU_1EVp0NmR049KHK7Q6k6PM2kIT19T-J-Lxa7s1G1IUJyWCG3HCq7XR_dfSBCxl6N4A60wI_ROzdK4NsL23VlIsq97Bjg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-4 left-4 text-white">
+<p class="font-bold text-lg">Newly Opened</p>
+<p class="text-sm opacity-90 flex items-center">18 Places <span class="material-symbols-outlined text-xs ml-1" data-icon="arrow_right">arrow_right</span></p>
+</div>
+</div>
+<!-- Collection Item 2 -->
+<div class="relative h-80 rounded-xl overflow-hidden group cursor-pointer">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="Lava Cake" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQVPgiJWYOD1aEBZlCclBtwiXVLECDppuWKTjXPTftaVGMzPR7-HuHia3aY3C5pjgXrgza0lzqsVKduC6b2VuGdzHgQNirB4vLwOLWoc-IwBoEgEyfIJstLj3Csuu6zn4uxTH6oLuGrztaio0JPyotwqza9s5xi1a7FhqgF8z01gTPqpg--nyw5CZUE3uPVhqSxXsfCu06Ln10Kh7OH5ZcQWej3CsSwCkYgkjs4sJqhf43yzCkS2TZHNritQbtAlTCmPw0Tt0b_A"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-4 left-4 text-white">
+<p class="font-bold text-lg">Trending this week</p>
+<p class="text-sm opacity-90 flex items-center">30 Places <span class="material-symbols-outlined text-xs ml-1" data-icon="arrow_right">arrow_right</span></p>
+</div>
+</div>
+<!-- Collection Item 3 -->
+<div class="relative h-80 rounded-xl overflow-hidden group cursor-pointer">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="Thali" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXcCXKS7Wdupu4oLbZpby5ltmtHN5R1ikv7h-9_9L7-LfGGUAaydhqOLIvaHPStUL-06yp6XfhSSCTd2TktfihgJp6HrBR92NDK_xuyVc9HuL5FaFCyRR-u1wm_jgVUAq9tB3OEUR14FvUoqLljGNlSNlySziI_gUv6ZDos4L0DLtmgTRqL7Q1AjL8xeBqqVC-h42H6GLu_csKXWopEAunHN4CQPV9oARDP2cnn0Ve5KRU1hjyddqgrkdL6QlqDtN6FWgqXTsa7g"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-4 left-4 text-white">
+<p class="font-bold text-lg">Best of Mumbai</p>
+<p class="text-sm opacity-90 flex items-center">25 Places <span class="material-symbols-outlined text-xs ml-1" data-icon="arrow_right">arrow_right</span></p>
+</div>
+</div>
+<!-- Collection Item 4 -->
+<div class="relative h-80 rounded-xl overflow-hidden group cursor-pointer">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="Rooftop" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHlzdFh0RILGAgH_gOIwmIF5Vz4gbbRCR3skrZldXsDOGpUoHd9XfJWG7HMyH9_kbHRK8I2bzWf5BcRYFbsOIzWG-bR3a2IaJqp3q-6QFtfgyh3AaEHs8wEimeQW0gmAsNln0Yj6YkGRsPO9CHIXdd2Xoz5E-Drkf-9dvCT4RbuH8b6HsyGPXezDEJ-ig7sI4f58m9xfWkWtQlSWkmGVULLqR2azzcNILs5Z_TjxfsLtMS0f9tnKFuY-YMbmbghK2_3jStIlkxbg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-4 left-4 text-white">
+<p class="font-bold text-lg">Rooftop Views</p>
+<p class="text-sm opacity-90 flex items-center">12 Places <span class="material-symbols-outlined text-xs ml-1" data-icon="arrow_right">arrow_right</span></p>
+</div>
+</div>
+</div>
+</section>
+<!-- "What's waiting for you" Section -->
+<section class="bg-surface-container-low rounded-2xl p-12 mb-24 relative overflow-hidden">
+<div class="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+<div>
+<span class="label-md uppercase tracking-widest text-primary font-bold mb-4 block">The Zesty Experience</span>
+<h2 class="text-5xl font-black leading-tight mb-6 tracking-tight">What's waiting for you on the app?</h2>
+<p class="text-lg text-on-surface-variant mb-8 leading-relaxed">Discover personalized recommendations, live order tracking, and exclusive discounts from over 50,000 restaurants across India.</p>
+<div class="space-y-6">
+<div class="flex items-start gap-4">
+<div class="bg-primary-container p-3 rounded-full text-on-primary">
+<span class="material-symbols-outlined" data-icon="speed">speed</span>
+</div>
+<div>
+<h4 class="font-bold text-lg">Lightning Fast Delivery</h4>
+<p class="text-on-surface-variant">Get your food delivered in under 30 minutes, every single time.</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<div class="bg-primary-container p-3 rounded-full text-on-primary">
+<span class="material-symbols-outlined" data-icon="loyalty">loyalty</span>
+</div>
+<div>
+<h4 class="font-bold text-lg">Exclusive Zesty Pro Deals</h4>
+<p class="text-on-surface-variant">Save up to 40% on every order with our premium membership.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="relative">
+<div class="absolute -top-10 -right-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
+<img class="rounded-2xl ambient-shadow w-full max-w-md mx-auto transform rotate-2 hover:rotate-0 transition-transform duration-500" data-alt="UI Mockup" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcwUWT5s-Eg59xM8lRUKXzZKEJ_XDFP1mj-NlbHvU2OeNv8xxzV_G9U8yeU5QDuRYHpl9dlHv9zj-WS45pmm8Sd_VGgwtJfR7YQOwg4_UX_0HhQUSScfsg8NejwFl8JU086o1yJ2iSML6D5NlfGvSuqRbP5w7kJTFECZqy7jlWNtV5JWU6KdXvPWHskLD7XN3EssGALkEVz67X6CzF6z8yy-dy3bVb9v2eOBUuEKF8ddaxSd5RDtv_HiiA7Ep11nY4EEgWEQnt4w"/>
+</div>
+</div>
+</section>
+<!-- Download App Section -->
+<section class="bg-primary-container rounded-2xl p-12 flex flex-col md:flex-row items-center justify-between gap-12 text-on-primary">
+<div class="flex-1">
+<h2 class="text-4xl font-black mb-4">Get the Zesty app</h2>
+<p class="text-xl mb-8 opacity-90">We will send you a link, open it on your phone to download the app</p>
+<div class="flex gap-4 mb-8">
+<label class="flex items-center gap-2 cursor-pointer">
+<input checked="" class="text-on-primary focus:ring-on-primary" name="contact" type="radio"/> <span>Email</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer">
+<input class="text-on-primary focus:ring-on-primary" name="contact" type="radio"/> <span>Phone</span>
+</label>
+</div>
+<div class="flex flex-col sm:flex-row gap-4 mb-12">
+<input class="bg-white rounded-xl px-4 py-3 text-on-surface border-none flex-1 font-medium" placeholder="Email" type="text"/>
+<button class="bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-surface-tint transition-colors">Share App Link</button>
+</div>
+<p class="text-sm opacity-80 mb-4">Download app from</p>
+<div class="flex gap-4">
+<img class="h-10 cursor-pointer" data-alt="App Store" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAHfxAmLNX8Yjln6BdyEAPfLIkOpU9nQwNqoT1WvxSteW_6vRCMEKTEIr6NE09ePm7A8EImAOD2t5OYJTm9VWdb_QZGRvsLvJviSWkZN5MIY1e5gRvKcNXHgGu-ioeHpS2TqgHnwSzquISSXZTb4gsAydC53IfwNLl3NU_r_PPAZ8JRTfHStGH9TzkClUwGJmNj5s9eFX3tfAyeD1-tAYAn0o0_X1oOCZ-eNL6ppXJNRy46_QEuSOLowOxrj2dLF-GzVK5GWXaxAg"/>
+<img class="h-10 cursor-pointer" data-alt="Google Play" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTdQx1rVnpUoSovCp3oHbXl2RuNA0KBAQl7Xg_h32baQK2GQ-H-GWlIZsVaYF9jMPpm7K5Ev9tK53s8v1BYBG2uJRE6TOUO4e4e73atq_zcO87WiW3ApS6CG3UE-A9hBYRCDienVXwLAW4DWh3vM3zIENL4co2FoqpwpkClRpNfQY9lDhWyKJz7kWRUdLenO2erfoSO3gm3YFgCrin2i9_Z68sZGtfHNNpO8a8s5XolmBKU3BX1lteoDp9hM0JmMRnhc6DnmF5jQ"/>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-2xl ambient-shadow flex flex-col items-center">
+<div class="bg-stone-200 w-48 h-48 rounded-xl mb-4 flex items-center justify-center border-4 border-white">
+<span class="material-symbols-outlined text-7xl text-on-surface" data-icon="qr_code_2">qr_code_2</span>
+</div>
+<p class="text-on-surface text-center font-bold">Scan to Download</p>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full border-t border-stone-200 dark:border-stone-800 px-8 flex flex-col md:flex-row justify-between max-w-7xl mx-auto py-12">
+<div class="mb-8 md:mb-0">
+<div class="text-2xl font-black text-stone-900 dark:text-white italic mb-4">Zesty</div>
+<p class="font-lexend text-sm text-stone-600 dark:text-stone-400 mb-6">Experience the art of food delivery.</p>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-stone-600 cursor-pointer hover:text-primary transition-colors" data-icon="public">public</span>
+<span class="material-symbols-outlined text-stone-600 cursor-pointer hover:text-primary transition-colors" data-icon="social_leaderboard">social_leaderboard</span>
+<span class="material-symbols-outlined text-stone-600 cursor-pointer hover:text-primary transition-colors" data-icon="share">share</span>
+</div>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-8">
+<div class="flex flex-col gap-2">
+<p class="font-bold text-on-surface mb-2">Company</p>
+<a class="text-stone-600 hover:text-red-600 hover:translate-x-1 transition-transform" href="#">About Zesty</a>
+<a class="text-stone-600 hover:text-red-600 hover:translate-x-1 transition-transform" href="#">Partner With Us</a>
+<a class="text-stone-600 hover:text-red-600 hover:translate-x-1 transition-transform" href="#">Apps For You</a>
+</div>
+<div class="flex flex-col gap-2">
+<p class="font-bold text-on-surface mb-2">Legal</p>
+<a class="text-stone-600 hover:text-red-600 hover:translate-x-1 transition-transform" href="#">Privacy Policy</a>
+<a class="text-stone-600 hover:text-red-600 hover:translate-x-1 transition-transform" href="#">Terms of Service</a>
+</div>
+<div class="flex flex-col gap-2 sm:col-span-1 col-span-2">
+<p class="font-bold text-on-surface mb-2">Contact</p>
+<p class="text-stone-600 text-sm">support@zesty.com</p>
+<p class="text-stone-600 text-sm">1800-ZESTY-APP</p>
+</div>
+</div>
+<div class="w-full mt-12 pt-8 border-t border-stone-200 flex justify-center text-xs text-stone-400">
+            © 2024 Zesty Technologies Ltd. All rights reserved.
+        </div>
+</footer>
+</body></html>
