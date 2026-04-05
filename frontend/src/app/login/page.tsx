@@ -7,9 +7,11 @@ import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { HiMail, HiLockClosed, HiEye, HiEyeOff } from 'react-icons/hi';
+import { useTheme } from '@/context/ThemeContext';
 
 function LoginContent() {
   const { login } = useAuth();
+  const { isZesty } = useTheme();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,9 +25,10 @@ function LoginContent() {
     setLoading(true);
     try {
       await login(email, password);
+      const fallback = isZesty ? '/zesty' : '/eventra';
       const redirectTo = typeof window !== 'undefined'
-        ? new URLSearchParams(window.location.search).get('redirect') || '/'
-        : '/';
+        ? new URLSearchParams(window.location.search).get('redirect') || fallback
+        : fallback;
       router.replace(redirectTo);
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {

@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import ClientLayout from '@/components/ClientLayout';
 import { useAuth } from '@/context/AuthContext';
 import { HiMail, HiUser, HiPhone, HiLockClosed } from 'react-icons/hi';
+import { useTheme } from '@/context/ThemeContext';
 
 type RegisterForm = {
   email: string;
@@ -31,6 +32,7 @@ const INITIAL_FORM: RegisterForm = {
 function RegisterContent() {
   const router = useRouter();
   const { register } = useAuth();
+  const { isZesty } = useTheme();
 
   const [form, setForm] = useState<RegisterForm>(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
@@ -52,7 +54,7 @@ function RegisterContent() {
     setLoading(true);
     try {
       await register(form);
-      router.replace('/');
+      router.replace(isZesty ? '/zesty' : '/eventra');
     } catch {
       setError('Unable to create account. Try a different email or username.');
     } finally {
