@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from zesty.models import Restaurant, MenuItem, Order, OrderItem, Review, DeliveryTracking
+from core.models import Address
 
 
 class MenuItemSerializer(serializers.ModelSerializer):
@@ -40,6 +41,42 @@ class OrderItemSerializer(serializers.ModelSerializer):
         read_only_fields = ['unit_price', 'total']
 
 
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = ['id', 'label', 'street', 'city', 'state', 'postal_code', 'is_default']
+
+
+class OrderListSerializer(serializers.ModelSerializer):
+    """Summary view for order listings."""
+    items = OrderItemSerializer(many=True, read_only=True)
+    restaurant_name = serializers.CharField(source='restaurant.name', read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ['id', 'restaurant', 'restaurant_name', 'status', 'items',
+                  'subtotal', 'delivery_fee', 'tax', 'total',
+                  'estimated_delivery', 'created_at']
+        read_only_fields = ['id', 'subtotal', 'delivery_fee', 'tax', 'total',
+                            'created_at']
+
+
+class OrderDetailSerializer(serializers.ModelSerializer):
+    """Full detail serializer with items and tracking."""
+    items = OrderItemSerializer(many=True, read_only=True)
+    restaurant_name = serializers.CharField(source='restaurant.name', read_only=True)
+    delivery_address = AddressSerializer(read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ['id', 'restaurant', 'restaurant_name', 'status', 'items',
+                  'subtotal', 'delivery_fee', 'tax', 'total',
+                  'delivery_address', 'estimated_delivery', 'actual_delivery',
+                  'special_instructions', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'subtotal', 'delivery_fee', 'tax', 'total',
+                            'actual_delivery', 'created_at', 'updated_at']
+
+
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     restaurant_name = serializers.CharField(source='restaurant.name', read_only=True)
@@ -54,7 +91,7 @@ class OrderSerializer(serializers.ModelSerializer):
                             'actual_delivery', 'created_at', 'updated_at']
 
 
-class CreateOrderSerializer(serializers.Serializer):
+class OrderCreateSerializer(serializers.Serializer):
     """Serializer for creating orders with items."""
     restaurant_id = serializers.IntegerField()
     delivery_address_id = serializers.IntegerField(required=False)
@@ -86,6 +123,18 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def get_user_name(self, obj):
         return obj.user.get_full_name() or obj.user.email
+
+
+class ReviewCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating reviews with validation."""
+    class Meta:
+        model = Review
+        fields = ['rating', 'comment']
+
+    def validate_rating(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError("Rating must be between 1 and 5.")
+        return value
 
 
 class DeliveryTrackingSerializer(serializers.ModelSerializer):

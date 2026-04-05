@@ -140,9 +140,10 @@ class Order(models.Model):
 
     def calculate_totals(self):
         """Calculate order totals from items."""
+        from decimal import Decimal
         self.subtotal = sum(item.total for item in self.items.all())
         self.delivery_fee = self.restaurant.delivery_fee
-        self.tax = self.subtotal * 0.05  # 5% GST
+        self.tax = self.subtotal * Decimal('0.05')  # 5% GST
         self.total = self.subtotal + self.delivery_fee + self.tax
         self.save(update_fields=['subtotal', 'delivery_fee', 'tax', 'total'])
 

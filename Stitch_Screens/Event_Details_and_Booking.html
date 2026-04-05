@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Eventra - Event Details</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary-container": "#f3ecff",
+                      "inverse-on-surface": "#f2f0f6",
+                      "secondary-fixed": "#e4e2e4",
+                      "on-error": "#ffffff",
+                      "surface-container-high": "#e9e7ed",
+                      "primary": "#5426e4",
+                      "on-primary": "#ffffff",
+                      "primary-container": "#6d49fd",
+                      "outline": "#797587",
+                      "primary-fixed-dim": "#c9beff",
+                      "on-primary-fixed": "#1b0063",
+                      "secondary": "#5f5e60",
+                      "tertiary-fixed-dim": "#c8c3dd",
+                      "surface-variant": "#e3e1e7",
+                      "on-tertiary-fixed-variant": "#474459",
+                      "surface-dim": "#dbd9df",
+                      "on-secondary-fixed-variant": "#474649",
+                      "tertiary-fixed": "#e4dff9",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-fixed-variant": "#4600d7",
+                      "primary-fixed": "#e6deff",
+                      "on-surface": "#1b1b20",
+                      "inverse-primary": "#c9beff",
+                      "on-secondary-fixed": "#1b1b1d",
+                      "on-secondary": "#ffffff",
+                      "surface-container": "#efedf3",
+                      "error": "#ba1a1a",
+                      "on-tertiary-fixed": "#1b192c",
+                      "surface-container-highest": "#e3e1e7",
+                      "background": "#fbf8fe",
+                      "surface-container-low": "#f5f3f9",
+                      "surface": "#fbf8fe",
+                      "on-secondary-container": "#636264",
+                      "inverse-surface": "#303035",
+                      "surface-tint": "#5e36ee",
+                      "tertiary-container": "#6d6a80",
+                      "error-container": "#ffdad6",
+                      "secondary-container": "#e2dfe1",
+                      "on-background": "#1b1b20",
+                      "secondary-fixed-dim": "#c8c6c8",
+                      "outline-variant": "#c9c3d9",
+                      "on-surface-variant": "#484556",
+                      "on-tertiary-container": "#f2edff",
+                      "surface-bright": "#fbf8fe",
+                      "on-error-container": "#93000a",
+                      "tertiary": "#545267"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "1.5rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "headline": ["Inter"],
+                      "body": ["Inter"],
+                      "label": ["Be Vietnam Pro"]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-nav {
+            background: rgba(251, 248, 254, 0.6);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface">
+<!-- Top Navigation Bar -->
+<header class="bg-[#fbf8fe]/60 dark:bg-[#1c1b1f]/60 backdrop-blur-xl dock full-width top-0 sticky z-50 shadow-[0px_12px_32px_0px_rgba(84,38,228,0.06)]">
+<div class="flex justify-between items-center w-full px-8 py-4 max-w-[1440px] mx-auto">
+<div class="flex items-center gap-12">
+<span class="text-2xl font-black text-[#5426e4] dark:text-[#d0bcff] italic">Eventra</span>
+<nav class="hidden md:flex gap-8 items-center">
+<a class="font-medium Be Vietnam Pro text-[#49454f] dark:text-[#cac4d0] hover:text-[#5426e4] hover:bg-[#f5f3f9] dark:hover:bg-[#49454f] transition-all duration-300" href="#">For you</a>
+<a class="font-medium Be Vietnam Pro text-[#49454f] dark:text-[#cac4d0] hover:text-[#5426e4] hover:bg-[#f5f3f9] dark:hover:bg-[#49454f] transition-all duration-300" href="#">Dining</a>
+<a class="font-medium Be Vietnam Pro text-[#49454f] dark:text-[#cac4d0] hover:text-[#5426e4] hover:bg-[#f5f3f9] dark:hover:bg-[#49454f] transition-all duration-300" href="#">Movies</a>
+<a class="font-bold border-b-2 border-[#5426e4] pb-1 text-[#5426e4] dark:text-[#d0bcff] transition-all duration-300" href="#">Events</a>
+<a class="font-medium Be Vietnam Pro text-[#49454f] dark:text-[#cac4d0] hover:text-[#5426e4] hover:bg-[#f5f3f9] dark:hover:bg-[#49454f] transition-all duration-300" href="#">IPL</a>
+<a class="font-medium Be Vietnam Pro text-[#49454f] dark:text-[#cac4d0] hover:text-[#5426e4] hover:bg-[#f5f3f9] dark:hover:bg-[#49454f] transition-all duration-300" href="#">Stores</a>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden lg:flex items-center bg-surface-container rounded-full px-4 py-2">
+<span class="material-symbols-outlined text-on-surface-variant mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48" placeholder="Search events..." type="text"/>
+</div>
+<div class="flex gap-4 items-center">
+<button class="material-symbols-outlined text-[#49454f] scale-105 active:scale-95 transition-transform">location_on</button>
+<button class="material-symbols-outlined text-[#49454f] scale-105 active:scale-95 transition-transform">account_circle</button>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-[1440px] mx-auto px-8 py-12 space-y-24">
+<!-- Hero Section -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+<div class="lg:col-span-8 group relative overflow-hidden rounded-xl shadow-[0px_12px_32px_0px_rgba(84,38,228,0.1)]">
+<img alt="IPL Stadium" class="w-full h-[600px] object-cover transition-transform duration-700 group-hover:scale-105" data-alt="dramatic wide shot of a futuristic brightly lit cricket stadium at night filled with cheering crowds under a dark violet sky" src="https://lh3.googleusercontent.com/aida-public/AB6AXuChPHRggfiuV2J9ZtqQOXDE3Y8kRfAzLj-4hKoHaCdtSiXw9eBNB982N9Vsguvndlg_oGHqcr7F0vAE5D0QEOXiHLrdRb1E5jVrLRcoaVm9QNDLzeqmvWnrGv9-__hB7Y4GTxhtgKGwPp41Qm0lwqjK4Vtb6QRtCxQMuq9iy8sIghPYaDzam12faJPsTdD3Np-KIWqxSl1jvjsYnrFI08mraAoczeEgo8Ainrn8haO1glJ5vyPuy1lu18sZPxJYZncLH7i6MbYzfA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+<div class="absolute bottom-8 left-8 text-white">
+<span class="inline-block bg-primary px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4">Trending Now</span>
+<h1 class="text-5xl font-black font-headline tracking-tight leading-tight">Championship Final: <br/>Titans vs. Knights</h1>
+</div>
+</div>
+<!-- Sticky Booking Info -->
+<div class="lg:col-span-4 sticky top-28 space-y-6">
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-[0px_12px_32px_0px_rgba(84,38,228,0.04)] space-y-6">
+<div class="space-y-2">
+<h2 class="text-2xl font-bold font-headline tracking-tight">Event Details</h2>
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-primary">calendar_today</span>
+<p class="font-label text-sm font-medium">Saturday, 24th May 2024</p>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-primary">schedule</span>
+<p class="font-label text-sm font-medium">07:30 PM Onwards</p>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-primary">location_on</span>
+<p class="font-label text-sm font-medium">Narendra Modi Stadium, Ahmedabad</p>
+</div>
+</div>
+<div class="pt-6 border-t border-outline-variant/30">
+<div class="flex justify-between items-end mb-6">
+<div>
+<p class="font-label text-xs text-on-surface-variant uppercase tracking-wider">Starts from</p>
+<p class="text-3xl font-black text-primary font-headline">₹850.00</p>
+</div>
+<span class="font-label text-xs text-on-surface-variant">All taxes included</span>
+</div>
+<button class="w-full py-4 rounded-xl bg-gradient-to-r from-primary to-primary-container text-white font-bold text-lg hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-lg shadow-primary/20">
+                            Book Tickets
+                        </button>
+</div>
+</div>
+<!-- Short Bio/Teaser -->
+<div class="bg-surface-container-low p-6 rounded-xl">
+<p class="font-label text-sm italic leading-relaxed text-on-surface-variant">
+                        "The most anticipated sporting event of the decade. A night of high-octane action and unparalleled entertainment."
+                    </p>
+</div>
+</div>
+</section>
+<!-- About & Amenities Bento Grid -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="md:col-span-2 space-y-6">
+<h3 class="text-3xl font-black font-headline">About the Event</h3>
+<div class="prose prose-on-surface max-w-none text-on-surface-variant font-label leading-relaxed space-y-4">
+<p>Experience the electrifying finale of the premier league like never before. The Titans face off against the Knights in a battle for supreme glory at the iconic Ahmedabad venue. This isn't just a game; it's a spectacle of skill, strategy, and sheer will.</p>
+<p>Expect a star-studded opening ceremony, immersive light shows, and a culinary experience curated by the city's finest chefs. Your ticket grants you access to the fan zones and multiple interactive entertainment booths around the stadium perimeter.</p>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-8">
+<div class="flex flex-col items-center p-4 bg-surface-container-low rounded-xl text-center space-y-2">
+<span class="material-symbols-outlined text-primary">fastfood</span>
+<span class="font-label text-xs font-semibold">Food Court</span>
+</div>
+<div class="flex flex-col items-center p-4 bg-surface-container-low rounded-xl text-center space-y-2">
+<span class="material-symbols-outlined text-primary">local_parking</span>
+<span class="font-label text-xs font-semibold">Valet Parking</span>
+</div>
+<div class="flex flex-col items-center p-4 bg-surface-container-low rounded-xl text-center space-y-2">
+<span class="material-symbols-outlined text-primary">medical_services</span>
+<span class="font-label text-xs font-semibold">First Aid</span>
+</div>
+<div class="flex flex-col items-center p-4 bg-surface-container-low rounded-xl text-center space-y-2">
+<span class="material-symbols-outlined text-primary">wifi</span>
+<span class="font-label text-xs font-semibold">High-speed Wi-Fi</span>
+</div>
+</div>
+</div>
+<div class="space-y-6">
+<h3 class="text-3xl font-black font-headline">Venue Location</h3>
+<div class="h-64 rounded-xl overflow-hidden shadow-sm relative group">
+<img alt="Map location" class="w-full h-full object-cover" data-alt="clean minimal stylized map of Ahmedabad city showing major roads and stadium marker in soft violet and white tones" data-location="Ahmedabad" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUCD1lRlLXgenbEJzmWmpEWuqlYSaRCkDjBxUAadvaAObRKkGox6KbTaKJZutlGI39Ns5Ak3G8CaEaftE77lPmQ_pt9AiaqhSK7KJAHinbWV6eu-KLy8xMw-YOdb80Ra59HoH1jk7MR3M9h8lY73cEDod9w_CC6ZO_2Up3o8sU3vLwF9jHrO_2qwlxbr2PmaXWy8-d_c76vEdY2zgzBtoMW-XpAhNkq5UkAWN9plkuTa3xtc7F2GGU5cGvVUYwJ7QLUwRtOUBccQ"/>
+<div class="absolute inset-0 bg-primary/10 group-hover:bg-transparent transition-colors"></div>
+<div class="absolute bottom-4 left-4 right-4">
+<a class="block w-full text-center py-3 bg-surface-container-lowest/90 backdrop-blur-md rounded-lg font-label text-sm font-bold text-primary shadow-lg" href="#">Get Directions</a>
+</div>
+</div>
+<div class="space-y-2">
+<p class="font-label text-sm font-bold">Narendra Modi Stadium</p>
+<p class="font-label text-sm text-on-surface-variant">Motera, Ahmedabad, Gujarat 380005, India</p>
+</div>
+</div>
+</section>
+<!-- Ticket Selection Section -->
+<section class="space-y-8">
+<div class="flex items-end justify-between">
+<div>
+<h3 class="text-3xl font-black font-headline">Select Tickets</h3>
+<p class="font-label text-on-surface-variant">Choose your perfect view of the championship</p>
+</div>
+<div class="hidden sm:flex gap-4">
+<span class="flex items-center gap-2 font-label text-xs text-on-surface-variant">
+<span class="w-3 h-3 rounded-full bg-primary/20"></span> Available
+                    </span>
+<span class="flex items-center gap-2 font-label text-xs text-on-surface-variant">
+<span class="w-3 h-3 rounded-full bg-error/20"></span> Selling Fast
+                    </span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- General Admission -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border-2 border-transparent hover:border-primary/20 transition-all space-y-6 shadow-[0px_12px_32px_0px_rgba(84,38,228,0.04)]">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="text-xl font-bold font-headline">North Stand</h4>
+<p class="font-label text-xs text-on-surface-variant">Standard Entry</p>
+</div>
+<span class="text-2xl font-black text-on-surface">₹850</span>
+</div>
+<ul class="space-y-2">
+<li class="flex items-center gap-2 text-xs font-label text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span> Unreserved Seating
+                        </li>
+<li class="flex items-center gap-2 text-xs font-label text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span> Food Court Access
+                        </li>
+</ul>
+<div class="flex items-center justify-between pt-4">
+<div class="flex items-center gap-4 bg-surface-container rounded-full px-3 py-1">
+<button class="w-8 h-8 flex items-center justify-center font-bold text-on-surface">-</button>
+<span class="font-label font-bold">0</span>
+<button class="w-8 h-8 flex items-center justify-center font-bold text-on-surface">+</button>
+</div>
+<span class="font-label text-xs font-medium text-error">Only 12 left!</span>
+</div>
+</div>
+<!-- Premium Seating -->
+<div class="bg-primary/5 p-6 rounded-xl border-2 border-primary/10 hover:border-primary transition-all space-y-6 shadow-[0px_12px_32px_0px_rgba(84,38,228,0.06)] relative overflow-hidden">
+<div class="absolute top-0 right-0 bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-tighter">Most Popular</div>
+<div class="flex justify-between items-start">
+<div>
+<h4 class="text-xl font-bold font-headline">Grand Pavillion</h4>
+<p class="font-label text-xs text-primary font-medium">Premium View</p>
+</div>
+<span class="text-2xl font-black text-primary">₹2,450</span>
+</div>
+<ul class="space-y-2">
+<li class="flex items-center gap-2 text-xs font-label text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span> Cushioned Seats
+                        </li>
+<li class="flex items-center gap-2 text-xs font-label text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span> Priority Entry Lane
+                        </li>
+</ul>
+<div class="flex items-center justify-between pt-4">
+<div class="flex items-center gap-4 bg-white rounded-full px-3 py-1 shadow-sm">
+<button class="w-8 h-8 flex items-center justify-center font-bold text-on-surface">-</button>
+<span class="font-label font-bold text-primary">2</span>
+<button class="w-8 h-8 flex items-center justify-center font-bold text-on-surface">+</button>
+</div>
+<span class="font-label text-xs font-medium text-on-surface-variant">In High Demand</span>
+</div>
+</div>
+<!-- VIP Experience -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border-2 border-transparent hover:border-primary/20 transition-all space-y-6 shadow-[0px_12px_32px_0px_rgba(84,38,228,0.04)]">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="text-xl font-bold font-headline">VIP Lounge</h4>
+<p class="font-label text-xs text-on-surface-variant">Ultra Luxury</p>
+</div>
+<span class="text-2xl font-black text-on-surface">₹7,999</span>
+</div>
+<ul class="space-y-2">
+<li class="flex items-center gap-2 text-xs font-label text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span> Unlimited Buffet &amp; Drinks
+                        </li>
+<li class="flex items-center gap-2 text-xs font-label text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span> Meet &amp; Greet Opportunity
+                        </li>
+</ul>
+<div class="flex items-center justify-between pt-4">
+<div class="flex items-center gap-4 bg-surface-container rounded-full px-3 py-1">
+<button class="w-8 h-8 flex items-center justify-center font-bold text-on-surface">-</button>
+<span class="font-label font-bold">0</span>
+<button class="w-8 h-8 flex items-center justify-center font-bold text-on-surface">+</button>
+</div>
+<span class="font-label text-xs font-medium text-on-surface-variant">Limited Capacity</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-[#f5f3f9] dark:bg-[#1c1b1f] w-full mt-20">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 px-12 py-16 max-w-[1440px] mx-auto">
+<div class="space-y-4">
+<span class="text-xl font-black text-[#5426e4]">Eventra</span>
+<p class="font-medium Be Vietnam Pro text-sm text-[#49454f]">Curating the world's most exclusive experiences. Your gateway to culture, entertainment, and sport.</p>
+</div>
+<div class="space-y-4">
+<h5 class="font-bold text-[#5426e4] text-sm uppercase tracking-widest">Company</h5>
+<ul class="space-y-2">
+<li><a class="font-medium Be Vietnam Pro text-sm text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline opacity-80 hover:opacity-100 transition-all" href="#">About Us</a></li>
+<li><a class="font-medium Be Vietnam Pro text-sm text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline opacity-80 hover:opacity-100 transition-all" href="#">Careers</a></li>
+<li><a class="font-medium Be Vietnam Pro text-sm text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline opacity-80 hover:opacity-100 transition-all" href="#">Support</a></li>
+</ul>
+</div>
+<div class="space-y-4">
+<h5 class="font-bold text-[#5426e4] text-sm uppercase tracking-widest">Legal</h5>
+<ul class="space-y-2">
+<li><a class="font-medium Be Vietnam Pro text-sm text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline opacity-80 hover:opacity-100 transition-all" href="#">Terms &amp; Conditions</a></li>
+<li><a class="font-medium Be Vietnam Pro text-sm text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline opacity-80 hover:opacity-100 transition-all" href="#">Privacy Policy</a></li>
+<li><a class="font-medium Be Vietnam Pro text-sm text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline opacity-80 hover:opacity-100 transition-all" href="#">Cookie Policy</a></li>
+</ul>
+</div>
+<div class="space-y-4">
+<h5 class="font-bold text-[#5426e4] text-sm uppercase tracking-widest">Stay Updated</h5>
+<div class="flex">
+<input class="bg-surface-container-high border-none rounded-l-xl px-4 py-2 text-sm w-full focus:ring-1 focus:ring-primary" placeholder="Email address" type="email"/>
+<button class="bg-primary text-white px-4 py-2 rounded-r-xl material-symbols-outlined">send</button>
+</div>
+</div>
+</div>
+<div class="border-t border-outline-variant/20 max-w-[1440px] mx-auto py-8 px-12 flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="font-medium Be Vietnam Pro text-sm text-[#49454f]">© 2024 Eventra. The Digital Curator.</p>
+<div class="flex gap-6">
+<span class="material-symbols-outlined text-[#49454f] hover:text-[#5426e4] cursor-pointer">social_leaderboard</span>
+<span class="material-symbols-outlined text-[#49454f] hover:text-[#5426e4] cursor-pointer">brand_awareness</span>
+<span class="material-symbols-outlined text-[#49454f] hover:text-[#5426e4] cursor-pointer">public</span>
+</div>
+</div>
+</footer>
+</body></html>

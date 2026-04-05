@@ -6,7 +6,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 
 from core.serializers import (
-    UserSerializer, RegistrationSerializer,
+    UserSerializer, RegisterSerializer, LoginSerializer,
+    UserProfileSerializer, PasswordChangeSerializer,
     AddressSerializer, PaymentSerializer, NotificationSerializer
 )
 from core.models import Address, Payment, Notification
@@ -21,7 +22,7 @@ User = get_user_model()
 class RegisterView(generics.CreateAPIView):
     """Register a new user."""
     permission_classes = [AllowAny]
-    serializer_class = RegistrationSerializer
+    serializer_class = RegisterSerializer
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -39,6 +40,24 @@ class RegisterView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED)
 
 
+class LoginView(generics.GenericAPIView):
+    """Login user with email and password."""
+    permission_classes = [AllowAny]
+    serializer_class = LoginSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+        }, status=status.HTTP_200_OK)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
@@ -53,14 +72,28 @@ def logout_view(request):
         return Response({'message': 'Logged out.'}, status=status.HTTP_200_OK)
 
 
+class PasswordChangeView(generics.GenericAPIView):
+    """Change user password."""
+    permission_classes = [IsAuthenticated]
+    serializer_class = PasswordChangeSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({
+            'message': 'Password changed successfully.'
+        }, status=status.HTTP_200_OK)
+
+
 # =====================
 # USER VIEWS
 # =====================
 
-class UserProfileView(generics.RetrieveUpdateAPIView):
+class ProfileView(generics.RetrieveUpdateAPIView):
     """Get or update the authenticated user's profile."""
     permission_classes = [IsAuthenticated]
-    serializer_class = UserSerializer
+    serializer_class = UserProfileSerializer
 
     def get_object(self):
         return self.request.user
@@ -76,6 +109,14 @@ class AddressViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=['patch'])
+    def set_default(self, request, pk=None):
+        """Set an address as the default address."""
+        address = self.get_object()
+        address.is_default = True
+        address.save()  # The model's save method handles unsetting other defaults
+        return Response(AddressSerializer(address).data)
 
 
 # =====================

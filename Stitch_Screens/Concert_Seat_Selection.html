@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Seat Selection - Eventra</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline": "#797587",
+                        "on-secondary-container": "#636264",
+                        "tertiary-fixed": "#e4dff9",
+                        "surface-container": "#efedf3",
+                        "on-secondary": "#ffffff",
+                        "secondary": "#5f5e60",
+                        "surface-container-high": "#e9e7ed",
+                        "tertiary-fixed-dim": "#c8c3dd",
+                        "secondary-fixed": "#e4e2e4",
+                        "primary-fixed": "#e6deff",
+                        "on-primary-container": "#f3ecff",
+                        "tertiary": "#545267",
+                        "primary": "#5426e4",
+                        "primary-container": "#6d49fd",
+                        "on-tertiary-container": "#f2edff",
+                        "surface-dim": "#dbd9df",
+                        "surface": "#fbf8fe",
+                        "on-tertiary-fixed-variant": "#474459",
+                        "on-secondary-fixed": "#1b1b1d",
+                        "on-surface-variant": "#484556",
+                        "on-primary-fixed": "#1b0063",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#f2f0f6",
+                        "tertiary-container": "#6d6a80",
+                        "inverse-primary": "#c9beff",
+                        "surface-container-lowest": "#ffffff",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#fbf8fe",
+                        "on-surface": "#1b1b20",
+                        "background": "#fbf8fe",
+                        "secondary-fixed-dim": "#c8c6c8",
+                        "error-container": "#ffdad6",
+                        "surface-variant": "#e3e1e7",
+                        "on-background": "#1b1b20",
+                        "surface-container-low": "#f5f3f9",
+                        "on-tertiary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#303035",
+                        "surface-container-highest": "#e3e1e7",
+                        "on-tertiary-fixed": "#1b192c",
+                        "outline-variant": "#c9c3d9",
+                        "secondary-container": "#e2dfe1",
+                        "surface-tint": "#5e36ee",
+                        "on-secondary-fixed-variant": "#474649",
+                        "primary-fixed-dim": "#c9beff",
+                        "on-primary-fixed-variant": "#4600d7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Be Vietnam Pro"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .venue-path:hover {
+            fill-opacity: 0.8;
+            filter: drop-shadow(0 0 8px rgba(84, 38, 228, 0.3));
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body antialiased">
+<!-- Top Navigation Bar -->
+<header class="bg-[#fbf8fe]/60 dark:bg-[#1c1b1f]/60 backdrop-blur-xl dock full-width top-0 sticky z-50 shadow-[0px_12px_32px_0px_rgba(84,38,228,0.06)]">
+<nav class="flex justify-between items-center w-full px-8 py-4 max-w-[1440px] mx-auto">
+<div class="text-2xl font-black text-[#5426e4] dark:text-[#d0bcff] italic">Eventra</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-[#5426e4] dark:text-[#d0bcff] font-bold border-b-2 border-[#5426e4] pb-1 font-label text-sm uppercase tracking-wider" href="#">Events</a>
+<a class="text-[#49454f] dark:text-[#cac4d0] hover:text-[#5426e4] transition-all duration-300 font-label text-sm uppercase tracking-wider" href="#">Dining</a>
+<a class="text-[#49454f] dark:text-[#cac4d0] hover:text-[#5426e4] transition-all duration-300 font-label text-sm uppercase tracking-wider" href="#">Movies</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined p-2 hover:bg-[#f5f3f9] rounded-full transition-all duration-300 text-on-surface-variant" data-icon="location_on">location_on</button>
+<button class="material-symbols-outlined p-2 hover:bg-[#f5f3f9] rounded-full transition-all duration-300 text-on-surface-variant" data-icon="account_circle">account_circle</button>
+</div>
+</nav>
+</header>
+<main class="max-w-[1440px] mx-auto px-8 py-12 grid grid-cols-1 lg:grid-cols-12 gap-12">
+<!-- Venue Selection Area (Left/Center) -->
+<section class="lg:col-span-8 flex flex-col gap-10">
+<div class="flex items-center justify-between">
+<div>
+<h1 class="text-4xl font-black font-headline tracking-tight text-on-surface mb-2">Select Your Section</h1>
+<p class="font-label text-on-surface-variant text-sm">Choose a zone to view available seating and pricing</p>
+</div>
+<div class="flex gap-4">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-primary-container"></span>
+<span class="text-xs font-label text-on-surface-variant uppercase tracking-tighter">Available</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-surface-container-highest"></span>
+<span class="text-xs font-label text-on-surface-variant uppercase tracking-tighter">Sold Out</span>
+</div>
+</div>
+</div>
+<!-- Interactive Venue Map (SVG Container) -->
+<div class="bg-surface-container-low p-12 rounded-[2rem] aspect-[16/10] flex items-center justify-center relative overflow-hidden">
+<!-- Decorative Ambient Glow -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none"></div>
+<svg class="w-full h-full drop-shadow-2xl" viewbox="0 0 800 500">
+<!-- Stage -->
+<rect class="fill-on-surface" height="60" rx="8" width="300" x="250" y="20"></rect>
+<text class="fill-surface text-xs font-bold font-headline" text-anchor="middle" x="400" y="55">STAGE</text>
+<!-- Fan Pit -->
+<path class="venue-path cursor-pointer transition-all duration-300 fill-primary-container" d="M220 100 H580 Q600 100 600 120 V180 Q600 200 580 200 H220 Q200 200 200 180 V120 Q200 100 220 100"></path>
+<text class="fill-white text-sm font-bold pointer-events-none" text-anchor="middle" x="400" y="155">FAN PIT</text>
+<!-- VIP Lounge Left -->
+<path class="venue-path cursor-pointer transition-all duration-300 fill-[#d0bcff]" d="M40 120 H160 Q180 120 180 140 V240 Q180 260 160 260 H40 Q20 260 20 240 V140 Q20 120 40 120"></path>
+<text class="fill-primary text-xs font-black pointer-events-none" text-anchor="middle" x="100" y="200">VIP LOUNGE L</text>
+<!-- VIP Lounge Right -->
+<path class="venue-path cursor-pointer transition-all duration-300 fill-[#d0bcff]" d="M640 120 H760 Q780 120 780 140 V240 Q780 260 760 260 H640 Q620 260 620 240 V140 Q620 120 640 120"></path>
+<text class="fill-primary text-xs font-black pointer-events-none" text-anchor="middle" x="700" y="200">VIP LOUNGE R</text>
+<!-- General Admission -->
+<path class="venue-path cursor-pointer transition-all duration-300 fill-surface-container-highest" d="M120 240 H680 Q700 240 700 260 V400 Q700 420 680 420 H120 Q100 420 100 400 V260 Q100 240 120 240"></path>
+<text class="fill-on-surface-variant text-sm font-bold pointer-events-none" text-anchor="middle" x="400" y="340">GENERAL ADMISSION</text>
+<!-- Balcony Tier 1 -->
+<path class="venue-path cursor-pointer transition-all duration-300 fill-tertiary-fixed" d="M50 440 H750 Q770 440 770 450 V480 H30 V450 Q30 440 50 440"></path>
+<text class="fill-tertiary text-xs font-bold pointer-events-none" text-anchor="middle" x="400" y="465">BALCONY TIER 1</text>
+</svg>
+</div>
+<!-- Section Previews -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="bg-surface-container-lowest p-6 rounded-2xl flex items-center gap-6 shadow-[0px_12px_32px_0px_rgba(84,38,228,0.04)] hover:scale-[1.02] transition-transform">
+<img class="w-24 h-24 rounded-xl object-cover shrink-0" data-alt="vibrant blue and purple lights from a concert stage perspective standing in the front row fan pit area" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-vZZDZLy6kzHfi2hb1q3WPwmW-c2gmsU1wIfWb7QnxOcxULyXQbHcPADCNANNMolFSUanmWBlOkdbGBMWIPoL8axT4NTZ8KHoXrxDosw4mc7H0pMnliWfxpfcuPF8doolgtUHrAgQIGZ5t7ulpNmlitL_3HmJZZEa-4fnA50mYpS5vvO3t6iAMTPPUDNkvtkVZBI2j03YfYpx2_T0dJaFbv8LpwAI1-5ol1srxdkiMMY40InwLjM06_of-T5YAa1NGCWHU7U46g"/>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface">Fan Pit Experience</h3>
+<p class="font-label text-sm text-on-surface-variant">Front row immersive access with premium acoustics.</p>
+<p class="mt-2 font-headline font-black text-primary">$249.00</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-2xl flex items-center gap-6 shadow-[0px_12px_32px_0px_rgba(84,38,228,0.04)] hover:scale-[1.02] transition-transform">
+<img class="w-24 h-24 rounded-xl object-cover shrink-0" data-alt="elegant empty vip lounge seating area in a luxury arena with gold accents and plush purple chairs" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXIB480ShxuFNw_WfYA3XQM1-sYapWLpTOiIzmfKGU-8MRj7rrOTEGgj2l1CHW8KqBb07lCVxJ_UEALlx5sBeAFOoh3KNMl3hRGuUwgFXhjT7iDOjz_gJZ74htVp1G2QU7h05KPNnkSK90e1bqKAxzIJlm_YwyuDdbwp-hR1G17Qg9k4CFGk45qSU34htdRzC-Kc7ICrGbPuJCLp2Avp3qr4la1lVP1iAgxj_f_xlu259vJT3nvexPE-1Nbkrf8t45xqu27UWgHg"/>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface">Private VIP Lounge</h3>
+<p class="font-label text-sm text-on-surface-variant">Elevated side views with dedicated bar service.</p>
+<p class="mt-2 font-headline font-black text-primary">$399.00</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Sidebar Panel (Right) -->
+<aside class="lg:col-span-4">
+<div class="sticky top-28 bg-surface-container-lowest rounded-[2rem] p-8 shadow-[0px_12px_48px_0px_rgba(84,38,228,0.08)]">
+<!-- Event Identity -->
+<div class="mb-8 border-b-2 border-surface-container pb-8">
+<div class="flex items-center gap-2 text-primary font-label text-xs font-bold uppercase tracking-widest mb-3">
+<span class="material-symbols-outlined text-sm" data-icon="confirmation_number">confirmation_number</span>
+                        Live Concert
+                    </div>
+<h2 class="text-3xl font-black font-headline tracking-tight text-on-surface leading-tight mb-2">Midnight Echoes: Live in London</h2>
+<div class="flex items-center gap-4 text-on-surface-variant font-label text-sm">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-base" data-icon="calendar_today">calendar_today</span> Oct 24, 2024</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-base" data-icon="schedule">schedule</span> 20:00</span>
+</div>
+<div class="mt-4 flex items-center gap-2 text-on-surface-variant font-label text-sm">
+<span class="material-symbols-outlined text-base" data-icon="location_on">location_on</span>
+                        Royal Albert Hall, Kensington
+                    </div>
+</div>
+<!-- Selection Summary -->
+<div class="space-y-6 mb-10">
+<div class="flex justify-between items-start">
+<div>
+<p class="font-label text-xs text-on-surface-variant uppercase tracking-wider mb-1">Selected Section</p>
+<p class="font-headline font-bold text-on-surface">Fan Pit Zone A</p>
+<p class="font-label text-xs text-primary font-semibold mt-1">Best availability</p>
+</div>
+<button class="text-xs font-bold text-primary hover:underline font-label uppercase">Change</button>
+</div>
+<div class="flex justify-between items-center bg-surface-container-low p-4 rounded-xl">
+<div class="flex items-center gap-3">
+<button class="w-8 h-8 flex items-center justify-center bg-surface-container-highest rounded-full text-on-surface hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="remove">remove</span>
+</button>
+<span class="font-headline font-bold text-lg w-6 text-center">2</span>
+<button class="w-8 h-8 flex items-center justify-center bg-primary rounded-full text-white hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="add">add</span>
+</button>
+</div>
+<div class="text-right">
+<p class="font-label text-xs text-on-surface-variant uppercase">Subtotal</p>
+<p class="font-headline font-black text-xl text-on-surface">$498.00</p>
+</div>
+</div>
+</div>
+<!-- Price Breakdown -->
+<div class="space-y-3 mb-8 px-1">
+<div class="flex justify-between text-sm font-label text-on-surface-variant">
+<span>Tickets (2 × $249.00)</span>
+<span>$498.00</span>
+</div>
+<div class="flex justify-between text-sm font-label text-on-surface-variant">
+<span>Service Fee</span>
+<span>$24.50</span>
+</div>
+<div class="flex justify-between text-lg font-headline font-black text-on-surface pt-4 border-t border-surface-container">
+<span>Total Price</span>
+<span class="text-primary">$522.50</span>
+</div>
+</div>
+<!-- CTA -->
+<button class="w-full bg-gradient-to-br from-[#5426e4] to-[#6d49fd] text-white py-5 rounded-2xl font-headline font-bold text-lg shadow-[0px_12px_24px_-8px_rgba(84,38,228,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3">
+                    Proceed to Checkout
+                    <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<p class="text-center mt-6 font-label text-xs text-on-surface-variant px-4">
+                    By clicking proceed, you agree to our <a class="underline" href="#">Terms of Purchase</a> and booking policies.
+                </p>
+</div>
+</aside>
+</main>
+<!-- Footer -->
+<footer class="w-full mt-20 bg-[#f5f3f9] dark:bg-[#1c1b1f] tonal-shift-bg">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 px-12 py-16 max-w-[1440px] mx-auto">
+<div class="flex flex-col gap-4">
+<div class="text-xl font-black text-[#5426e4]">Eventra</div>
+<p class="font-label text-sm text-[#49454f] max-w-[200px]">Curating the world's most breathtaking live experiences.</p>
+</div>
+<div>
+<h4 class="font-headline font-bold text-on-surface mb-6 uppercase text-xs tracking-widest">Navigation</h4>
+<ul class="space-y-4 font-label text-sm text-[#49454f]">
+<li><a class="hover:text-[#5426e4] underline-offset-4 hover:underline opacity-80 hover:opacity-100 transition-all" href="#">For you</a></li>
+<li><a class="hover:text-[#5426e4] underline-offset-4 hover:underline opacity-80 hover:opacity-100 transition-all" href="#">Events</a></li>
+<li><a class="hover:text-[#5426e4] underline-offset-4 hover:underline opacity-80 hover:opacity-100 transition-all" href="#">Support</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-headline font-bold text-on-surface mb-6 uppercase text-xs tracking-widest">Legal</h4>
+<ul class="space-y-4 font-label text-sm text-[#49454f]">
+<li><a class="hover:text-[#5426e4] underline-offset-4 hover:underline opacity-80 hover:opacity-100 transition-all" href="#">Terms &amp; Conditions</a></li>
+<li><a class="hover:text-[#5426e4] underline-offset-4 hover:underline opacity-80 hover:opacity-100 transition-all" href="#">Privacy Policy</a></li>
+<li><a class="hover:text-[#5426e4] underline-offset-4 hover:underline opacity-80 hover:opacity-100 transition-all" href="#">Cookie Policy</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-headline font-bold text-on-surface mb-6 uppercase text-xs tracking-widest">Connect</h4>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-[#49454f] hover:text-[#5426e4] cursor-pointer" data-icon="share">share</span>
+<span class="material-symbols-outlined text-[#49454f] hover:text-[#5426e4] cursor-pointer" data-icon="public">public</span>
+<span class="material-symbols-outlined text-[#49454f] hover:text-[#5426e4] cursor-pointer" data-icon="mail">mail</span>
+</div>
+<div class="mt-8">
+<p class="font-label text-xs text-[#49454f]">© 2024 Eventra. The Digital Curator.</p>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

@@ -1,9 +1,10 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from zesty.views import LandingPageView, RestaurantViewSet, OrderViewSet
+from zesty.views import LandingPageView, RestaurantViewSet, MenuItemViewSet, OrderViewSet
 
 router = DefaultRouter()
 router.register(r'restaurants', RestaurantViewSet, basename='restaurant')
+router.register(r'menu-items', MenuItemViewSet, basename='menu-item')
 router.register(r'orders', OrderViewSet, basename='order')
 
 urlpatterns = [
