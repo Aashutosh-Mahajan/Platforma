@@ -95,6 +95,18 @@ class EventReviewSerializer(serializers.ModelSerializer):
         return obj.user.get_full_name() or obj.user.email
 
 
+class EventReviewCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating event reviews with validation."""
+    class Meta:
+        model = EventReview
+        fields = ['rating', 'comment']
+
+    def validate_rating(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError("Rating must be between 1 and 5.")
+        return value
+
+
 class EventAnalyticsSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventAnalytics
