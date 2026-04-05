@@ -1,0 +1,110 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,700;0,900;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+@theme {
+  --color-surface: #fcf9f8;
+  --color-on-surface: #1b1b1b;
+  --color-primary: #b7122a;
+  --color-surface-container: #f0eded;
+  --color-surface-container-low: #f6f3f2;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-high: #eae7e7;
+  --color-surface-container-highest: #e5e2e1;
+  --color-on-surface-variant: #5b403f;
+  --color-outline: #8f6f6e;
+
+  --font-lexend: "Lexend", sans-serif;
+  --font-poppins: "Poppins", sans-serif;
+  --font-eventra-headline: "Inter", sans-serif;
+  --font-eventra-label: "Be Vietnam Pro", sans-serif;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    margin: 0;
+    min-height: 100%;
+  }
+
+  body {
+    font-family: var(--font-lexend);
+    background-color: #fcf9f8;
+    color: var(--color-on-surface);
+    text-rendering: geometricPrecision;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  input,
+  button,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined' !important;
+}
+
+@layer utilities {
+  .theme-zesty {
+    --focus-ring: #b7122a;
+    font-family: var(--font-lexend);
+  }
+
+  .theme-eventra {
+    --focus-ring: #5426e4;
+    font-family: var(--font-eventra-headline);
+  }
+
+  .font-eventra-label {
+    font-family: var(--font-eventra-label);
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.45s ease;
+  }
+
+  .eventra-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #c9beff transparent;
+  }
+
+  .eventra-scrollbar::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .eventra-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #c9beff;
+  }
+
+  .eventra-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

@@ -4,9 +4,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.views import APIView
 from django.utils import timezone
 from datetime import timedelta
 
+from zesty.landing_content import build_landing_page_content
 from zesty.models import Restaurant, MenuItem, Order, OrderItem, Review, DeliveryTracking
 from zesty.serializers import (
     RestaurantListSerializer, RestaurantDetailSerializer,
@@ -14,6 +16,15 @@ from zesty.serializers import (
     ReviewSerializer, DeliveryTrackingSerializer
 )
 from core.models import Payment
+
+
+class LandingPageView(APIView):
+    """Serve public landing page content for the frontend."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response(build_landing_page_content(request))
 
 
 class RestaurantViewSet(viewsets.ReadOnlyModelViewSet):

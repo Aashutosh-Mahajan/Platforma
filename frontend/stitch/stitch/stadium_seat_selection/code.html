@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Eventra | Stadium Seat Selection</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#6d49fd",
+                        "tertiary": "#545267",
+                        "secondary-container": "#e2dfe1",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#e9e7ed",
+                        "surface-container": "#efedf3",
+                        "on-tertiary-fixed-variant": "#474459",
+                        "on-tertiary-fixed": "#1b192c",
+                        "surface-container-highest": "#e3e1e7",
+                        "outline": "#797587",
+                        "on-error-container": "#93000a",
+                        "error-container": "#ffdad6",
+                        "surface-bright": "#fbf8fe",
+                        "on-tertiary-container": "#f2edff",
+                        "surface-tint": "#5e36ee",
+                        "error": "#ba1a1a",
+                        "on-surface": "#1b1b20",
+                        "secondary": "#5f5e60",
+                        "secondary-fixed-dim": "#c8c6c8",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#636264",
+                        "primary": "#5426e4",
+                        "outline-variant": "#c9c3d9",
+                        "surface-variant": "#e3e1e7",
+                        "on-secondary-fixed": "#1b1b1d",
+                        "on-primary-fixed": "#1b0063",
+                        "secondary-fixed": "#e4e2e4",
+                        "inverse-on-surface": "#f2f0f6",
+                        "inverse-surface": "#303035",
+                        "on-surface-variant": "#484556",
+                        "on-primary-container": "#f3ecff",
+                        "tertiary-container": "#6d6a80",
+                        "on-background": "#1b1b20",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "background": "#fbf8fe",
+                        "tertiary-fixed-dim": "#c8c3dd",
+                        "tertiary-fixed": "#e4dff9",
+                        "on-primary-fixed-variant": "#4600d7",
+                        "surface": "#fbf8fe",
+                        "inverse-primary": "#c9beff",
+                        "surface-dim": "#dbd9df",
+                        "on-secondary-fixed-variant": "#474649",
+                        "primary-fixed-dim": "#c9beff",
+                        "surface-container-low": "#f5f3f9",
+                        "primary-fixed": "#e6deff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Be Vietnam Pro"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .stadium-path:hover {
+            fill-opacity: 0.8;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Top Navigation Shell -->
+<header class="bg-[#fbf8fe]/60 dark:bg-[#1c1b1f]/60 backdrop-blur-xl docked full-width top-0 sticky z-50 shadow-[0px_12px_32px_0px_rgba(84,38,228,0.06)]">
+<nav class="flex justify-between items-center w-full px-8 py-4 max-w-[1440px] mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black text-[#5426e4] dark:text-[#d0bcff] italic">Eventra</span>
+<div class="hidden md:flex items-center gap-6">
+<a class="text-[#5426e4] dark:text-[#d0bcff] font-bold border-b-2 border-[#5426e4] pb-1 font-label text-sm uppercase tracking-wide" href="#">Events</a>
+<a class="text-[#49454f] dark:text-[#cac4d0] hover:text-[#5426e4] font-label text-sm uppercase tracking-wide" href="#">Movies</a>
+<a class="text-[#49454f] dark:text-[#cac4d0] hover:text-[#5426e4] font-label text-sm uppercase tracking-wide" href="#">Dining</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="bg-surface-container-low px-4 py-2 rounded-full flex items-center gap-2 group transition-all duration-300 hover:bg-surface-container-high cursor-pointer">
+<span class="material-symbols-outlined text-primary text-xl">location_on</span>
+<span class="font-label text-sm font-medium">Wankhede Stadium, Mumbai</span>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-on-surface">account_circle</span>
+</button>
+</div>
+</nav>
+</header>
+<main class="max-w-[1440px] mx-auto px-8 py-8 lg:py-12">
+<div class="flex flex-col lg:flex-row gap-12">
+<!-- Stadium Section Selector -->
+<div class="flex-1 space-y-10">
+<header class="space-y-2">
+<div class="flex items-center gap-3 text-primary font-label font-semibold uppercase tracking-[0.2em] text-xs">
+<span class="w-8 h-[2px] bg-primary"></span>
+                        IPL 2024 • Final
+                    </div>
+<h1 class="text-5xl font-black font-headline tracking-tighter text-on-surface">Choose Your Seat</h1>
+<p class="text-on-surface-variant max-w-xl font-label">Select a stand from the map below to view available seats and pricing tiers. Experience the roar of the crowd from your preferred vantage point.</p>
+</header>
+<!-- Interactive Stadium Canvas -->
+<div class="relative bg-surface-container-low rounded-[2rem] p-8 lg:p-16 overflow-hidden flex items-center justify-center min-h-[600px]">
+<div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(circle at 2px 2px, #5426e4 1px, transparent 0); background-size: 40px 40px;"></div>
+<div class="relative w-full max-w-2xl aspect-square flex items-center justify-center">
+<!-- Simulated SVG Stadium Map -->
+<svg class="w-full h-full drop-shadow-2xl" viewbox="0 0 500 500">
+<!-- Field/Pitch -->
+<rect fill="#2d5a27" height="200" rx="50" width="100" x="200" y="150"></rect>
+<circle cx="250" cy="250" fill="none" r="40" stroke="white" stroke-opacity="0.5" stroke-width="2"></circle>
+<line stroke="white" stroke-opacity="0.5" stroke-width="2" x1="250" x2="250" y1="210" y2="290"></line>
+<!-- Stands Group -->
+<!-- North Stand (Premium) -->
+<path class="stadium-path transition-all duration-300" d="M100,80 Q250,20 400,80 L420,120 Q250,60 80,120 Z" fill="#5426e4"></path>
+<text fill="white" font-family="Inter" font-size="12" font-weight="700" text-anchor="middle" x="250" y="65">NORTH STAND</text>
+<!-- East Stand -->
+<path class="stadium-path transition-all duration-300" d="M420,150 Q480,250 420,350 L380,330 Q430,250 380,170 Z" fill="#6d49fd"></path>
+<text fill="white" font-family="Inter" font-size="12" font-weight="700" text-anchor="middle" transform="rotate(90, 445, 250)" x="445" y="250">EAST STAND</text>
+<!-- West Stand -->
+<path class="stadium-path transition-all duration-300" d="M80,150 Q20,250 80,350 L120,330 Q70,250 120,170 Z" fill="#6d49fd"></path>
+<text fill="white" font-family="Inter" font-size="12" font-weight="700" text-anchor="middle" transform="rotate(-90, 55, 250)" x="55" y="250">WEST STAND</text>
+<!-- South Stand -->
+<path class="stadium-path transition-all duration-300" d="M100,420 Q250,480 400,420 L420,380 Q250,440 80,380 Z" fill="#5426e4"></path>
+<text fill="white" font-family="Inter" font-size="12" font-weight="700" text-anchor="middle" x="250" y="445">SOUTH STAND</text>
+<!-- VIP Boxes (Corners) -->
+<circle class="stadium-path" cx="90" cy="110" fill="#f2edff" r="25" stroke="#5426e4" stroke-width="2"></circle>
+<circle class="stadium-path" cx="410" cy="110" fill="#f2edff" r="25" stroke="#5426e4" stroke-width="2"></circle>
+<circle class="stadium-path" cx="90" cy="390" fill="#f2edff" r="25" stroke="#5426e4" stroke-width="2"></circle>
+<circle class="stadium-path" cx="410" cy="390" fill="#f2edff" r="25" stroke="#5426e4" stroke-width="2"></circle>
+</svg>
+<!-- Zoom Indicator Overlay -->
+<div class="absolute bottom-8 right-8 flex flex-col gap-2">
+<button class="bg-surface-container-lowest w-10 h-10 rounded-xl shadow-lg flex items-center justify-center text-primary hover:scale-105 transition-transform">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button class="bg-surface-container-lowest w-10 h-10 rounded-xl shadow-lg flex items-center justify-center text-primary hover:scale-105 transition-transform">
+<span class="material-symbols-outlined">remove</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Price Legend -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="bg-surface-container-lowest p-4 rounded-2xl flex items-center gap-4 transition-all duration-300 hover:shadow-lg border-l-4 border-primary">
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<div>
+<div class="text-[10px] uppercase font-label font-bold text-on-surface-variant tracking-wider">Premium</div>
+<div class="font-headline font-bold text-lg text-on-surface">₹4,500</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-2xl flex items-center gap-4 transition-all duration-300 hover:shadow-lg border-l-4 border-primary-container">
+<div class="w-3 h-3 rounded-full bg-primary-container"></div>
+<div>
+<div class="text-[10px] uppercase font-label font-bold text-on-surface-variant tracking-wider">Mid-Tier</div>
+<div class="font-headline font-bold text-lg text-on-surface">₹2,800</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-2xl flex items-center gap-4 transition-all duration-300 hover:shadow-lg border-l-4 border-tertiary-container">
+<div class="w-3 h-3 rounded-full bg-tertiary-container"></div>
+<div>
+<div class="text-[10px] uppercase font-label font-bold text-on-surface-variant tracking-wider">Economy</div>
+<div class="font-headline font-bold text-lg text-on-surface">₹1,200</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-2xl flex items-center gap-4 transition-all duration-300 hover:shadow-lg border-l-4 border-surface-container-highest">
+<div class="w-3 h-3 rounded-full bg-surface-container-highest"></div>
+<div>
+<div class="text-[10px] uppercase font-label font-bold text-on-surface-variant tracking-wider">Sold Out</div>
+<div class="font-headline font-bold text-lg text-on-surface line-through decoration-error">₹900</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Booking Summary Side Panel -->
+<aside class="w-full lg:w-[420px] shrink-0">
+<div class="sticky top-28 space-y-6">
+<!-- Event Details Card -->
+<div class="bg-surface-container-lowest rounded-[2rem] overflow-hidden shadow-[0px_12px_32px_0px_rgba(84,38,228,0.06)] border border-outline-variant/10">
+<div class="relative h-48">
+<img alt="Stadium" class="w-full h-full object-cover" data-alt="dramatic night view of a crowded cricket stadium with bright floodlights and green pitch" src="https://lh3.googleusercontent.com/aida-public/AB6AXuATwK9VQXoRtZ4XJBGP135K5Yds8ToKl9DyPjPL8Sg6fpD0dsUFAsbyxTY05A0f7EBwg-8yFY7TQDZuZUN2D3kpoWWIs0NhPnojHyqIDm0iT3Tyfu-RuB9TgJ2glnFXsSpN7bPNzl_cIyENVCN6wHAbOn5cMGz4g6zwv_pwBJZ99ZiUrASO-7f6iCAMGT1n-wE_yr66LvcjKYwtrtuFr9v1CAUErFZfVekp1RNpfE2zvdkLDAFY4EvoCbiifEgBDZXO0BesEirkvg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-end items-end p-6">
+<div class="text-white">
+<h3 class="text-2xl font-black tracking-tight leading-tight">Mumbai Indians vs<br/>Gujarat Titans</h3>
+<p class="font-label text-sm opacity-90 mt-1">28 May, 2024 • 07:30 PM IST</p>
+</div>
+</div>
+</div>
+<div class="p-8 space-y-8">
+<!-- Selection Logic -->
+<div>
+<h4 class="text-xs uppercase font-label font-bold tracking-[0.2em] text-on-surface-variant mb-4">Selected Seats</h4>
+<div class="space-y-3">
+<!-- Selected Seat Item -->
+<div class="flex items-center justify-between p-4 rounded-2xl bg-surface-container-low border border-primary/10 transition-transform active:scale-95 cursor-default">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-xl">event_seat</span>
+</div>
+<div>
+<div class="font-bold text-on-surface">North Stand, L-14</div>
+<div class="text-[11px] font-label font-semibold text-primary uppercase">Premium Tier</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-black text-on-surface tracking-tight">₹4,500</div>
+<button class="text-xs text-error font-semibold hover:underline">Remove</button>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 rounded-2xl bg-surface-container-low border border-primary/10 transition-transform active:scale-95 cursor-default">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-xl">event_seat</span>
+</div>
+<div>
+<div class="font-bold text-on-surface">North Stand, L-15</div>
+<div class="text-[11px] font-label font-semibold text-primary uppercase">Premium Tier</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-black text-on-surface tracking-tight">₹4,500</div>
+<button class="text-xs text-error font-semibold hover:underline">Remove</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Payment Breakdown -->
+<div class="space-y-3 border-t border-surface-container-high pt-6">
+<div class="flex justify-between text-on-surface-variant font-label text-sm">
+<span>Tickets (2)</span>
+<span class="font-medium text-on-surface">₹9,000.00</span>
+</div>
+<div class="flex justify-between text-on-surface-variant font-label text-sm">
+<span>Internet Handling Fees</span>
+<span class="font-medium text-on-surface">₹145.50</span>
+</div>
+<div class="flex justify-between items-center pt-2">
+<span class="text-lg font-bold text-on-surface">Total Amount</span>
+<span class="text-2xl font-black text-primary tracking-tighter">₹9,145.50</span>
+</div>
+</div>
+<!-- CTA -->
+<button class="w-full bg-gradient-to-r from-[#5426e4] to-[#6d49fd] text-on-primary py-5 rounded-2xl font-black tracking-tight text-lg shadow-[0px_8px_24px_rgba(84,38,228,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-3">
+                                Proceed to Checkout
+                                <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Safety/Help Note -->
+<div class="flex items-center gap-4 p-4 rounded-2xl bg-surface-container-low border border-outline-variant/20">
+<span class="material-symbols-outlined text-primary text-2xl">verified_user</span>
+<p class="text-xs font-label text-on-surface-variant leading-relaxed">
+                            Official ticket partner for IPL 2024. Your transactions are secure and encrypted. Need help? <a class="text-primary font-bold hover:underline" href="#">Contact Support</a>
+</p>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<!-- Detailed Seat Selection Modal (Invisible by default, conceptually zoomed) -->
+<!-- This structure demonstrates the zoomed-in grid UI pattern -->
+<section class="hidden fixed inset-0 z-[60] bg-surface/95 backdrop-blur-sm p-8 flex items-center justify-center">
+<div class="bg-surface-container-lowest w-full max-w-5xl rounded-[3rem] p-12 relative shadow-2xl">
+<button class="absolute top-8 right-8 w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-error-container hover:text-on-error-container transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+<div class="mb-12 text-center">
+<h2 class="text-3xl font-black font-headline tracking-tighter">North Stand - Lower Tier</h2>
+<p class="text-on-surface-variant font-label">Pick your exact seat coordinates</p>
+</div>
+<!-- Seat Grid -->
+<div class="grid grid-cols-12 gap-3 max-w-3xl mx-auto mb-12">
+<!-- Example Seats -->
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest border border-outline-variant/30 hover:border-primary cursor-pointer transition-all"></div>
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest border border-outline-variant/30 hover:border-primary cursor-pointer transition-all"></div>
+<div class="w-10 h-10 rounded-lg bg-primary text-white flex items-center justify-center"><span class="material-symbols-outlined text-xs">check</span></div>
+<!-- Repeat for rows... -->
+</div>
+<div class="flex justify-center gap-8">
+<div class="flex items-center gap-2 text-xs font-bold font-label uppercase text-on-surface-variant">
+<div class="w-4 h-4 rounded bg-surface-container-highest"></div> Available
+                </div>
+<div class="flex items-center gap-2 text-xs font-bold font-label uppercase text-on-surface-variant">
+<div class="w-4 h-4 rounded bg-primary"></div> Selected
+                </div>
+<div class="flex items-center gap-2 text-xs font-bold font-label uppercase text-on-surface-variant">
+<div class="w-4 h-4 rounded bg-secondary opacity-30"></div> Occupied
+                </div>
+</div>
+</div>
+</section>
+<!-- Footer Shell -->
+<footer class="bg-[#f5f3f9] dark:bg-[#1c1b1f] w-full mt-20">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 px-12 py-16 max-w-[1440px] mx-auto">
+<div class="space-y-6">
+<span class="text-2xl font-black text-[#5426e4]">Eventra</span>
+<p class="font-medium font-label text-sm text-[#49454f] max-w-xs">
+                    Curating the most spectacular experiences across the digital landscape.
+                </p>
+</div>
+<div class="space-y-4">
+<h4 class="font-black text-on-surface tracking-tight uppercase text-xs">Platform</h4>
+<ul class="space-y-2">
+<li><a class="font-medium font-label text-sm text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline" href="#">App Download</a></li>
+<li><a class="font-medium font-label text-sm text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline" href="#">Support</a></li>
+<li><a class="font-medium font-label text-sm text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline" href="#">Stadium Guide</a></li>
+</ul>
+</div>
+<div class="space-y-4">
+<h4 class="font-black text-on-surface tracking-tight uppercase text-xs">Legal</h4>
+<ul class="space-y-2">
+<li><a class="font-medium font-label text-sm text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline" href="#">Terms &amp; Conditions</a></li>
+<li><a class="font-medium font-label text-sm text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline" href="#">Privacy Policy</a></li>
+</ul>
+</div>
+<div class="space-y-4">
+<h4 class="font-black text-on-surface tracking-tight uppercase text-xs">Connect</h4>
+<div class="flex gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary cursor-pointer hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">share</span>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary cursor-pointer hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">language</span>
+</div>
+</div>
+<div class="pt-4">
+<p class="font-medium font-label text-sm text-[#49454f]">© 2024 Eventra. The Digital Curator.</p>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

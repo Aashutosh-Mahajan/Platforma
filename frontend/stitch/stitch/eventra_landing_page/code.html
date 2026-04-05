@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Eventra | The Digital Curator</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary-container": "#f3ecff",
+                      "inverse-on-surface": "#f2f0f6",
+                      "secondary-fixed": "#e4e2e4",
+                      "on-error": "#ffffff",
+                      "surface-container-high": "#e9e7ed",
+                      "primary": "#5426e4",
+                      "on-primary": "#ffffff",
+                      "primary-container": "#6d49fd",
+                      "outline": "#797587",
+                      "primary-fixed-dim": "#c9beff",
+                      "on-primary-fixed": "#1b0063",
+                      "secondary": "#5f5e60",
+                      "tertiary-fixed-dim": "#c8c3dd",
+                      "surface-variant": "#e3e1e7",
+                      "on-tertiary-fixed-variant": "#474459",
+                      "surface-dim": "#dbd9df",
+                      "on-secondary-fixed-variant": "#474649",
+                      "tertiary-fixed": "#e4dff9",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-fixed-variant": "#4600d7",
+                      "primary-fixed": "#e6deff",
+                      "on-surface": "#1b1b20",
+                      "inverse-primary": "#c9beff",
+                      "on-secondary-fixed": "#1b1b1d",
+                      "on-secondary": "#ffffff",
+                      "surface-container": "#efedf3",
+                      "error": "#ba1a1a",
+                      "on-tertiary-fixed": "#1b192c",
+                      "surface-container-highest": "#e3e1e7",
+                      "background": "#fbf8fe",
+                      "surface-container-low": "#f5f3f9",
+                      "surface": "#fbf8fe",
+                      "on-secondary-container": "#636264",
+                      "inverse-surface": "#303035",
+                      "surface-tint": "#5e36ee",
+                      "tertiary-container": "#6d6a80",
+                      "error-container": "#ffdad6",
+                      "secondary-container": "#e2dfe1",
+                      "on-background": "#1b1b20",
+                      "secondary-fixed-dim": "#c8c6c8",
+                      "outline-variant": "#c9c3d9",
+                      "on-surface-variant": "#484556",
+                      "on-tertiary-container": "#f2edff",
+                      "surface-bright": "#fbf8fe",
+                      "on-error-container": "#93000a",
+                      "tertiary": "#545267"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "headline": ["Inter"],
+                      "body": ["Inter"],
+                      "label": ["Be Vietnam Pro"]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Top Navigation Bar -->
+<nav class="bg-[#fbf8fe]/60 dark:bg-[#1c1b1f]/60 backdrop-blur-xl docked full-width top-0 sticky z-50 shadow-[0px_12px_32px_0px_rgba(84,38,228,0.06)]">
+<div class="flex justify-between items-center w-full px-8 py-4 max-w-[1440px] mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black text-[#5426e4] dark:text-[#d0bcff] italic font-headline">Eventra</span>
+<div class="hidden lg:flex items-center gap-6 font-label text-sm font-medium">
+<a class="text-[#5426e4] dark:text-[#d0bcff] font-bold border-b-2 border-[#5426e4] pb-1" href="#">For you</a>
+<a class="text-[#49454f] dark:text-[#cac4d0] hover:text-[#5426e4] hover:bg-[#f5f3f9] dark:hover:bg-[#49454f] transition-all duration-300 px-2 py-1 rounded-lg" href="#">Dining</a>
+<a class="text-[#49454f] dark:text-[#cac4d0] hover:text-[#5426e4] hover:bg-[#f5f3f9] dark:hover:bg-[#49454f] transition-all duration-300 px-2 py-1 rounded-lg" href="#">Movies</a>
+<a class="text-[#49454f] dark:text-[#cac4d0] hover:text-[#5426e4] hover:bg-[#f5f3f9] dark:hover:bg-[#49454f] transition-all duration-300 px-2 py-1 rounded-lg" href="#">Events</a>
+<a class="text-[#49454f] dark:text-[#cac4d0] hover:text-[#5426e4] hover:bg-[#f5f3f9] dark:hover:bg-[#49454f] transition-all duration-300 px-2 py-1 rounded-lg" href="#">IPL</a>
+<a class="text-[#49454f] dark:text-[#cac4d0] hover:text-[#5426e4] hover:bg-[#f5f3f9] dark:hover:bg-[#49454f] transition-all duration-300 px-2 py-1 rounded-lg" href="#">Stores</a>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2 px-4 py-2 bg-surface-container rounded-full cursor-pointer hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-primary text-xl">location_on</span>
+<span class="font-label text-xs font-semibold">New Delhi</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">search</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">account_circle</span>
+</div>
+</div>
+</div>
+</nav>
+<main class="space-y-24 pb-20">
+<!-- Header Carousel: Featured Events (IPL) -->
+<section class="max-w-[1440px] mx-auto px-8 pt-8">
+<div class="flex justify-between items-end mb-8">
+<div>
+<span class="text-primary font-bold font-label uppercase tracking-widest text-xs">Live Action</span>
+<h2 class="text-4xl font-black font-headline tracking-tighter mt-1">TATA IPL 2026</h2>
+</div>
+<button class="text-primary font-bold font-label flex items-center gap-1 hover:gap-2 transition-all">View Schedule <span class="material-symbols-outlined">chevron_right</span></button>
+</div>
+<div class="flex gap-6 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-4">
+<!-- Match Card 1 -->
+<div class="min-w-[400px] bg-surface-container-lowest rounded-3xl snap-start p-6 shadow-[0px_12px_32px_0px_rgba(84,38,228,0.04)] hover:scale-105 transition-transform duration-300">
+<div class="flex justify-between items-start mb-6">
+<div class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold font-label">Match 14</div>
+<span class="text-on-surface-variant text-sm font-label">Mar 28 • 19:30</span>
+</div>
+<div class="flex justify-between items-center mb-8">
+<div class="text-center w-1/3">
+<div class="w-16 h-16 mx-auto mb-2 bg-surface-container rounded-full flex items-center justify-center">
+<img alt="MI" class="w-10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBT0SLhQV-VjyaLzl-pwDupqlSNLUfRJlQlMzBb3uBzYxp2eA-dLs2hD9LEGzsbHk6I3CWWRgyz4LRH0rNGvqPs5aZ3orOArHBm5wfIam_gART_OgKXo5szbXv5nrnQixPFcvwu18XWfc9eyeNNOT2wB0wxt31cIrSvbDZkhYvI4Gy3WJDlCQNXyw1iQivSYgxzS4HprjhqPHCRofVS_8fNHVC2HmjPuszEOqeGsabzuIYZf3gy2EDf0XXm3V-PYq7y3FtYl_kHrw"/>
+</div>
+<span class="font-bold text-sm">Mumbai</span>
+</div>
+<div class="text-on-surface-variant font-black text-xl italic">VS</div>
+<div class="text-center w-1/3">
+<div class="w-16 h-16 mx-auto mb-2 bg-surface-container rounded-full flex items-center justify-center">
+<img alt="RCB" class="w-10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuApUe-vWO6SpohfeeJS0TDDvTsTtlcChsg-i7id99A1JtDckHmYVfvrpcAPAmo9dQVzFewX_lqM7gEFF8x_O-6hxxKVzhpxcXjom-Vw2CTPzHadm5UVRjXUVYotkeJyBicw2Whlh-gIx-Zr033PJ638OlWS-aKx4LbJuYIDwGC0kT23PtlbVBgr4a7qFc0ax-0SyGmgOQ8839DnuPQhErA02d7dGLR7cmn0xXDCHUaZrFDICjcbmOzP60UPP1j9NcBgERdwWKDBZg"/>
+</div>
+<span class="font-bold text-sm">Bengaluru</span>
+</div>
+</div>
+<div class="flex justify-between items-center pt-4 border-t border-outline-variant/20">
+<span class="font-label font-bold text-lg">From ₹999</span>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-xl font-bold font-label text-sm hover:scale-105 active:scale-95 transition-transform">Book Now</button>
+</div>
+</div>
+<!-- Match Card 2 -->
+<div class="min-w-[400px] bg-surface-container-lowest rounded-3xl snap-start p-6 shadow-[0px_12px_32px_0px_rgba(84,38,228,0.04)] hover:scale-105 transition-transform duration-300">
+<div class="flex justify-between items-start mb-6">
+<div class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold font-label">Match 17</div>
+<span class="text-on-surface-variant text-sm font-label">Mar 30 • 19:30</span>
+</div>
+<div class="flex justify-between items-center mb-8">
+<div class="text-center w-1/3">
+<div class="w-16 h-16 mx-auto mb-2 bg-surface-container rounded-full flex items-center justify-center">
+<img alt="CSK" class="w-10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9YAPIW0_e7F6Gh10zeoW5aK2FQnUCsSiPo9BJR94lo-sDKK5uN7fr4hDoS4qTqqJssW3pCs92144z5HWMOTGsTYGpksJVFhDDLS1j0CcOIvvZMN3k6dFxpW5dLoLiAUHP_SHb2WCnDQE2kCspsACBoyrh5lbxORF03onA8JlgbctCSIM8ZAt9KYmucjEpG6UmZf4BE4jJmZEotGnl9QGbE6hSH54rl8Kuk3ENR3M0niuomiJihfKhbj7VyHy7N7BcwELy4HMHOA"/>
+</div>
+<span class="font-bold text-sm">Chennai</span>
+</div>
+<div class="text-on-surface-variant font-black text-xl italic">VS</div>
+<div class="text-center w-1/3">
+<div class="w-16 h-16 mx-auto mb-2 bg-surface-container rounded-full flex items-center justify-center">
+<img alt="GT" class="w-10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPUAZ9XH9oaYcn9_7fmV1FoGzmljVQk2-i8l8L0q07CD2bdNiKyOBQMWKSTXqafsX4FUtAs3wdZA0cNr0SZao8bRGMSGHzl7nPzABsIRD5bVccj4sNLR5J-ArLLYUzKTlFJt0sr4_Gwi882Oq5WaZ4XKcjKvqwIiKVYl9JrmCB27Dd6A_CUjZtxT1PeL_VOZ_e4yoPOXJpPaBLFtDUXyx5VMr3qYbHFS6F-cwDD0gvyyhHcFFI4mew0W2Ny_ufUYLzX-3SWDhkNw"/>
+</div>
+<span class="font-bold text-sm">Gujarat</span>
+</div>
+</div>
+<div class="flex justify-between items-center pt-4 border-t border-outline-variant/20">
+<span class="font-label font-bold text-lg">From ₹1,200</span>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-xl font-bold font-label text-sm hover:scale-105 active:scale-95 transition-transform">Book Now</button>
+</div>
+</div>
+<!-- Card 3 bleed -->
+<div class="min-w-[400px] bg-surface-container-lowest rounded-3xl snap-start p-6 shadow-[0px_12px_32px_0px_rgba(84,38,228,0.04)] opacity-60">
+<div class="flex justify-between items-start mb-6">
+<div class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold font-label">Match 21</div>
+<span class="text-on-surface-variant text-sm font-label">Apr 02 • 15:30</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Top Hindi Movies -->
+<section class="max-w-[1440px] mx-auto px-8">
+<h2 class="text-3xl font-black font-headline tracking-tighter mb-8">Top Hindi Movies</h2>
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
+<!-- Movie 1 -->
+<div class="group cursor-pointer">
+<div class="aspect-[2/3] bg-surface-container rounded-3xl overflow-hidden mb-4 shadow-sm group-hover:shadow-xl transition-all duration-300">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="dramatic action movie poster with a silhouetted hero standing against an orange explosion and debris" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYKUuo09Hm_B8mK5Q96BTF9akFewOCjs1-h-OSC6Zl-CX9rthxZ_bD5RSFZakbmRxjYm1FMy9JQ00pVAVAmKjgGj8FVwybUqw_IbL2n2ylXpLKUPKpWeeI2YJRqS1St4c2lDkOjH5dXPS8XsZYSsg0iZhjxkjyb3U4s6iQlIVqFeZqfLW-yQo_VASy2KEtNdtBwoIv00hRe2QYShsyH7M1fvOWg42jC8xnw-faBPIRvMTIOtOcRl2nKzx86AtgQMjJucnw0ZBznw"/>
+</div>
+<h3 class="font-bold font-headline text-lg leading-tight">Dhurandhar: The Revenge</h3>
+<p class="font-label text-on-surface-variant text-sm mt-1">Action • UA • 2h 45m</p>
+</div>
+<!-- Movie 2 -->
+<div class="group cursor-pointer">
+<div class="aspect-[2/3] bg-surface-container rounded-3xl overflow-hidden mb-4 shadow-sm group-hover:shadow-xl transition-all duration-300">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="vibrant animated movie poster featuring colorful forest and magical glowing creatures in a dreamy landscape" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsXrFL2YoIhunLapQ4PpIrwI-K_F07vleSbX9QjnIEYUQ5qYvqNH-efuJcQdK84_X2JGAt9jyZCMHapaVchhojvjuQ1CiTkWve_HrF5qDq1Y22hpQj8LXsxOyDYATxokfTTo5y2A9C1S5lWR2vZWQffm_Azkq0dI5fEG_4A5SYfDxvwXjiy7gvq6me6FFqi5aNt3WOWj_7Utfgbo8NbdgwXenuWj3CqvYntBsIBaWaOuKNuO_0xAHvi670OnTR6G9sWDpUc5Bb9Q"/>
+</div>
+<h3 class="font-bold font-headline text-lg leading-tight">Zootopia 2</h3>
+<p class="font-label text-on-surface-variant text-sm mt-1">Animation • U • 1h 52m</p>
+</div>
+<!-- Movie 3 -->
+<div class="group cursor-pointer">
+<div class="aspect-[2/3] bg-surface-container rounded-3xl overflow-hidden mb-4 shadow-sm group-hover:shadow-xl transition-all duration-300">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="cinematic movie poster of a space station orbiting a giant ringed planet with nebula clouds" src="https://lh3.googleusercontent.com/aida-public/AB6AXuChM2T23s3n46WCGjpvqdUTgKX3FseVOkMPF4ntqWL6cFNF2CpqSFve1qj8BvgOd3Tg0xomckQh5bYDxVP1kk8O_i0p7Xrsls9oahIz-TCSqUOz66JqW-OvF7f6FsUSWNSl2PzgSMelSNpobyh7pJdgHsekpROhKJlzG2YjiRCqXW-H7NB0n4xLzxjzwi35uM8iBPkdlor7HImSFTOdogPl2P1ZAoh7xi71rLNNMJKX6jnjyRS9nxd_PwWl6lQmmA_pyYP9VPssNQ"/>
+</div>
+<h3 class="font-bold font-headline text-lg leading-tight">Voyage Beyond</h3>
+<p class="font-label text-on-surface-variant text-sm mt-1">Sci-Fi • UA • 2h 10m</p>
+</div>
+<!-- Movie 4 -->
+<div class="group cursor-pointer">
+<div class="aspect-[2/3] bg-surface-container rounded-3xl overflow-hidden mb-4 shadow-sm group-hover:shadow-xl transition-all duration-300">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="black and white artistic movie poster with high contrast lighting and a single red object on a chair" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfmOajS37HLL9elKl_UwCUL_py3-BrECwb4X9rlD7AzeQlcYKqTkhvNB4Z7htzbvBVFWGrB2FygEK0thXn4t65SeAEfIe6OShlEvgxp9PckzG_M1HrgIISAsG70uPY0JhD0x3izxR9EMQ74NrLSBjuB6febus-aalhxPLalMLsZGFnkiasSDtgf8A-Iqb_3H6bVTOAH9OeVb7e0G_ThBeDJr5arfjruc2DFhHsGxLHCKVQ8FwmJvWLbPrtpZaFLQhRfxY0lt6ZiA"/>
+</div>
+<h3 class="font-bold font-headline text-lg leading-tight">The Silent Echo</h3>
+<p class="font-label text-on-surface-variant text-sm mt-1">Drama • A • 2h 20m</p>
+</div>
+<!-- Movie 5 -->
+<div class="hidden lg:block group cursor-pointer">
+<div class="aspect-[2/3] bg-surface-container rounded-3xl overflow-hidden mb-4 shadow-sm group-hover:shadow-xl transition-all duration-300">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="mysterious thriller poster with a foggy street lamp at night and a shadow of a person walking away" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPuWOEj9SObFhRgkA_HqGBhCGo9XfsSCp0jp1ai5HFqgYl1fIPcvyzxiANFa9LfkbzZNR8HiCBKSGkYt0G5ZuLBRqsK-__E79VHr7er06RzXISvB-hFG9NP-D3-Cqd6_6d3tzjXvb5a-aOb45ZURXTQoSbol-QwSov-k5GP-5UAdeUQ7asYyMsc4CVzBJN2xK8YGKSXjiJtONP-gwFp-4FkNLLZJkYrdvc278QRdTrjAhiWBj5dER822yDtJvtm5wOgOq1rnAqlQ"/>
+</div>
+<h3 class="font-bold font-headline text-lg leading-tight">Midnight Shadows</h3>
+<p class="font-label text-on-surface-variant text-sm mt-1">Thriller • UA • 1h 55m</p>
+</div>
+</div>
+</section>
+<!-- Crowd Favourite Activities -->
+<section class="bg-surface-container-low py-20">
+<div class="max-w-[1440px] mx-auto px-8">
+<h2 class="text-3xl font-black font-headline tracking-tighter mb-10">Crowd Favourite Activities</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+<!-- Activity 1 -->
+<div class="relative h-[400px] rounded-[2rem] overflow-hidden group">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="blurred motion of a colorful go-kart racing on an asphalt track with bright outdoor lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJFf4nnbIqHJlkKIXEKfvDecAiX1xPRELtKuZQp0B4Gtj_R0At-ul7o6KTLgufz3J0rH3MhBZZxD1fWjPb4vgzZznvWUdUXBt5FaPQ8lrK7IDTsMjM9b_W3BaGUUKnd1-cEwc5E0hgePoOgYmPIHR-WL4Ywej-8OaslNjNFtlYEBAzamN5st7USUY2bJZ5oqz8gb4wZHD45FuI8M5WA4sMZopUUbgjpAwv19YG3Afu0zmpAlhksxIBUH4QQeMaof5FGcilKmsqqg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-8 text-white">
+<h3 class="text-2xl font-black mb-2">Go Karting</h3>
+<p class="text-sm font-label opacity-80">Starting at ₹599</p>
+</div>
+</div>
+<!-- Activity 2 -->
+<div class="relative h-[400px] rounded-[2rem] overflow-hidden group">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="crystal blue water park slides with children playing and water splashing under bright summer sun" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZXqvQewR1PDHSb9fAj5y5c34LjMIy9XBPNrcbRKDQ3Qyro5n2kPwaCnpxt10c0Enzt_zHUEKFrmjbxEWCyWLMZFhTCjdAIJFBmx5Z0H6gw_xcgiD0gb2CaH2cgWCGD4X3FZ-pq8QeIW8faEjivHqjPhKtGw7RpMqhGuHFgJTqJO8Xl13nm1JbsOloHb6DdFLQusDmcH2NNm8IwAmsby0mQDnm7Q7MDGWsP1e1dCa-qRF3tmGTiGqgHVNYcOr89_zdr74RS-FUlA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-8 text-white">
+<h3 class="text-2xl font-black mb-2">Water Park</h3>
+<p class="text-sm font-label opacity-80">Starting at ₹1,199</p>
+</div>
+</div>
+<!-- Activity 3 -->
+<div class="relative h-[400px] rounded-[2rem] overflow-hidden group">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="high energy trampoline park with people jumping and neon foam cubes in a dark interior" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6zFwnkZ-QcJc-_S-JSMLzoJoKKVDT4-G65Vwa7Rwo_msJS9RQzGDBdqxauEq6HtX0w_4X138OakNr7DZGXwTVQAv3AsUfTv_dh-sFae4wUM78wgEzeOR1qbftG6Ej2T_0HeVsTkRpCQD-6OQDdUWg39vajp35ahqwVQrP0sui39K9DypAQVc_S4z1AOsrcM8uCOSDK0KfLSoS9M2_QO6i48aaaRKCU5alLLc2609E1XVB1sbPN183eTU0c77x89YePQdmdwl46g"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-8 text-white">
+<h3 class="text-2xl font-black mb-2">Bounce Arena</h3>
+<p class="text-sm font-label opacity-80">Starting at ₹399</p>
+</div>
+</div>
+<!-- Activity 4 -->
+<div class="relative h-[400px] rounded-[2rem] overflow-hidden group">
+<img class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="exciting laser tag arena with neon green and purple lighting and silhouettes of players" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHbM9qWQ25zqbSd6u0OwPoLGCGo0VZv0AyCZ7zrlsAsq6Mky5iLXxklGRQdz5yUloH_lGhBLhOGUcvs0ZzedWgrXXfjvQ2OLuEXEHq4_QrewSR8AlZEGXLnnPaNp3ws1sY2XHbmtOmx7OZd92uEDCYb82eJ3wNKJ39yLGl-04v-WVB_Zod-6NZUJAWP0MGUcG6cZEXWxX7pLFsK9VJHWmFnx0D81d9gKM2Uix8NuOjSpTh0Jmx2W40TV414q1mvadMvtKTGomMJQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-8 text-white">
+<h3 class="text-2xl font-black mb-2">Laser Tag</h3>
+<p class="text-sm font-label opacity-80">Starting at ₹450</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Amusement Parks -->
+<section class="max-w-[1440px] mx-auto px-8">
+<div class="flex justify-between items-center mb-10">
+<h2 class="text-3xl font-black font-headline tracking-tighter">Amusement Parks</h2>
+<button class="bg-surface-container hover:bg-surface-container-high px-6 py-2 rounded-full font-bold font-label text-sm transition-colors">See All</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Park 1 -->
+<div class="flex bg-surface-container-lowest rounded-[2rem] overflow-hidden shadow-[0px_12px_32px_0px_rgba(84,38,228,0.04)] hover:shadow-xl transition-shadow border border-outline-variant/10">
+<div class="w-2/5 relative">
+<img class="w-full h-full object-cover" data-alt="majestic roller coaster track against a clear blue sky at an amusement park" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBANR_GG3upgVywAWV8ch-0sS9gDESpFQcfuGcvU0fAyI_9kSU2fc9bOYk-_ycs2W4l8Gy7odqRIupOPF82Z4qmXQK9oGYyAKM01k5dX9KPhK4F3Fa6p2IFp29il55DnG92MsFIpfI3lw-3_1Wnaa5-_zxdDVzes-Am4IVrvywawykeyvEMhYOI2Pq8-w00gfhvjeLL_S-WomGvD0Jci3s7n714UtJ2DgaUFCFS2QBTyaTlMuHM8xynBtMv8H83wXPcS5dnWpLkg"/>
+</div>
+<div class="w-3/5 p-8 flex flex-col justify-between">
+<div>
+<h3 class="text-2xl font-black font-headline mb-2">Adventure Island</h3>
+<p class="text-on-surface-variant font-label text-sm">Rohini, New Delhi</p>
+<div class="flex gap-2 mt-4">
+<span class="bg-surface-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Family Friendly</span>
+<span class="bg-surface-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Thrill Rides</span>
+</div>
+</div>
+<div class="flex justify-between items-end">
+<div class="flex flex-col">
+<span class="text-xs font-label text-on-surface-variant">Tickets from</span>
+<span class="text-xl font-black">₹499</span>
+</div>
+<button class="bg-primary text-on-primary px-8 py-3 rounded-2xl font-bold font-label hover:scale-105 transition-transform">Book</button>
+</div>
+</div>
+</div>
+<!-- Park 2 -->
+<div class="flex bg-surface-container-lowest rounded-[2rem] overflow-hidden shadow-[0px_12px_32px_0px_rgba(84,38,228,0.04)] hover:shadow-xl transition-shadow border border-outline-variant/10">
+<div class="w-2/5 relative">
+<img class="w-full h-full object-cover" data-alt="indoor miniature city for children with bright colors and educational play zones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8vw4V5NeyYFTTwcJDMncy2SWAZT8p4DagqU9Tfv2AeeISSfwn9YFYBfxQ9cmD44nBX5A1BS5BDK-xt6AtyRPV9XKC75uEne1gOIE-kbFYGEiZPtlcS6Kbr-svVbPxM3n6gMEZKrDUoBa_0Wu82UAHTwrnqiBl_NoyeZP6Nb70ghxri8WOG3STBbQ1b3BJu4arJsn4w9ydRllh0u864rZGkc_XS3iluZC5Vw7QzxpzIboaeeLBXkQ3HZquAraC_jbFVISkesp3sQ"/>
+</div>
+<div class="w-3/5 p-8 flex flex-col justify-between">
+<div>
+<h3 class="text-2xl font-black font-headline mb-2">KidZania</h3>
+<p class="text-on-surface-variant font-label text-sm">Noida, NCR</p>
+<div class="flex gap-2 mt-4">
+<span class="bg-surface-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Education</span>
+<span class="bg-surface-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Interactive</span>
+</div>
+</div>
+<div class="flex justify-between items-end">
+<div class="flex flex-col">
+<span class="text-xs font-label text-on-surface-variant">Tickets from</span>
+<span class="text-xl font-black">₹750</span>
+</div>
+<button class="bg-primary text-on-primary px-8 py-3 rounded-2xl font-bold font-label hover:scale-105 transition-transform">Book</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Promo Banner: Eventra PASS -->
+<section class="max-w-[1440px] mx-auto px-8">
+<div class="bg-gradient-to-br from-primary via-primary-container to-[#845ef7] rounded-[3rem] p-12 relative overflow-hidden text-on-primary">
+<div class="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+<div>
+<div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full mb-6">
+<span class="material-symbols-outlined text-sm">workspace_premium</span>
+<span class="text-xs font-bold font-label uppercase tracking-widest">Exclusive Access</span>
+</div>
+<h2 class="text-6xl font-black font-headline tracking-tighter mb-6 leading-tight">Elevate your city life with Eventra PASS</h2>
+<ul class="space-y-4 font-label">
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary bg-white rounded-full p-1 text-sm">check</span>
+<span class="text-lg font-medium">Free Movie Tickets every month</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary bg-white rounded-full p-1 text-sm">check</span>
+<span class="text-lg font-medium">Priority access to Concerts &amp; Events</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary bg-white rounded-full p-1 text-sm">check</span>
+<span class="text-lg font-medium">Flat 50% OFF on Snacks at Cinemas</span>
+</li>
+</ul>
+<button class="mt-10 bg-white text-primary px-10 py-4 rounded-2xl font-black text-lg hover:scale-105 transition-transform shadow-xl">Get Your PASS Now</button>
+</div>
+<div class="flex flex-col items-center lg:items-end">
+<div class="bg-white p-6 rounded-[2.5rem] shadow-2xl inline-block max-w-[280px]">
+<img alt="App Download QR" class="w-full h-auto mb-4 grayscale contrast-125" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBT-vukjvNPNe7nVUEZlr9F3_PS2gGUZ8ATaCiwJRTicDo7hXAEkEwv7xnxTMTD45yEl23ANwNEsejyJ4Q6agmZ8t9XlO44-GZwQeOyXVSwiYm0abC3Hbu68M7EOGGDMSzubc5KmXkGaxey6Z8pX4hWml6hj2oV0vRGs0tc_b1dXycD6lMUZwj0CVV58Aov7p0wF6f9IJyfyniOeA2E7J78pKTHJuP9XA5EH7XcY69Gg50eUajlXuQyi7GW3gTz-cdtbB8e98Tngw"/>
+<p class="text-on-surface font-black text-center text-sm leading-tight">Scan to download the<br/>Eventra App</p>
+</div>
+<p class="mt-6 text-white/60 font-label text-sm">Available on iOS and Android</p>
+</div>
+</div>
+<!-- Abstract Design Elements -->
+<div class="absolute top-0 right-0 w-[600px] h-[600px] bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
+<div class="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary-container/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4"></div>
+</div>
+</section>
+<!-- Artists -->
+<section class="max-w-[1440px] mx-auto px-8">
+<h2 class="text-3xl font-black font-headline tracking-tighter mb-10">Artists in your District</h2>
+<div class="flex justify-between items-center overflow-x-auto hide-scrollbar gap-12 pb-4">
+<!-- Artist 1 -->
+<div class="flex flex-col items-center min-w-[160px] group cursor-pointer">
+<div class="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-transparent group-hover:border-primary transition-all duration-300">
+<img class="w-full h-full object-cover" data-alt="portrait of a stylish female singer with vibrant traditional jewelry and dramatic stage lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4O2RmyJn4zfU3skSvvDytQaJUaLpPpHt0dB0hYWZjMsUkvX0CQo0rxeAhwIeThuJ1IoX6onsLlYnB_ienVMNr0AWQiGYfLTO42e_HYFkChd7Rvj1_MvrVGfDQNt3KNo8eB4tE-2seZcrrxanKuklWr5zedav-UUwB5YIUjUJKxuHFJ-v8pB4E_L65iLg1IsJqE_JUTTh4yDEjf8RBBwrHBzT2KpYq4hX77zljo8tObVCZs0Ux9rw14LxzDB6L7v3mr36dZDzHHA"/>
+</div>
+<h4 class="font-bold font-headline text-lg">Jasmine Sandlas</h4>
+<p class="text-xs font-label text-on-surface-variant uppercase tracking-wider mt-1">Singer</p>
+</div>
+<!-- Artist 2 -->
+<div class="flex flex-col items-center min-w-[160px] group cursor-pointer">
+<div class="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-transparent group-hover:border-primary transition-all duration-300">
+<img class="w-full h-full object-cover" data-alt="professional portrait of a male musician with a warm smile and casual attire" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYM06AXy2YL0fBXRkbQLlV-UktjcabUt3t-L0ifKUdYicLwfh2rM5DEQh3IHlE1LOdaYrfhD9Fc9zoJCQp21BTOtuMdVIxaLrNhXlswYOWKNQkZpwGsJEGaTCgQGXyt8AADTYyrp560Rx_hQRi85_qOE0DJJcecLktceV4i1V60GWrkNsfwzU28sfEHL20VY-1_41HdSDlZBkOZ5rnmo6GEgwiOmj8wQVDIM8R3ZKchktjAdtHHzdzJ_uOnwtwpq0RIoVnl1asDg"/>
+</div>
+<h4 class="font-bold font-headline text-lg">Javed Ali</h4>
+<p class="text-xs font-label text-on-surface-variant uppercase tracking-wider mt-1">Singer</p>
+</div>
+<!-- Artist 3 -->
+<div class="flex flex-col items-center min-w-[160px] group cursor-pointer">
+<div class="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-transparent group-hover:border-primary transition-all duration-300">
+<img class="w-full h-full object-cover" data-alt="headshot of a famous female comedian with expressive features in high-key studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9Om4bXWAqadpRVOczDMJhTxrGWJODWVjzELJKx-jw2YSOVzUCniUWVkXK5G5zkfVq3wycl0c-O8aoSkTacN-BQaMNsgkl9oArIxK8O1CiVx6AHQOVM4wwnhWAXIJCvn4SPO3ThZqmSPU4_A0xkHotZ8OvfHRpFDhjUFFyr9VXhj3IKAMZIKl-J7DvVOgFQWUA8mgFUnyePCn_mFOru0YSKZVNKsqX3trQenHllMTKbAa-qulSETYLd5ofoJMl2m7IzwiKFSsUpA"/>
+</div>
+<h4 class="font-bold font-headline text-lg">Aditi Mittal</h4>
+<p class="text-xs font-label text-on-surface-variant uppercase tracking-wider mt-1">Comedian</p>
+</div>
+<!-- Artist 4 -->
+<div class="flex flex-col items-center min-w-[160px] group cursor-pointer">
+<div class="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-transparent group-hover:border-primary transition-all duration-300">
+<img class="w-full h-full object-cover" data-alt="close-up of a soulful male vocalist performing on stage with atmospheric blue lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsURan6sg5K-VP-zjDs-PGs6nYgjRBDyvReJyxPCcKvqD5KAVLlFJ3wPje_wbFukiklPwBftuEdHlf7PGBReIILvHMEwEx4mdHuEkNZIQYYEopWdwy2nX5PantVkoKta5cVL1wm-DyNoC5nkbDZKlt0PxDA44xRq3KqEixPnxauDEUeRpX9HWksicq4ukGkS7ta3_k5QfBgN2-iLNIaTz9o3Ah0VuBBVXiRBV_ebPrzsA-7_Vuyc1rVvpSz8D_lnlI6tAxkC6LRQ"/>
+</div>
+<h4 class="font-bold font-headline text-lg">Arijit Singh</h4>
+<p class="text-xs font-label text-on-surface-variant uppercase tracking-wider mt-1">Vocalist</p>
+</div>
+<!-- Artist 5 -->
+<div class="flex flex-col items-center min-w-[160px] group cursor-pointer">
+<div class="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-transparent group-hover:border-primary transition-all duration-300">
+<img class="w-full h-full object-cover" data-alt="trendy portrait of a popular male DJ wearing headphones and streetwear in a neon setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCt6I46Aogd_-ZYyj60U6ffKT56Tdf71ynFiDtKVbCjShiEWorCZGc3tg_6k2W5ZWlFiXyxoe-pB1uKbTzFCxEyufNffh3mjnr8PeHU6_0H_75GHDTE9En4JUS2CkmDCWmvg8-MX2zYUKJBxOmD37mEFWJWC6y9Jyvle3rGAsHnVC0ohjVPm0bor-EbGpyq8THMczYJIPrj0BREmjJOq9Mxj_ndGsVr_YSJfOilRap1QZCt6qM5vcCon3j6eDQIr4yvn7fH2XuArQ"/>
+</div>
+<h4 class="font-bold font-headline text-lg">Nucleya</h4>
+<p class="text-xs font-label text-on-surface-variant uppercase tracking-wider mt-1">DJ • Artist</p>
+</div>
+<!-- Artist 6 -->
+<div class="flex flex-col items-center min-w-[160px] group cursor-pointer">
+<div class="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-transparent group-hover:border-primary transition-all duration-300">
+<img class="w-full h-full object-cover" data-alt="glamour portrait of a female playback singer with elegant gown and classic portrait lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8H1LTaGhVVjdFEL7N2MtSEBAwFJI2nJ0jz9SxIjsO9c-Tt76FUdN_jznoigcQFoT000623gfT9W6xhUXVU1c6cY2gT71QCZTDz2IMOggz3_GZfZbsGsbbbklnG3WLx8kkO1qQKbUgvBY2qPcGCZrdnx5B_wZfyWKuVz1Da6FpAPNUSEFeu1zQBMwezUJiw4j7Hv2bBhdykA6FlOHBHChe5XS2xEBBJyrAQk7-Jdqr7a92SDJPeptqYtB0AgsXGkKdvJMLUOb00g"/>
+</div>
+<h4 class="font-bold font-headline text-lg">Shreya Ghoshal</h4>
+<p class="text-xs font-label text-on-surface-variant uppercase tracking-wider mt-1">Singer</p>
+</div>
+</div>
+</section>
+<!-- Comedy & Nightlife -->
+<section class="max-w-[1440px] mx-auto px-8 grid grid-cols-1 lg:grid-cols-2 gap-16">
+<!-- Comedy Mania -->
+<div>
+<div class="flex justify-between items-center mb-8">
+<h2 class="text-2xl font-black font-headline tracking-tight">Comedy Mania</h2>
+<span class="material-symbols-outlined text-primary cursor-pointer">arrow_forward</span>
+</div>
+<div class="space-y-6">
+<div class="flex gap-6 group cursor-pointer items-center p-4 rounded-3xl hover:bg-surface-container transition-colors">
+<div class="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="vibrant comedy club stage with a microphone stand and brick wall background in warm light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmilfWpJnY6usdO9aO0g6n0TkhKcqoRCtSgitd3wEjK7JtKV4oEA-ypDJur_62fNC6-FWLXat1Bz4p2Iinvfm7Iwti_2XnjRB0OrnH6uYeKz8A2yEtLux80ukPy2_53vYIT7a84yaWPCzW-XW3hxNta_BtixmdrsSHHrgNXhYIbGSp7VFdJXQPILJyZdXpGNE5IXejAfa27ueu-bEmk8YoH5kXAkinvyCfqp9OH3NA4OU6Kt6LnrlXJo3AhlIyaW0-ax7YnO3ngw"/>
+</div>
+<div>
+<h4 class="font-bold text-lg mb-1">Standup Special: Zakir Khan</h4>
+<p class="text-sm font-label text-on-surface-variant">Live at Sirifort • Mar 15</p>
+<p class="text-primary font-bold text-sm mt-2">₹499 onwards</p>
+</div>
+</div>
+<div class="flex gap-6 group cursor-pointer items-center p-4 rounded-3xl hover:bg-surface-container transition-colors">
+<div class="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="close-up of a microphone on a stand in a dimly lit club with purple accent lights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCk77P7LaulVXer0InYpbCmWbbSJLxVdO0poeK4oNGRPLdPsJWopnT9lQEJr-d3Fct4O2m8Jb1XGsL1y5MqrCal_E0ZweeqaeRBB7XFsEupB6ff9E70jzheJOw0glYFiu9bCgyQqm3xHY76DUN6YMzvI9FZST-Gl4Ile3LJG2_b6yIQaHud3BBhn0F6AD3H7QWZ1hQl6sCNQLPam5pshiXhtaF_1g67fo1qXKBZd8UXeczsFf0zDakvQeQqU1imEoc0QEMG3zI80A"/>
+</div>
+<div>
+<h4 class="font-bold text-lg mb-1">Comedy Open Mic Night</h4>
+<p class="text-sm font-label text-on-surface-variant">Social CP • Every Tuesday</p>
+<p class="text-primary font-bold text-sm mt-2">Free Entry</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Nightlife -->
+<div>
+<div class="flex justify-between items-center mb-8">
+<h2 class="text-2xl font-black font-headline tracking-tight">Nightlife</h2>
+<span class="material-symbols-outlined text-primary cursor-pointer">arrow_forward</span>
+</div>
+<div class="space-y-6">
+<div class="flex gap-6 group cursor-pointer items-center p-4 rounded-3xl hover:bg-surface-container transition-colors">
+<div class="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="energetic nightclub dance floor with laser lights, crowd silhouettes, and smoke effects" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCczoQuPmUy6xHHuda37-Tqp-CFzeDft5kmlRFutJVtUDpg4_8KRWoneKnMYSdHxuvY-0EOD_D-gEt534Ej4db8CuIvvma4UDhkwiQ53IKUbvXZFystLC9iTfzx68MCx5edUfbeXehZ31WlpF_jYGUO3MU_GTbHH0qiyv0q6Ttm1wc8l5yCh_U-kiIxd-XlpgbGl27OkZnpU-I0rA7rayYNSAPakw6Z-s20j7LlaXeQpZLtvgsWCnUP6b01yvcNWlj4YW5K6IhZMQ"/>
+</div>
+<div>
+<h4 class="font-bold text-lg mb-1">Techno Friday Night</h4>
+<p class="text-sm font-label text-on-surface-variant">PVR Director's Cut • Mar 14</p>
+<p class="text-primary font-bold text-sm mt-2">Cover Charges ₹2000</p>
+</div>
+</div>
+<div class="flex gap-6 group cursor-pointer items-center p-4 rounded-3xl hover:bg-surface-container transition-colors">
+<div class="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="glamourous rooftop bar at night with city lights and craft cocktails on a sleek table" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCusbbJrujeSdJBzp0GNxVs2-qtubz08y6E32C-UD5-5q1nwm3OOMB0ZuuiV0tbmS5jiBdSTRIB6Wx6upGM2DgFaR28Xife363wlel7PKFKoJuqP1gqY1hy5ii5bLtxlu49ylYjXN0mcUXuiWmxi1nc5ia0_BtvBRldKXjTi0zZZLCFiInbw3qUA5YPamgSX9NUlRSHo9yUnDVT3zLLYb_H5OSy14M-_SHuFjhulZ2NqCxoaYlLlb9o10kJiFIv8nmcxiwCpX1A0g"/>
+</div>
+<div>
+<h4 class="font-bold text-lg mb-1">Sky High Rooftop Party</h4>
+<p class="text-sm font-label text-on-surface-variant">The Sky High • Weekends</p>
+<p class="text-primary font-bold text-sm mt-2">₹1500 onwards</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-[#f5f3f9] dark:bg-[#1c1b1f] w-full mt-20 tonal-shift-bg border-t-0">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 px-12 py-16 max-w-[1440px] mx-auto">
+<div class="space-y-6">
+<span class="text-3xl font-black text-[#5426e4] italic">Eventra</span>
+<p class="text-[#49454f] font-label text-sm leading-relaxed">The Digital Curator. Your one-stop destination for all things happening in your city. From movies to matches, we've got you covered.</p>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-primary cursor-pointer opacity-80 hover:opacity-100 transition-opacity">public</span>
+<span class="material-symbols-outlined text-primary cursor-pointer opacity-80 hover:opacity-100 transition-opacity">mail</span>
+<span class="material-symbols-outlined text-primary cursor-pointer opacity-80 hover:opacity-100 transition-opacity">phone</span>
+</div>
+</div>
+<div class="space-y-6">
+<h4 class="font-black text-on-surface uppercase tracking-widest text-xs">Navigation</h4>
+<ul class="space-y-4 font-label text-sm font-medium">
+<li><a class="text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline transition-all" href="#">For you</a></li>
+<li><a class="text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline transition-all" href="#">Movies</a></li>
+<li><a class="text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline transition-all" href="#">IPL 2026</a></li>
+<li><a class="text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline transition-all" href="#">Nightlife</a></li>
+</ul>
+</div>
+<div class="space-y-6">
+<h4 class="font-black text-on-surface uppercase tracking-widest text-xs">Support</h4>
+<ul class="space-y-4 font-label text-sm font-medium">
+<li><a class="text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline transition-all" href="#">Terms &amp; Conditions</a></li>
+<li><a class="text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline transition-all" href="#">Privacy Policy</a></li>
+<li><a class="text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline transition-all" href="#">App Download</a></li>
+<li><a class="text-[#49454f] hover:text-[#5426e4] underline-offset-4 hover:underline transition-all" href="#">Support</a></li>
+</ul>
+</div>
+<div class="space-y-6">
+<h4 class="font-black text-on-surface uppercase tracking-widest text-xs">Download the App</h4>
+<div class="bg-white p-4 rounded-3xl inline-block shadow-sm">
+<img alt="App Download QR" class="w-32 grayscale contrast-125" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWfriW4E9DYvsRlXrsZFdUF2z90T5jxBHYDLehMadsUYZWoJ_JPytrUahOWYBJiPUSsAEq4pUM-raOy843Cu3Jl7pgLjNKjkyhx2M2CmTrhrSZ4sbXG3f0JfpveWysMUwYFgqfZ5Ge3l1Mxampq7ruBZr6ovTzeSG__tyLwTjY2v9PNQTJ6QIL65Wn4L0RDKkEEBYzZiWcsWMc9zN-h0dnh1JcW67Rjtd1HaK2rxlQme7f3jodkv0MiXuQUkXuxVP-Mw3OMtTyYQ"/>
+</div>
+<p class="text-xs font-label text-on-surface-variant">© 2024 Eventra. The Digital Curator.</p>
+</div>
+</div>
+</footer>
+<!-- Bottom Navigation (Mobile Only) -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 bg-surface/80 backdrop-blur-xl px-8 py-4 flex justify-between items-center z-50 shadow-[0px_-4px_24px_rgba(0,0,0,0.05)]">
+<div class="flex flex-col items-center gap-1 text-[#5426e4]">
+<span class="material-symbols-outlined font-variation-settings: 'FILL' 1;">home</span>
+<span class="text-[10px] font-bold font-label">Home</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">explore</span>
+<span class="text-[10px] font-bold font-label">Explore</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">confirmation_number</span>
+<span class="text-[10px] font-bold font-label">Bookings</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-bold font-label">Account</span>
+</div>
+</div>
+</body></html>
