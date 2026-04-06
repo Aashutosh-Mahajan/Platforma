@@ -78,16 +78,76 @@
         }
     </script>
 <style>
+        html {
+            scroll-behavior: smooth;
+        }
         body { font-family: 'Lexend', sans-serif; }
         .glass-effect {
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
         }
-        .hero-gradient {
-            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url('{{DATA:IMAGE:IMAGE_3}}');
-            background-size: cover;
-            background-position: center;
+        .hero-sequence-shell {
+            background: #1f1815;
+        }
+        .hero-sequence-frame {
+            transform: scale(1.04);
+            will-change: transform;
+        }
+        .hero-sequence-overlay {
+            background: linear-gradient(180deg, rgba(12, 12, 12, 0.24) 0%, rgba(12, 12, 12, 0.5) 50%, rgba(12, 12, 12, 0.76) 100%);
+        }
+        .hero-copy-brand {
+            font-size: clamp(3rem, 9.4vw, 6.2rem);
+            font-style: italic;
+            font-weight: 900;
+            letter-spacing: -0.045em;
+            line-height: 0.95;
+            text-shadow: 0px 10px 22px rgba(0, 0, 0, 0.24);
+        }
+        .hero-copy-stack {
+            transform: translateY(clamp(44px, 9vh, 110px));
+        }
+        .hero-copy-title {
+            font-size: clamp(1.5rem, 4.6vw, 3.15rem);
+            font-weight: 900;
+            letter-spacing: -0.035em;
+            line-height: 1.08;
+            text-shadow: 0px 10px 24px rgba(0, 0, 0, 0.2);
+        }
+        .hero-copy-sub {
+            font-size: clamp(1rem, 2.15vw, 1.45rem);
+            font-weight: 500;
+            opacity: 0.95;
+            max-width: 690px;
+            margin-inline: auto;
+            text-wrap: balance;
+        }
+        .hero-scroll-cue {
+            position: absolute;
+            left: 50%;
+            bottom: 2.4rem;
+            transform: translateX(-50%);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: rgba(255, 255, 255, 0.96);
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            text-shadow: 0px 4px 12px rgba(0, 0, 0, 0.26);
+            animation: zestyScrollBob 1.25s ease-in-out infinite;
+        }
+        .hero-scroll-cue .material-symbols-outlined {
+            font-size: 1.35rem;
+        }
+        @keyframes zestyScrollBob {
+            0%, 100% {
+                transform: translate(-50%, 0px);
+            }
+            50% {
+                transform: translate(-50%, 8px);
+            }
         }
         .ambient-shadow {
             box-shadow: 0px 20px 40px rgba(27, 27, 27, 0.06);
@@ -98,34 +158,41 @@
 <!-- TopNavBar -->
 <header class="absolute top-0 left-0 w-full z-50 flex justify-between items-center px-8 py-6 max-w-7xl mx-auto bg-transparent">
 <div class="text-3xl font-black text-white italic font-lexend tracking-tight">Zesty</div>
-<nav class="hidden md:flex items-center gap-8">
-<a class="text-white/90 font-medium hover:text-red-200 transition-colors" href="#">Add restaurant</a>
-<a class="text-white/90 font-medium hover:text-red-200 transition-colors" href="#">Log in</a>
-<a class="text-white/90 font-medium hover:text-red-200 transition-colors" href="#">Sign up</a>
+<nav class="hidden md:flex items-center gap-8" id="zesty-nav">
+<div class="hidden items-center gap-8" id="zesty-nav-guest">
+<a class="text-white/90 font-medium hover:text-red-200 transition-colors" href="/zesty/restaurants">Add restaurant</a>
+<a class="text-white/90 font-medium hover:text-red-200 transition-colors" href="/login">Log in</a>
+<a class="text-white/90 font-medium hover:text-red-200 transition-colors" href="/register">Sign up</a>
+</div>
+<div class="hidden items-center gap-8" id="zesty-nav-auth">
+<a class="text-white/90 font-medium hover:text-red-200 transition-colors" href="/">Home</a>
+<a class="text-white/90 font-medium hover:text-red-200 transition-colors" href="/zesty/restaurants">Add restaurants</a>
+<a class="text-white/90 font-medium hover:text-red-200 transition-colors" href="/eventra">Eventra</a>
+<a class="text-white/90 font-medium hover:text-red-200 transition-colors" href="#" id="zesty-logout-link">Logout</a>
+</div>
 </nav>
 </header>
 <!-- Hero Section -->
-<section class="relative h-[665px] min-h-[600px] flex flex-col items-center justify-center text-center px-6 hero-gradient">
-<div class="max-w-4xl w-full">
-<h1 class="text-white text-5xl md:text-7xl font-black italic mb-4 tracking-tighter">Zesty</h1>
-<p class="text-white text-2xl md:text-3xl font-medium mb-12 opacity-95">India's #1 food delivery app</p>
-<!-- Search Bar (Glassmorphism) -->
-<div class="glass-effect p-2 rounded-2xl flex flex-col md:flex-row items-center gap-2 max-w-3xl mx-auto ambient-shadow">
-<div class="flex items-center bg-surface-container-lowest rounded-xl flex-1 px-4 py-3 w-full">
-<span class="material-symbols-outlined text-primary mr-2" data-icon="location_on">location_on</span>
-<input class="bg-transparent border-none focus:ring-0 text-on-surface w-full font-medium" placeholder="Mumbai, Maharashtra" type="text"/>
-<span class="material-symbols-outlined text-secondary ml-2" data-icon="arrow_drop_down">arrow_drop_down</span>
+<section class="relative h-[190vh] min-h-[1200px] hero-sequence-shell" id="zesty-hero-sequence">
+<div class="sticky top-0 h-screen overflow-hidden">
+<img alt="Freshly baked pizza" class="absolute inset-0 w-full h-full object-cover hero-sequence-frame" id="zesty-hero-frame" src="/hero/Slice_of_pizza_202604051228_011.jpg"/>
+<div class="absolute inset-0 hero-sequence-overlay"></div>
+<div class="relative z-10 h-full flex flex-col items-center justify-center text-center px-6 pb-20">
+<div class="max-w-4xl w-full hero-copy-stack">
+<h1 class="hero-copy-brand text-white mb-3">Zesty</h1>
+<p class="hero-copy-title text-white mb-4">India's #1<br/>food delivery app</p>
+<p class="hero-copy-sub text-white/90 mb-9">Fast, flavorful, and always on time. Discover top restaurants and order your favorites in minutes.</p>
+<a class="inline-flex items-center justify-center px-10 py-3 rounded-2xl bg-white text-primary font-black text-base tracking-wide hover:bg-red-50 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0px_16px_30px_rgba(0,0,0,0.22)]" href="/zesty/restaurants">Enjoy</a>
 </div>
-<div class="h-8 w-[1px] bg-white/20 hidden md:block"></div>
-<div class="flex items-center bg-surface-container-lowest rounded-xl flex-[2] px-4 py-3 w-full">
-<span class="material-symbols-outlined text-secondary mr-2" data-icon="search">search</span>
-<input class="bg-transparent border-none focus:ring-0 text-on-surface w-full font-medium" placeholder="Search for restaurant, cuisine or a dish" type="text"/>
-</div>
+<a aria-label="Scroll to next section" class="hero-scroll-cue" href="#zesty-content-start">
+<span>Scroll down</span>
+<span class="material-symbols-outlined" data-icon="keyboard_arrow_down">keyboard_arrow_down</span>
+</a>
 </div>
 </div>
 </section>
 <!-- Statistics Section (Better food for more people) -->
-<section class="bg-white py-20 px-8 relative overflow-hidden">
+<section class="bg-white py-20 px-8 relative overflow-hidden" id="zesty-content-start">
 <!-- Floating elements from IMAGE_2 -->
 <div class="absolute top-10 left-[10%] opacity-20 pointer-events-none">
 <svg fill="none" height="200" viewbox="0 0 200 200" width="200" xmlns="http://www.w3.org/2000/svg">
@@ -369,4 +436,145 @@
             © 2024 Zesty Technologies Ltd. All rights reserved.
         </div>
 </footer>
+<script>
+                (function () {
+                    const guestNav = document.getElementById('zesty-nav-guest');
+                    const authNav = document.getElementById('zesty-nav-auth');
+                    const logoutLink = document.getElementById('zesty-logout-link');
+
+                    const accessToken = localStorage.getItem('access_token');
+                    const refreshToken = localStorage.getItem('refresh_token');
+                    const isLoggedIn = Boolean(accessToken);
+
+                    if (guestNav && authNav) {
+                        if (isLoggedIn) {
+                            guestNav.classList.add('hidden');
+                            authNav.classList.remove('hidden');
+                            authNav.classList.add('flex');
+                        } else {
+                            authNav.classList.add('hidden');
+                            guestNav.classList.remove('hidden');
+                            guestNav.classList.add('flex');
+                        }
+                    }
+
+                    if (logoutLink) {
+                        logoutLink.addEventListener('click', async function (event) {
+                            event.preventDefault();
+
+                            try {
+                                if (refreshToken) {
+                                    const headers = {
+                                        'Content-Type': 'application/json',
+                                    };
+
+                                    if (accessToken) {
+                                        headers.Authorization = `Bearer ${accessToken}`;
+                                    }
+
+                                    await fetch('http://127.0.0.1:8000/api/v1/auth/logout/', {
+                                        method: 'POST',
+                                        headers,
+                                        body: JSON.stringify({ refresh: refreshToken }),
+                                    });
+                                }
+                            } catch (error) {
+                                // Ignore network errors and clear local session state anyway.
+                            }
+
+                            localStorage.removeItem('access_token');
+                            localStorage.removeItem('refresh_token');
+                            window.location.href = '/';
+                        });
+                    }
+                })();
+
+        (function () {
+            const firstFrame = 11;
+            const lastFrame = 53;
+            const framePaths = [];
+
+            for (let frame = firstFrame; frame <= lastFrame; frame += 1) {
+                framePaths.push(`/hero/Slice_of_pizza_202604051228_${String(frame).padStart(3, '0')}.jpg`);
+            }
+
+            const section = document.getElementById('zesty-hero-sequence');
+            const image = document.getElementById('zesty-hero-frame');
+            if (!section || !image || framePaths.length === 0) {
+                return;
+            }
+
+            let currentFrameIndex = 0;
+            const warmupFrameCount = Math.min(8, framePaths.length);
+
+            // Preload the first few frames immediately for responsive scroll animation.
+            for (let i = 0; i < warmupFrameCount; i += 1) {
+                const preloadImage = new Image();
+                preloadImage.src = framePaths[i];
+            }
+
+            const preloadRemainingFrames = () => {
+                for (let i = warmupFrameCount; i < framePaths.length; i += 1) {
+                    const preloadImage = new Image();
+                    preloadImage.src = framePaths[i];
+                }
+            };
+
+            if ('requestIdleCallback' in window) {
+                window.requestIdleCallback(preloadRemainingFrames);
+            } else {
+                window.setTimeout(preloadRemainingFrames, 400);
+            }
+
+            const getScrollProgress = () => {
+                const sectionRect = section.getBoundingClientRect();
+                const maxScrollable = Math.max(sectionRect.height - window.innerHeight, 1);
+                const clampedScroll = Math.min(Math.max(-sectionRect.top, 0), maxScrollable);
+                return clampedScroll / maxScrollable;
+            };
+
+            const drawFrameForProgress = (progress) => {
+                const nextIndex = Math.min(framePaths.length - 1, Math.max(0, Math.round(progress * (framePaths.length - 1))));
+                if (nextIndex !== currentFrameIndex) {
+                    currentFrameIndex = nextIndex;
+                    image.src = framePaths[currentFrameIndex];
+                }
+            };
+
+            let targetProgress = 0;
+            let renderedProgress = 0;
+            let animationFrameId = null;
+            const SMOOTHING = 0.14;
+            const MIN_DELTA = 0.0008;
+
+            const animateToTarget = () => {
+                renderedProgress += (targetProgress - renderedProgress) * SMOOTHING;
+
+                if (Math.abs(targetProgress - renderedProgress) < MIN_DELTA) {
+                    renderedProgress = targetProgress;
+                }
+
+                drawFrameForProgress(renderedProgress);
+
+                if (renderedProgress !== targetProgress) {
+                    animationFrameId = window.requestAnimationFrame(animateToTarget);
+                } else {
+                    animationFrameId = null;
+                }
+            };
+
+            const syncTargetProgress = () => {
+                targetProgress = getScrollProgress();
+
+                if (animationFrameId === null) {
+                    animationFrameId = window.requestAnimationFrame(animateToTarget);
+                }
+            };
+
+            window.addEventListener('scroll', syncTargetProgress, { passive: true });
+            window.addEventListener('resize', syncTargetProgress);
+            window.addEventListener('load', syncTargetProgress);
+            syncTargetProgress();
+        })();
+    </script>
 </body></html>

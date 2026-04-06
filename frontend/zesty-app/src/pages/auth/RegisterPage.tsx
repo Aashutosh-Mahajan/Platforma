@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { validateEmail, validatePassword, validateRequired } from '../../utils/validation';
 
@@ -17,7 +17,16 @@ interface FormErrors {
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { register, isAuthenticated, error: authError, clearError } = useAuth();
+
+  const initialRoleParam = searchParams.get('role');
+  const initialRole =
+    initialRoleParam === 'customer' ||
+    initialRoleParam === 'restaurant_owner' ||
+    initialRoleParam === 'event_organizer'
+      ? initialRoleParam
+      : 'customer';
 
   const [formData, setFormData] = useState({
     email: '',
@@ -27,7 +36,7 @@ const RegisterPage: React.FC = () => {
     first_name: '',
     last_name: '',
     phone: '',
-    role: 'customer',
+    role: initialRole,
   });
 
   const [errors, setErrors] = useState<FormErrors>({});

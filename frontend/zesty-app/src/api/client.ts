@@ -6,6 +6,11 @@ const DEFAULT_TIMEOUT = 30000; // 30 seconds
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1000; // 1 second
 
+interface RetryableRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+  _retryCount?: number;
+}
+
 // Token management functions
 export const getAccessToken = (): string | null => {
   return localStorage.getItem('access_token');
@@ -59,17 +64,18 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor: Add access token to headers
 apiClient.interceptors.request.use(
   (config) => {
+    const requestConfig = config as RetryableRequestConfig;
     const token = getAccessToken();
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      requestConfig.headers.Authorization = `Bearer ${token}`;
     }
-    
-    // Initialize retry count
-    if (!config.headers['X-Retry-Count']) {
-      config.headers['X-Retry-Count'] = '0';
+
+    // Keep retry metadata client-side only (do not send custom headers).
+    if (requestConfig._retryCount === undefined) {
+      requestConfig._retryCount = 0;
     }
-    
-    return config;
+
+    return requestConfig;
   },
   (error) => Promise.reject(error)
 );
@@ -78,7 +84,7 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as RetryableRequestConfig | undefined;
 
     if (!originalRequest) {
       return Promise.reject(error);
@@ -113,11 +119,10 @@ apiClient.interceptors.response.use(
     }
 
     // Handle retryable errors with exponential backoff
-    const retryCount = parseInt(originalRequest.headers['X-Retry-Count'] as string || '0');
+    const retryCount = originalRequest._retryCount ?? 0;
     
     if (isRetryableError(error) && retryCount < MAX_RETRIES) {
-      const newRetryCount = retryCount + 1;
-      originalRequest.headers['X-Retry-Count'] = newRetryCount.toString();
+      originalRequest._retryCount = retryCount + 1;
       
       const delay = getRetryDelay(retryCount);
       await sleep(delay);

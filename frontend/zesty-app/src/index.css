@@ -66,6 +66,111 @@
     font-family: var(--font-lexend);
   }
 
+  .theme-zesty-page {
+    position: relative;
+    overflow-x: clip;
+    background:
+      radial-gradient(900px 380px at -8% -14%, rgba(183, 18, 42, 0.15), transparent 62%),
+      radial-gradient(860px 420px at 108% -10%, rgba(219, 49, 63, 0.12), transparent 64%),
+      linear-gradient(180deg, #fff7f6 0%, #fcf9f8 38%, #fcf9f8 100%);
+    color: var(--color-on-surface);
+  }
+
+  .theme-zesty-page .bg-gray-50 {
+    background-color: transparent;
+  }
+
+  .theme-zesty-page .bg-white.rounded-lg.shadow-sm {
+    background-color: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(228, 190, 188, 0.42);
+    box-shadow: 0px 16px 34px rgba(27, 27, 27, 0.06);
+    border-radius: 1rem;
+  }
+
+  .theme-zesty-page .hover\:shadow-md:hover {
+    box-shadow: 0px 20px 42px rgba(183, 18, 42, 0.14);
+  }
+
+  .theme-zesty-page .text-gray-900 {
+    color: var(--color-on-surface);
+  }
+
+  .theme-zesty-page .text-gray-700,
+  .theme-zesty-page .text-gray-600,
+  .theme-zesty-page .text-gray-500 {
+    color: var(--color-on-surface-variant);
+  }
+
+  .theme-zesty-page .border-gray-300,
+  .theme-zesty-page .border-gray-200,
+  .theme-zesty-page .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgba(228, 190, 188, 0.62);
+  }
+
+  .theme-zesty-page .bg-gray-200 {
+    background-color: #f2e4e3;
+  }
+
+  .theme-zesty-page .bg-gray-100,
+  .theme-zesty-page .hover\:bg-gray-100:hover,
+  .theme-zesty-page .hover\:bg-gray-50:hover,
+  .theme-zesty-page .hover\:bg-gray-300:hover {
+    background-color: #f8eceb;
+  }
+
+  .theme-zesty-page .bg-orange-500,
+  .theme-zesty-page .bg-blue-600 {
+    background-color: var(--color-primary);
+  }
+
+  .theme-zesty-page .hover\:bg-orange-600:hover,
+  .theme-zesty-page .hover\:bg-blue-700:hover {
+    background-color: var(--color-surface-tint);
+  }
+
+  .theme-zesty-page .text-orange-500,
+  .theme-zesty-page .text-blue-600 {
+    color: var(--color-primary);
+  }
+
+  .theme-zesty-page .hover\:text-orange-600:hover,
+  .theme-zesty-page .hover\:text-blue-700:hover {
+    color: var(--color-surface-tint);
+  }
+
+  .theme-zesty-page .border-orange-500,
+  .theme-zesty-page .border-blue-600 {
+    border-color: var(--color-primary);
+  }
+
+  .theme-zesty-page .bg-orange-50,
+  .theme-zesty-page .bg-blue-50 {
+    background-color: rgba(183, 18, 42, 0.1);
+  }
+
+  .theme-zesty-page .focus\:ring-orange-500:focus,
+  .theme-zesty-page .focus\:ring-blue-500:focus {
+    --tw-ring-color: var(--color-primary);
+  }
+
+  .theme-zesty-page input,
+  .theme-zesty-page textarea,
+  .theme-zesty-page select {
+    background-color: rgba(255, 255, 255, 0.96);
+    color: var(--color-on-surface);
+    border-color: rgba(228, 190, 188, 0.72);
+  }
+
+  .theme-zesty-page h1,
+  .theme-zesty-page h2,
+  .theme-zesty-page h3 {
+    letter-spacing: -0.02em;
+  }
+
+  .theme-zesty-page .animate-spin.rounded-full.border-b-2 {
+    border-bottom-color: var(--color-primary);
+  }
+
   .theme-eventra {
     --focus-ring: #5426e4;
     font-family: var(--font-eventra-headline);

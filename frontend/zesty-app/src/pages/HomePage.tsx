@@ -42,10 +42,10 @@ const HomePage: React.FC = () => {
           <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mt-12 sm:mt-16">
             {/* Zesty Card */}
             <article>
-              <Link
-                to="/zesty/restaurants"
+              <a
+                href="/LandingPage.html"
                 className="bg-white rounded-xl shadow-lg p-6 sm:p-8 hover:shadow-xl transition transform hover:-translate-y-1 block focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                aria-label="Browse Zesty restaurants for food delivery"
+                aria-label="Open Zesty landing page"
               >
                 <div className="flex items-center mb-4">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0" aria-hidden="true">
@@ -75,7 +75,7 @@ const HomePage: React.FC = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
-              </Link>
+              </a>
             </article>
 
             {/* Eventra Card */}

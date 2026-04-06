@@ -143,6 +143,16 @@ CORS_ALLOWED_ORIGINS = config(
     ),
     cast=Csv()
 )
+
+# In local development, frontend dev servers may run on different ports
+# (for example 3000, 3001, 3002). Allow localhost origins by regex so
+# CORS does not break whenever Vite picks a new available port.
+if DEBUG:
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r'^http://localhost:\d+$',
+        r'^http://127\.0\.0\.1:\d+$',
+    ]
+
 CORS_ALLOW_CREDENTIALS = True
 
 # ====================

@@ -7,7 +7,7 @@ import { LoadingSpinner } from './LoadingSpinner';
 export const LoadingFallback: React.FC = () => {
   return (
     <div className="flex items-center justify-center min-h-screen">
-      <LoadingSpinner size="large" message="Loading..." />
+      <LoadingSpinner size="lg" message="Loading..." />
     </div>
   );
 };
