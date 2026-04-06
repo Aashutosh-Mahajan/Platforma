@@ -37,14 +37,15 @@ INSTALLED_APPS = [
     'core',
     'zesty',
     'eventra',
+    'restaurants',
 ]
 
 # ====================
 # MIDDLEWARE
 # ====================
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -182,3 +183,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ====================
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@platforma.com')
+
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+UNSPLASH_ACCESS_KEY = os.environ.get('UNSPLASH_ACCESS_KEY')
