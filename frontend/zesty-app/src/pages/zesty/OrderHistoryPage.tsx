@@ -31,15 +31,15 @@ const OrderHistoryPage: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-      confirmed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-      preparing: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-      ready: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
-      out_for_delivery: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
-      delivered: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-      cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+      pending: 'bg-amber-100 text-amber-800',
+      confirmed: 'bg-orange-100 text-orange-800',
+      preparing: 'bg-rose-100 text-rose-800',
+      ready: 'bg-red-100 text-red-700',
+      out_for_delivery: 'bg-primary-fixed text-on-primary-fixed-variant',
+      delivered: 'bg-emerald-100 text-emerald-800',
+      cancelled: 'bg-red-100 text-red-800',
     };
-    return colors[status] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
+    return colors[status] || 'bg-surface-container text-on-surface-variant';
   };
 
   const formatStatus = (status: string) => {
@@ -48,14 +48,14 @@ const OrderHistoryPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex justify-center items-center">
+      <div className="theme-zesty theme-zesty-page min-h-screen bg-gray-50 flex justify-center items-center">
         <LoadingSpinner size="lg" message="Loading your orders..." />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="theme-zesty theme-zesty-page min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">

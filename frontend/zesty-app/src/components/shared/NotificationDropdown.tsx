@@ -3,11 +3,31 @@ import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../../contexts';
 import type { Notification } from '../../types';
 
-export const NotificationDropdown: React.FC = () => {
+interface NotificationDropdownProps {
+  variant?: 'default' | 'zesty';
+}
+
+export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ variant = 'default' }) => {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotification();
   const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const bellButtonClass = variant === 'zesty'
+    ? 'relative p-2 text-on-surface-variant hover:text-primary transition-colors'
+    : 'relative p-2 text-gray-600 hover:text-gray-900 transition-colors';
+
+  const markAllClass = variant === 'zesty'
+    ? 'text-sm text-primary hover:text-surface-tint font-medium transition-colors'
+    : 'text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors';
+
+  const unreadItemClass = variant === 'zesty'
+    ? 'bg-primary-fixed/45 hover:bg-primary-fixed/70'
+    : 'bg-blue-50 hover:bg-blue-100';
+
+  const unreadDotClass = variant === 'zesty'
+    ? 'w-2 h-2 bg-primary rounded-full mt-1 ml-2 flex-shrink-0'
+    : 'w-2 h-2 bg-blue-600 rounded-full mt-1 ml-2 flex-shrink-0';
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -46,7 +66,7 @@ export const NotificationDropdown: React.FC = () => {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors"
+        className={bellButtonClass}
         aria-label="Notifications"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,7 +91,7 @@ export const NotificationDropdown: React.FC = () => {
             {unreadCount > 0 && (
               <button
                 onClick={() => markAllAsRead()}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                className={markAllClass}
               >
                 Mark all as read
               </button>
@@ -102,7 +122,7 @@ export const NotificationDropdown: React.FC = () => {
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification)}
                   className={`p-4 border-b cursor-pointer transition ${
-                    notification.is_read ? 'bg-white hover:bg-gray-50' : 'bg-blue-50 hover:bg-blue-100'
+                    notification.is_read ? 'bg-white hover:bg-gray-50' : unreadItemClass
                   }`}
                 >
                   <div className="flex justify-between items-start">
@@ -114,7 +134,7 @@ export const NotificationDropdown: React.FC = () => {
                       </p>
                     </div>
                     {!notification.is_read && (
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-1 ml-2 flex-shrink-0"></div>
+                      <div className={unreadDotClass}></div>
                     )}
                   </div>
                 </div>

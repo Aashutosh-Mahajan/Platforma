@@ -25,18 +25,18 @@ const OrderDetailPage = lazy(() => import('./pages/zesty/OrderDetailPage'));
 
 // Eventra pages
 const EventListPage = lazy(() => import('./pages/eventra/EventListPage'));
-const EventraLandingPage = lazy(() => import('./pages/eventra/EventraLandingPage'));
-const EventDetailsandBooking = lazy(() => import('./pages/eventra/EventDetailsandBooking'));
-const EnhancedStadiumMapSelection = lazy(() => import('./pages/eventra/EnhancedStadiumMapSelection'));
-const CheckoutandTransaction = lazy(() => import('./pages/eventra/CheckoutandTransaction'));
+const EventraLandingPage = lazy(() => import('./pages/eventra/EventraLandingPage.jsx'));
+const EventDetailsandBooking = lazy(() => import('./pages/eventra/EventDetailsandBooking.jsx'));
+const EnhancedStadiumMapSelection = lazy(() => import('./pages/eventra/EnhancedStadiumMapSelection.jsx'));
+const CheckoutandTransaction = lazy(() => import('./pages/eventra/CheckoutandTransaction.jsx'));
 const BookingHistoryPage = lazy(() => import('./pages/eventra/BookingHistoryPage'));
 const BookingDetailPage = lazy(() => import('./pages/eventra/BookingDetailPage'));
 
-const EnhancedCinemaSeatMap = lazy(() => import('./pages/eventra/EnhancedCinemaSeatMap'));
-const EnhancedConcertMapSelection = lazy(() => import('./pages/eventra/EnhancedConcertMapSelection'));
-const StadiumSeatSelection = lazy(() => import('./pages/eventra/StadiumSeatSelection'));
-const CinemaSeatSelection = lazy(() => import('./pages/eventra/CinemaSeatSelection'));
-const ConcertSeatSelection = lazy(() => import('./pages/eventra/ConcertSeatSelection'));
+const EnhancedCinemaSeatMap = lazy(() => import('./pages/eventra/EnhancedCinemaSeatMap.jsx'));
+const EnhancedConcertMapSelection = lazy(() => import('./pages/eventra/EnhancedConcertMapSelection.jsx'));
+const StadiumSeatSelection = lazy(() => import('./pages/eventra/StadiumSeatSelection.jsx'));
+const CinemaSeatSelection = lazy(() => import('./pages/eventra/CinemaSeatSelection.jsx'));
+const ConcertSeatSelection = lazy(() => import('./pages/eventra/ConcertSeatSelection.jsx'));
 
 // Dashboard pages
 const RestaurantOwnerDashboard = lazy(() => import('./pages/dashboard/RestaurantOwnerDashboard'));

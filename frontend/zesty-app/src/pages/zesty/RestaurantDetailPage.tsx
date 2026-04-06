@@ -176,7 +176,7 @@ const RestaurantDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex justify-center items-center">
+      <div className="theme-zesty theme-zesty-page min-h-screen bg-gray-50 flex justify-center items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
       </div>
     );
@@ -184,7 +184,7 @@ const RestaurantDetailPage: React.FC = () => {
 
   if (error || !restaurant) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex justify-center items-center">
+      <div className="theme-zesty theme-zesty-page min-h-screen bg-gray-50 flex justify-center items-center">
         <div className="text-center">
           <p className="text-red-600 dark:text-red-400 mb-4">{error || 'Restaurant not found'}</p>
           <button
@@ -199,7 +199,7 @@ const RestaurantDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="theme-zesty theme-zesty-page min-h-screen bg-gray-50">
       {/* Cart Warning Modal */}
       {showCartWarning && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
