@@ -24,10 +24,11 @@ class EventListSerializer(serializers.ModelSerializer):
     """Lightweight event list serializer."""
     class Meta:
         model = Event
-        fields = ['id', 'name', 'description', 'category', 'venue_name',
+        fields = ['id', 'organizer', 'name', 'description', 'category', 'venue_name',
                   'address', 'event_date', 'event_end_date', 'image',
                   'rating', 'review_count', 'total_seats', 'available_seats',
-                  'is_published']
+                  'is_published', 'is_cancelled']
+        read_only_fields = ['id', 'organizer', 'rating', 'review_count', 'total_seats', 'available_seats', 'is_cancelled']
 
 
 class EventDetailSerializer(serializers.ModelSerializer):
@@ -36,10 +37,11 @@ class EventDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Event
-        fields = ['id', 'name', 'description', 'category', 'venue_name',
+        fields = ['id', 'organizer', 'name', 'description', 'category', 'venue_name',
                   'address', 'latitude', 'longitude', 'event_date',
                   'event_end_date', 'image', 'banner', 'rating', 'review_count',
-                  'total_seats', 'available_seats', 'is_published', 'ticket_types']
+                  'total_seats', 'available_seats', 'is_published', 'is_cancelled',
+                  'ticket_types']
 
 
 class BookingSeatSerializer(serializers.ModelSerializer):

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts';
 import { NotificationDropdown } from './NotificationDropdown';
+import { getDashboardRouteForRole } from '../../utils';
 
 export const Header: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -57,12 +58,7 @@ export const Header: React.FC = () => {
   };
 
   const getDashboardLink = () => {
-    if (user?.role === 'restaurant_owner') {
-      return '/dashboard/restaurant-owner';
-    } else if (user?.role === 'event_organizer') {
-      return '/dashboard/event-organizer';
-    }
-    return null;
+    return getDashboardRouteForRole(user?.role);
   };
 
   // Close user menu when clicking outside

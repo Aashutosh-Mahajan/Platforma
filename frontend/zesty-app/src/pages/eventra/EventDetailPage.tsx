@@ -22,13 +22,18 @@ const EventDetailPage: React.FC = () => {
   const [reviewComment, setReviewComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  const [ticketSelections, setTicketSelections] = useState<Record<number, number>>({});
 
   useEffect(() => {
-    if (id) {
-      fetchEventData(parseInt(id));
+    const eventId = Number(id);
+    if (Number.isInteger(eventId) && eventId > 0) {
+      fetchEventData(eventId);
       if (isAuthenticated) {
-        checkUserBooking(parseInt(id));
+        checkUserBooking(eventId);
       }
+    } else {
+      setError('Invalid event ID');
+      setLoading(false);
     }
   }, [id, isAuthenticated]);
 
@@ -52,6 +57,25 @@ const EventDetailPage: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (ticketTypes.length === 0) {
+      setTicketSelections({});
+      return;
+    }
+
+    setTicketSelections((previousSelections) => {
+      const nextSelections: Record<number, number> = {};
+
+      ticketTypes.forEach((ticketType) => {
+        const previousCount = previousSelections[ticketType.id] ?? 1;
+        const maxSelectable = Math.max(ticketType.quantity_available, 1);
+        nextSelections[ticketType.id] = Math.min(Math.max(previousCount, 1), maxSelectable);
+      });
+
+      return nextSelections;
+    });
+  }, [ticketTypes]);
+
   const checkUserBooking = async (eventId: number) => {
     try {
       const bookingsResponse = await bookingAPI.list();
@@ -65,13 +89,16 @@ const EventDetailPage: React.FC = () => {
   };
 
   const handleSubmitReview = async () => {
-    if (!id) return;
+    const eventId = Number(id);
+    if (!Number.isInteger(eventId) || eventId <= 0) {
+      return;
+    }
 
     setSubmittingReview(true);
     setReviewError(null);
 
     try {
-      const newReview = await eventAPI.createReview(parseInt(id), {
+      const newReview = await eventAPI.createReview(eventId, {
         rating: reviewRating,
         comment: reviewComment,
       });
@@ -85,7 +112,7 @@ const EventDetailPage: React.FC = () => {
       setReviewComment('');
       
       // Refresh event data to update rating
-      fetchEventData(parseInt(id));
+      fetchEventData(eventId);
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || 
                           err.response?.data?.message ||
@@ -102,7 +129,19 @@ const EventDetailPage: React.FC = () => {
     }
   };
 
-  const handleBookTickets = (ticketType: TicketType) => {
+  const updateTicketSelection = (ticketTypeId: number, maxAvailable: number, delta: number) => {
+    const safeMax = Math.max(maxAvailable, 1);
+    setTicketSelections((previousSelections) => {
+      const current = previousSelections[ticketTypeId] ?? 1;
+      const next = Math.min(Math.max(current + delta, 1), safeMax);
+      return {
+        ...previousSelections,
+        [ticketTypeId]: next,
+      };
+    });
+  };
+
+  const handleBookTickets = (ticketType: TicketType, requestedQuantity: number) => {
     if (!isAuthenticated) {
       navigate('/login', { state: { from: `/eventra/events/${id}` } });
       return;
@@ -115,7 +154,9 @@ const EventDetailPage: React.FC = () => {
     setTicketType(ticketType);
 
     // Navigate to seat selection
-    navigate(`/eventra/events/${id}/seats?ticketType=${ticketType.id}`);
+    navigate(
+      `/eventra/events/${id}/seats?ticketType=${ticketType.id}&quantity=${requestedQuantity}&category=${encodeURIComponent(event.category)}`
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -373,10 +414,7 @@ const EventDetailPage: React.FC = () => {
               ) : (
                 <div className="space-y-4">
                   {ticketTypes.map(ticketType => (
-                    <div
-                      key={ticketType.id}
-                      className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
-                    >
+                    <div key={ticketType.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-semibold text-gray-900 dark:text-white">
                           {ticketType.name}
@@ -412,12 +450,42 @@ const EventDetailPage: React.FC = () => {
                         </span>
                       </div>
 
+                      <div className="mb-3 flex items-center justify-between">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Tickets</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => updateTicketSelection(ticketType.id, ticketType.quantity_available, -1)}
+                            disabled={ticketType.quantity_available === 0 || (ticketSelections[ticketType.id] ?? 1) <= 1}
+                            className="h-8 w-8 rounded-full border border-gray-300 text-sm font-bold text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:text-gray-200"
+                          >
+                            -
+                          </button>
+                          <span className="min-w-[2rem] text-center text-sm font-semibold text-gray-900 dark:text-white">
+                            {ticketSelections[ticketType.id] ?? 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => updateTicketSelection(ticketType.id, ticketType.quantity_available, 1)}
+                            disabled={
+                              ticketType.quantity_available === 0 ||
+                              (ticketSelections[ticketType.id] ?? 1) >= ticketType.quantity_available
+                            }
+                            className="h-8 w-8 rounded-full border border-gray-300 text-sm font-bold text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:text-gray-200"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+
                       <button
-                        onClick={() => handleBookTickets(ticketType)}
+                        onClick={() => handleBookTickets(ticketType, ticketSelections[ticketType.id] ?? 1)}
                         disabled={ticketType.quantity_available === 0}
                         className="w-full px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
                       >
-                        {ticketType.quantity_available === 0 ? 'Sold Out' : 'Book Tickets'}
+                        {ticketType.quantity_available === 0
+                          ? 'Sold Out'
+                          : `Book ${(ticketSelections[ticketType.id] ?? 1)} Ticket${(ticketSelections[ticketType.id] ?? 1) > 1 ? 's' : ''}`}
                       </button>
                     </div>
                   ))}

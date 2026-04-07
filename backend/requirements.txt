@@ -14,6 +14,7 @@ psycopg2-binary>=2.9
 
 # Environment
 python-decouple>=3.8
+python-dotenv>=1.0
 
 # Media
 Pillow>=10.2

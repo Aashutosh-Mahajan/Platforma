@@ -17,6 +17,8 @@ class User(AbstractUser):
     phone = models.CharField(max_length=20, blank=True)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
+    restaurant_name = models.CharField(max_length=255, blank=True)
+    company_name = models.CharField(max_length=255, blank=True)
     is_email_verified = models.BooleanField(default=False)
     is_phone_verified = models.BooleanField(default=False)
 

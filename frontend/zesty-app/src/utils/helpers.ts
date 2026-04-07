@@ -53,3 +53,19 @@ export const debounce = <T extends (...args: any[]) => any>(
   };
 };
 
+export const getDashboardRouteForRole = (role?: string | null): string | null => {
+  if (role === 'restaurant_owner') {
+    return '/dashboard/restaurant-owner';
+  }
+
+  if (role === 'event_organizer') {
+    return '/dashboard/event-organizer';
+  }
+
+  return null;
+};
+
+export const getPostAuthRedirectPath = (role?: string | null): string => {
+  return getDashboardRouteForRole(role) || '/';
+};
+

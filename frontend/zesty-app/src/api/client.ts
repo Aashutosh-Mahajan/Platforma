@@ -1,7 +1,18 @@
 import axios from 'axios';
 import type { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+const resolveApiBaseUrl = (rawBaseUrl?: string): string => {
+  const normalizedBase = (rawBaseUrl || 'http://localhost:8000/api/v1').replace(/\/+$/, '');
+
+  // Backward compatibility: old configs used /api, while backend now serves /api/v1.
+  if (normalizedBase.endsWith('/api')) {
+    return `${normalizedBase}/v1`;
+  }
+
+  return normalizedBase;
+};
+
+const API_BASE_URL = resolveApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
 const DEFAULT_TIMEOUT = 30000; // 30 seconds
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1000; // 1 second

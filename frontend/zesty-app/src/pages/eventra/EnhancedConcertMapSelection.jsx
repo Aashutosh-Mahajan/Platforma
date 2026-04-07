@@ -16,8 +16,8 @@ const EnhancedConcertMapSelection = () => {
 <a className="text-[#49454f] dark:text-[#cac4d0] hover:text-[#5426e4] transition-all duration-300 font-eventra-label text-sm uppercase tracking-wider" href="#">Movies</a>
 </div>
 <div className="flex items-center gap-4">
-<button onClick={() => navigate("/eventra/checkout")} className="material-symbols-outlined p-2 hover:bg-[#f5f3f9] rounded-full transition-all duration-300 text-eventra-on-surface-variant" data-icon="location_on">location_on</button>
-<button onClick={() => navigate("/eventra/checkout")} className="material-symbols-outlined p-2 hover:bg-[#f5f3f9] rounded-full transition-all duration-300 text-eventra-on-surface-variant" data-icon="account_circle">account_circle</button>
+<button type="button" className="material-symbols-outlined p-2 hover:bg-[#f5f3f9] rounded-full transition-all duration-300 text-eventra-on-surface-variant" data-icon="location_on">location_on</button>
+<button type="button" className="material-symbols-outlined p-2 hover:bg-[#f5f3f9] rounded-full transition-all duration-300 text-eventra-on-surface-variant" data-icon="account_circle">account_circle</button>
 </div>
 </nav>
 </header>
@@ -44,7 +44,7 @@ const EnhancedConcertMapSelection = () => {
 <div className="bg-eventra-surface-container-low p-8 md:p-16 rounded-[2.5rem] aspect-[16/10] flex items-center justify-center relative overflow-hidden border border-eventra-surface-variant/30">
 
 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-[radial-gradient(circle,rgba(84,38,228,0.05)_0%,transparent_70%)] pointer-events-none"></div>
-<svg className="w-full h-full drop-shadow-2xl overflow-visible" viewbox="0 0 800 500">
+<svg className="w-full h-full drop-shadow-2xl overflow-visible" viewBox="0 0 800 500">
 
 <defs>
 <pattern height="40" id="grid" patternunits="userSpaceOnUse" width="40">
@@ -147,15 +147,15 @@ const EnhancedConcertMapSelection = () => {
                             Available now
                         </p>
 </div>
-<button onClick={() => navigate("/eventra/checkout")} className="text-xs font-bold text-eventra-primary hover:underline font-eventra-label uppercase">Change</button>
+<button type="button" className="text-xs font-bold text-eventra-primary hover:underline font-eventra-label uppercase">Change</button>
 </div>
 <div className="flex justify-between items-center bg-eventra-surface-container-low p-4 rounded-xl border border-eventra-surface-variant/20">
 <div className="flex items-center gap-3">
-<button onClick={() => navigate("/eventra/checkout")} className="w-8 h-8 flex items-center justify-center bg-eventra-surface-container-highest rounded-full text-eventra-on-surface hover:bg-eventra-surface-variant transition-colors">
+<button type="button" className="w-8 h-8 flex items-center justify-center bg-eventra-surface-container-highest rounded-full text-eventra-on-surface hover:bg-eventra-surface-variant transition-colors">
 <span className="material-symbols-outlined text-lg" data-icon="remove">remove</span>
 </button>
 <span className="font-eventra-headline font-bold text-lg w-6 text-center">2</span>
-<button onClick={() => navigate("/eventra/checkout")} className="w-8 h-8 flex items-center justify-center bg-eventra-primary rounded-full text-white hover:bg-eventra-primary-container transition-colors">
+<button type="button" className="w-8 h-8 flex items-center justify-center bg-eventra-primary rounded-full text-white hover:bg-eventra-primary-container transition-colors">
 <span className="material-symbols-outlined text-lg" data-icon="add">add</span>
 </button>
 </div>
@@ -181,7 +181,7 @@ const EnhancedConcertMapSelection = () => {
 </div>
 </div>
 
-<button onClick={() => navigate("/eventra/checkout")} className="w-full bg-gradient-to-br from-[#5426e4] to-[#6d49fd] text-white py-5 rounded-2xl font-eventra-headline font-bold text-lg shadow-[0px_12px_24px_-8px_rgba(84,38,228,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3">
+<button onClick={() => navigate('/eventra/checkout')} className="w-full bg-gradient-to-br from-[#5426e4] to-[#6d49fd] text-white py-5 rounded-2xl font-eventra-headline font-bold text-lg shadow-[0px_12px_24px_-8px_rgba(84,38,228,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3">
                 Proceed to Checkout
                 <span className="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
 </button>

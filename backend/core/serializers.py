@@ -10,7 +10,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'email', 'username', 'first_name', 'last_name',
-                  'phone', 'avatar', 'role', 'is_email_verified',
+                  'phone', 'avatar', 'role', 'restaurant_name', 'company_name', 'is_email_verified',
                   'created_at']
         read_only_fields = ['id', 'email', 'is_email_verified', 'created_at']
 
@@ -23,6 +23,8 @@ class RegisterSerializer(serializers.Serializer):
     first_name = serializers.CharField(max_length=100)
     last_name = serializers.CharField(max_length=100)
     phone = serializers.CharField(required=False, allow_blank=True)
+    restaurant_name = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    company_name = serializers.CharField(max_length=255, required=False, allow_blank=True)
     role = serializers.ChoiceField(
         choices=User.ROLE_CHOICES,
         default='customer'
@@ -45,6 +47,23 @@ class RegisterSerializer(serializers.Serializer):
     def validate(self, data):
         if data['password'] != data['password_confirm']:
             raise serializers.ValidationError({"password_confirm": "Passwords do not match."})
+
+        role = data.get('role', 'customer')
+        restaurant_name = (data.get('restaurant_name') or '').strip()
+        company_name = (data.get('company_name') or '').strip()
+
+        if role == 'restaurant_owner' and not restaurant_name:
+            raise serializers.ValidationError({
+                'restaurant_name': 'Restaurant name is required for restaurant owners.'
+            })
+
+        if role == 'event_organizer' and not company_name:
+            raise serializers.ValidationError({
+                'company_name': 'Company name is required for event organizers.'
+            })
+
+        data['restaurant_name'] = restaurant_name if role == 'restaurant_owner' else ''
+        data['company_name'] = company_name if role == 'event_organizer' else ''
         return data
 
     def create(self, validated_data):
@@ -81,7 +100,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'email', 'username', 'first_name', 'last_name',
-                  'phone', 'avatar', 'role', 'is_email_verified',
+                  'phone', 'avatar', 'role', 'restaurant_name', 'company_name', 'is_email_verified',
                   'is_phone_verified', 'created_at', 'updated_at']
         read_only_fields = ['id', 'email', 'username', 'role', 
                            'is_email_verified', 'is_phone_verified', 

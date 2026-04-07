@@ -8,6 +8,8 @@ export interface User {
   phone: string;
   avatar?: string;
   role: 'customer' | 'restaurant_owner' | 'event_organizer' | 'delivery_partner' | 'admin';
+  restaurant_name?: string;
+  company_name?: string;
   is_email_verified: boolean;
   is_phone_verified: boolean;
   created_at: string;
@@ -273,6 +275,8 @@ export interface RegisterRequest {
   last_name: string;
   phone?: string;
   role?: 'customer' | 'restaurant_owner' | 'event_organizer';
+  restaurant_name?: string;
+  company_name?: string;
 }
 
 export interface LoginRequest {

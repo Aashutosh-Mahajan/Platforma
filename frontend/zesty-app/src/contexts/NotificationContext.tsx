@@ -65,7 +65,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
 
       const interval = setInterval(() => {
         fetchNotifications();
-      }, 60000); // Poll every 60 seconds
+      }, 15000); // Poll every 15 seconds for faster updates
 
       return () => clearInterval(interval);
     }

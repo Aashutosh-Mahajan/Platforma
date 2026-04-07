@@ -26,17 +26,11 @@ const OrderDetailPage = lazy(() => import('./pages/zesty/OrderDetailPage'));
 // Eventra pages
 const EventListPage = lazy(() => import('./pages/eventra/EventListPage'));
 const EventraLandingPage = lazy(() => import('./pages/eventra/EventraLandingPage.jsx'));
-const EventDetailsandBooking = lazy(() => import('./pages/eventra/EventDetailsandBooking.jsx'));
-const EnhancedStadiumMapSelection = lazy(() => import('./pages/eventra/EnhancedStadiumMapSelection.jsx'));
-const CheckoutandTransaction = lazy(() => import('./pages/eventra/CheckoutandTransaction.jsx'));
+const EventDetailPage = lazy(() => import('./pages/eventra/EventDetailPage'));
+const SeatSelectionPage = lazy(() => import('./pages/eventra/SeatSelectionPage'));
+const BookingCheckoutPage = lazy(() => import('./pages/eventra/BookingCheckoutPage'));
 const BookingHistoryPage = lazy(() => import('./pages/eventra/BookingHistoryPage'));
 const BookingDetailPage = lazy(() => import('./pages/eventra/BookingDetailPage'));
-
-const EnhancedCinemaSeatMap = lazy(() => import('./pages/eventra/EnhancedCinemaSeatMap.jsx'));
-const EnhancedConcertMapSelection = lazy(() => import('./pages/eventra/EnhancedConcertMapSelection.jsx'));
-const StadiumSeatSelection = lazy(() => import('./pages/eventra/StadiumSeatSelection.jsx'));
-const CinemaSeatSelection = lazy(() => import('./pages/eventra/CinemaSeatSelection.jsx'));
-const ConcertSeatSelection = lazy(() => import('./pages/eventra/ConcertSeatSelection.jsx'));
 
 // Dashboard pages
 const RestaurantOwnerDashboard = lazy(() => import('./pages/dashboard/RestaurantOwnerDashboard'));
@@ -155,20 +149,32 @@ function App() {
                     {/* Eventra Routes */}
                     <Route path="/eventra" element={<EventraLandingPage />} />
                     <Route path="/eventra/events" element={<EventListPage />} />
-                    <Route path="/eventra/events/:id" element={<EventDetailsandBooking />} />
-                    <Route path="/eventra/events/:id/seats" element={<EnhancedStadiumMapSelection />} />
-                    
-                    <Route path="/eventra/seats/stadium-enhanced" element={ <EnhancedStadiumMapSelection /> } />
-                    <Route path="/eventra/seats/cinema-enhanced" element={ <EnhancedCinemaSeatMap /> } />
-                    <Route path="/eventra/seats/concert-enhanced" element={ <EnhancedConcertMapSelection /> } />
-                    <Route path="/eventra/seats/stadium" element={ <StadiumSeatSelection /> } />
-                    <Route path="/eventra/seats/cinema" element={ <CinemaSeatSelection /> } />
-                    <Route path="/eventra/seats/concert" element={ <ConcertSeatSelection /> } />
+                    <Route path="/eventra/events/:id" element={<EventDetailPage />} />
+                    <Route
+                      path="/eventra/events/:id/seats"
+                      element={
+                        <ProtectedRoute>
+                          <SeatSelectionPage />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    <Route path="/eventra/seats/stadium-enhanced" element={ <Navigate to="/eventra/events" replace /> } />
+                    <Route path="/eventra/seats/cinema-enhanced" element={ <Navigate to="/eventra/events" replace /> } />
+                    <Route path="/eventra/seats/theatre-enhanced" element={ <Navigate to="/eventra/events" replace /> } />
+                    <Route path="/eventra/seats/theater-enhanced" element={ <Navigate to="/eventra/events" replace /> } />
+                    <Route path="/eventra/seats/concert-enhanced" element={ <Navigate to="/eventra/events" replace /> } />
+                    <Route path="/eventra/seats/ground-enhanced" element={ <Navigate to="/eventra/events" replace /> } />
+                    <Route path="/eventra/seats/stadium" element={ <Navigate to="/eventra/events" replace /> } />
+                    <Route path="/eventra/seats/cinema" element={ <Navigate to="/eventra/events" replace /> } />
+                    <Route path="/eventra/seats/concert" element={ <Navigate to="/eventra/events" replace /> } />
                     
                     <Route
                       path="/eventra/checkout"
                       element={
-                        <CheckoutandTransaction />
+                        <ProtectedRoute>
+                          <BookingCheckoutPage />
+                        </ProtectedRoute>
                       }
                     />
                     <Route

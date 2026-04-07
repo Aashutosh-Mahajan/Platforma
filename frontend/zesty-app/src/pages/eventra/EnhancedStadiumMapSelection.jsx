@@ -45,7 +45,7 @@ const EnhancedStadiumMapSelection = () => {
 <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, #5426e4 1px, transparent 0)", backgroundSize: "40px 40px" }}></div>
 <div className="relative w-full max-w-2xl aspect-square flex items-center justify-center">
 
-<svg className="w-full h-full drop-shadow-2xl" viewbox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+<svg className="w-full h-full drop-shadow-2xl" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
 
 <ellipse cx="300" cy="300" fill="#388e3c" rx="200" ry="240"></ellipse>
 <ellipse cx="300" cy="300" fill="none" rx="198" ry="238" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1"></ellipse>
@@ -186,7 +186,7 @@ const EnhancedStadiumMapSelection = () => {
 </div>
 </div>
 
-<button className="w-full bg-gradient-to-r from-[#5426e4] to-[#6d49fd] text-eventra-on-primary py-5 rounded-2xl font-black tracking-tight text-lg shadow-[0px_8px_24px_rgba(84,38,228,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-3">
+<button onClick={() => navigate('/eventra/checkout')} className="w-full bg-gradient-to-r from-[#5426e4] to-[#6d49fd] text-eventra-on-primary py-5 rounded-2xl font-black tracking-tight text-lg shadow-[0px_8px_24px_rgba(84,38,228,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-3">
                                 Proceed to Checkout
                                 <span className="material-symbols-outlined">arrow_forward</span>
 </button>
