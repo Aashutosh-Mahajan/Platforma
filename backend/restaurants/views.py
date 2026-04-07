@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 
 from restaurants.models import Restaurant
-from restaurants.serializers import RestaurantDetailSerializer, RestaurantListSerializer
+from restaurants.serializers import RestaurantSerializer
 
 
 def normalize_primary_cuisine(cuisine_value):
@@ -16,32 +16,36 @@ def normalize_primary_cuisine(cuisine_value):
 
 
 class RestaurantPagination(PageNumberPagination):
-    page_size = 20
+    page_size = 12
 
 
 class RestaurantFilter(django_filters.FilterSet):
     area = django_filters.CharFilter(field_name="area", lookup_expr="exact")
-    cuisine = django_filters.CharFilter(field_name="cuisine", lookup_expr="icontains")
+    cuisine = django_filters.CharFilter(field_name="cuisine", lookup_expr="exact")
+    veg_only = django_filters.BooleanFilter(field_name="veg_only")
+    price_range = django_filters.NumberFilter(field_name="price_range")
+    is_open = django_filters.BooleanFilter(field_name="is_open")
+    data_source = django_filters.CharFilter(field_name="data_source", lookup_expr="exact")
 
     class Meta:
         model = Restaurant
-        fields = ["area", "cuisine"]
+        fields = ["area", "cuisine", "veg_only", "price_range", "is_open", "data_source"]
 
 
 class RestaurantListAPIView(generics.ListAPIView):
     queryset = Restaurant.objects.filter(is_active=True).order_by("name")
-    serializer_class = RestaurantListSerializer
+    serializer_class = RestaurantSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = RestaurantFilter
-    search_fields = ["name", "address"]
-    ordering_fields = ["name"]
+    search_fields = ["name", "description"]
+    ordering_fields = ["name", "rating", "price_range"]
     ordering = ["name"]
     pagination_class = RestaurantPagination
 
 
 class RestaurantDetailAPIView(generics.RetrieveAPIView):
     queryset = Restaurant.objects.all()
-    serializer_class = RestaurantDetailSerializer
+    serializer_class = RestaurantSerializer
     lookup_field = "id"
 
 

@@ -43,7 +43,7 @@ const HomePage: React.FC = () => {
             {/* Zesty Card */}
             <article>
               <a
-                href="/LandingPage.html"
+                href="/zesty/"
                 className="bg-white rounded-xl shadow-lg p-6 sm:p-8 hover:shadow-xl transition transform hover:-translate-y-1 block focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 aria-label="Open Zesty landing page"
               >

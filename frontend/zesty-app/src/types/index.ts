@@ -30,6 +30,16 @@ export interface Address {
 // Zesty Types
 export interface Restaurant {
   id: number;
+  slug: string;
+  area: string;
+  cuisine: string;
+  price_range: number;
+  image_url: string;
+  hours: string;
+  is_open: boolean;
+  veg_only: boolean;
+
+  // Existing zesty fields kept for compatibility across current pages.
   owner: number;
   name: string;
   description: string;

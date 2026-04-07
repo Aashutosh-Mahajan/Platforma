@@ -3,26 +3,41 @@ from rest_framework import serializers
 from restaurants.models import Restaurant
 
 
-class RestaurantListSerializer(serializers.ModelSerializer):
+class RestaurantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Restaurant
         fields = [
             "id",
             "osm_id",
             "name",
+            "slug",
+            "area",
             "cuisine",
+            "rating",
+            "data_source",
+            "price_range",
+            "image_url",
             "address",
+            "hours",
+            "is_open",
+            "veg_only",
+            "description",
             "latitude",
             "longitude",
-            "photo_url",
-            "area",
             "opening_hours",
+            "photo_url",
             "phone",
             "website",
+            "city",
+            "is_active",
+            "created_at",
         ]
 
 
-class RestaurantDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Restaurant
-        fields = "__all__"
+# Backward-compatible aliases used by existing imports.
+class RestaurantListSerializer(RestaurantSerializer):
+    pass
+
+
+class RestaurantDetailSerializer(RestaurantSerializer):
+    pass
