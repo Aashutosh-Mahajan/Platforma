@@ -83,9 +83,26 @@ export const EventOrganizerDashboard: React.FC = () => {
       loadTicketTypes();
       loadSeats();
       loadBookings();
-      calculateAnalytics();
     }
-  }, [selectedEvent]);
+  }, [selectedEvent?.id]);
+
+  useEffect(() => {
+    calculateAnalytics();
+  }, [bookings, selectedEvent?.id]);
+
+  useEffect(() => {
+    if (!selectedEvent) return;
+
+    const intervalId = window.setInterval(() => {
+      loadBookings();
+      refreshSelectedEvent();
+      if (activeTab === 'seats') {
+        loadSeats();
+      }
+    }, 15000);
+
+    return () => window.clearInterval(intervalId);
+  }, [selectedEvent?.id, activeTab]);
 
   const loadEvents = async () => {
     try {
@@ -127,15 +144,29 @@ export const EventOrganizerDashboard: React.FC = () => {
   };
 
   const loadBookings = async () => {
+    if (!selectedEvent) return;
+
     try {
       const data = await bookingAPI.list();
       // Filter bookings for selected event
       const eventBookings = data.results.filter(
-        (booking) => booking.event === selectedEvent?.id
+        (booking) => booking.event === selectedEvent.id
       );
       setBookings(eventBookings);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load bookings');
+    }
+  };
+
+  const refreshSelectedEvent = async () => {
+    if (!selectedEvent) return;
+
+    try {
+      const updatedEvent = await eventAPI.retrieve(selectedEvent.id);
+      setSelectedEvent(updatedEvent);
+      setEvents((prev) => prev.map((event) => (event.id === updatedEvent.id ? updatedEvent : event)));
+    } catch {
+      // Ignore transient refresh failures during polling.
     }
   };
 

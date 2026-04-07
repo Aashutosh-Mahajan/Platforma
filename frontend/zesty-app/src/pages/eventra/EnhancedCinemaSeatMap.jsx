@@ -201,10 +201,10 @@ const EnhancedCinemaSeatMap = () => {
 </div>
 </div>
 <div className="flex items-center gap-4 w-full md:w-auto">
-<button onClick={() => navigate("/eventra/checkout")} className="flex-grow md:flex-grow-0 px-8 py-4 rounded-xl font-eventra-headline font-bold bg-white/5 hover:bg-white/10 text-white transition-all duration-300">
+<button onClick={() => navigate('/eventra')} className="flex-grow md:flex-grow-0 px-8 py-4 rounded-xl font-eventra-headline font-bold bg-white/5 hover:bg-white/10 text-white transition-all duration-300">
                 Cancel
             </button>
-<button onClick={() => navigate("/eventra/checkout")} className="flex-grow md:flex-grow-0 px-12 py-4 rounded-xl font-eventra-headline font-bold text-white bg-eventra-primary hover:bg-eventra-primary-container scale-100 hover:scale-105 active:scale-95 transition-all duration-300 shadow-[0_0_30px_rgba(84,38,228,0.4)]">
+<button onClick={() => navigate('/eventra/checkout')} className="flex-grow md:flex-grow-0 px-12 py-4 rounded-xl font-eventra-headline font-bold text-white bg-eventra-primary hover:bg-eventra-primary-container scale-100 hover:scale-105 active:scale-95 transition-all duration-300 shadow-[0_0_30px_rgba(84,38,228,0.4)]">
                 Confirm Booking
             </button>
 </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { validateEmail, validateRequired } from '../../utils/validation';
+import { getPostAuthRedirectPath } from '../../utils';
 
 interface FormErrors {
   email?: string;
@@ -11,7 +12,7 @@ interface FormErrors {
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login, isAuthenticated, error: authError, clearError } = useAuth();
+  const { login, isAuthenticated, user, error: authError, clearError } = useAuth();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -24,9 +25,9 @@ const LoginPage: React.FC = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      navigate(getPostAuthRedirectPath(user?.role), { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, user?.role, navigate]);
 
   // Clear auth errors when component unmounts
   useEffect(() => {

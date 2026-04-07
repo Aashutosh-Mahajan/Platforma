@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { validateEmail, validatePassword, validateRequired } from '../../utils/validation';
+import { getPostAuthRedirectPath } from '../../utils';
 
 interface FormErrors {
   email?: string;
@@ -12,13 +13,15 @@ interface FormErrors {
   last_name?: string;
   phone?: string;
   role?: string;
+  restaurant_name?: string;
+  company_name?: string;
   general?: string;
 }
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { register, isAuthenticated, error: authError, clearError } = useAuth();
+  const { register, isAuthenticated, user, error: authError, clearError } = useAuth();
 
   const initialRoleParam = searchParams.get('role');
   const initialRole =
@@ -37,6 +40,8 @@ const RegisterPage: React.FC = () => {
     last_name: '',
     phone: '',
     role: initialRole,
+    restaurant_name: '',
+    company_name: '',
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -45,9 +50,9 @@ const RegisterPage: React.FC = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      navigate(getPostAuthRedirectPath(user?.role), { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, user?.role, navigate]);
 
   // Clear auth errors when component unmounts
   useEffect(() => {
@@ -56,7 +61,18 @@ const RegisterPage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (name === 'role') {
+      setFormData((prev) => ({
+        ...prev,
+        role: value,
+        restaurant_name: value === 'restaurant_owner' ? prev.restaurant_name : '',
+        company_name: value === 'event_organizer' ? prev.company_name : '',
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+
     // Clear field error on change
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
@@ -97,6 +113,14 @@ const RegisterPage: React.FC = () => {
       newErrors.password_confirm = 'Please confirm your password';
     } else if (formData.password !== formData.password_confirm) {
       newErrors.password_confirm = 'Passwords do not match';
+    }
+
+    if (formData.role === 'restaurant_owner' && !validateRequired(formData.restaurant_name)) {
+      newErrors.restaurant_name = 'Restaurant name is required';
+    }
+
+    if (formData.role === 'event_organizer' && !validateRequired(formData.company_name)) {
+      newErrors.company_name = 'Company name is required';
     }
 
     setErrors(newErrors);
@@ -288,6 +312,54 @@ const RegisterPage: React.FC = () => {
                 </select>
               </div>
             </div>
+
+            {formData.role === 'restaurant_owner' && (
+              <div>
+                <label htmlFor="restaurant_name" className="block text-sm font-medium text-gray-700">
+                  Restaurant name
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="restaurant_name"
+                    name="restaurant_name"
+                    type="text"
+                    value={formData.restaurant_name}
+                    onChange={handleChange}
+                    className={`appearance-none block w-full px-3 py-2 border ${
+                      errors.restaurant_name ? 'border-red-300' : 'border-gray-300'
+                    } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm`}
+                    placeholder="Enter your restaurant name"
+                  />
+                  {errors.restaurant_name && (
+                    <p className="mt-2 text-sm text-red-600">{errors.restaurant_name}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {formData.role === 'event_organizer' && (
+              <div>
+                <label htmlFor="company_name" className="block text-sm font-medium text-gray-700">
+                  Company name
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="company_name"
+                    name="company_name"
+                    type="text"
+                    value={formData.company_name}
+                    onChange={handleChange}
+                    className={`appearance-none block w-full px-3 py-2 border ${
+                      errors.company_name ? 'border-red-300' : 'border-gray-300'
+                    } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm`}
+                    placeholder="Enter your company name"
+                  />
+                  {errors.company_name && (
+                    <p className="mt-2 text-sm text-red-600">{errors.company_name}</p>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">

@@ -3,7 +3,63 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { bookingAPI, eventAPI } from '../../api/eventra';
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
 import { ErrorMessage } from '../../components/shared/ErrorMessage';
-import type { Booking, Event } from '../../types';
+import { jsPDF } from 'jspdf';
+import QRCode from 'qrcode';
+import type { Booking, BookingSeat, Event } from '../../types';
+
+const formatEventDateTime = (value?: string): string => {
+  if (!value) {
+    return 'Date and time to be announced';
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return 'Date and time to be announced';
+  }
+
+  return parsed.toLocaleDateString('en-IN', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const getSeatLabel = (bookedSeat: BookingSeat): string => {
+  const seat = bookedSeat.seat;
+  const rowLabel = seat.row ? `Row ${seat.row}` : '';
+  const seatLabel = seat.seat_number ? `Seat ${seat.seat_number}` : '';
+  const detail = [rowLabel, seatLabel].filter(Boolean).join(' • ');
+
+  if (!detail) {
+    return seat.section;
+  }
+
+  return `${seat.section} • ${detail}`;
+};
+
+const buildTicketQrPayload = (
+  booking: Booking,
+  event: Event | null,
+  bookedSeat: BookingSeat,
+  ticketNumber: number
+): string => {
+  return JSON.stringify({
+    platform: 'Platforma Eventra',
+    bookingReference: booking.booking_reference,
+    ticketNumber,
+    eventId: booking.event,
+    eventName: booking.event_name,
+    eventDate: event?.event_date || null,
+    seatId: bookedSeat.seat.id,
+    section: bookedSeat.seat.section,
+    row: bookedSeat.seat.row,
+    seatNumber: bookedSeat.seat.seat_number,
+    price: bookedSeat.seat.price,
+  });
+};
 
 const BookingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,12 +69,59 @@ const BookingDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [ticketQRCodes, setTicketQRCodes] = useState<Record<number, string>>({});
 
   useEffect(() => {
     if (id) {
       fetchBookingDetails(parseInt(id));
     }
   }, [id]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const generateTicketQRCodes = async () => {
+      if (!booking || booking.booked_seats.length === 0) {
+        setTicketQRCodes({});
+        return;
+      }
+
+      try {
+        const generated = await Promise.all(
+          booking.booked_seats.map(async (bookedSeat, index) => {
+            const qrPayload = buildTicketQrPayload(booking, event, bookedSeat, index + 1);
+            const dataUrl = await QRCode.toDataURL(qrPayload, {
+              width: 220,
+              margin: 1,
+              errorCorrectionLevel: 'M',
+              color: {
+                dark: '#111827',
+                light: '#FFFFFF',
+              },
+            });
+
+            return [bookedSeat.id, dataUrl] as const;
+          })
+        );
+
+        if (!isCancelled) {
+          setTicketQRCodes(Object.fromEntries(generated));
+        }
+      } catch (qrError) {
+        console.error('Failed to generate ticket QR codes', qrError);
+        if (!isCancelled) {
+          setTicketQRCodes({});
+        }
+      }
+    };
+
+    generateTicketQRCodes();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [booking, event]);
 
   const fetchBookingDetails = async (bookingId: number) => {
     try {
@@ -94,41 +197,115 @@ const BookingDetailPage: React.FC = () => {
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
-  const handleDownloadBooking = () => {
-    if (!booking || !event) return;
+  const handleDownloadBooking = async () => {
+    if (!booking || booking.booked_seats.length === 0) {
+      return;
+    }
 
-    // Create a simple text representation of the booking
-    const bookingText = `
-BOOKING CONFIRMATION
-====================
+    setDownloadingPdf(true);
+    setError(null);
 
-Booking Reference: ${booking.booking_reference}
-Event: ${event.name}
-Venue: ${event.venue_name}
-Date: ${new Date(event.event_date).toLocaleString()}
+    try {
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
 
-Seats:
-${booking.booked_seats.map(bs => `${bs.seat.section} - Row ${bs.seat.row}, Seat ${bs.seat.seat_number}`).join('\n')}
+      const generatedOn = new Date().toLocaleString('en-IN');
+      const eventName = event?.name || booking.event_name;
+      const eventVenue = event?.venue_name || 'Venue information unavailable';
+      const eventDate = formatEventDateTime(event?.event_date);
 
-Total Tickets: ${booking.total_tickets}
-Subtotal: ₹${booking.subtotal.toFixed(2)}
-Tax: ₹${booking.tax.toFixed(2)}
-Total: ₹${booking.total.toFixed(2)}
+      for (let index = 0; index < booking.booked_seats.length; index += 1) {
+        if (index > 0) {
+          doc.addPage();
+        }
 
-Status: ${formatStatus(booking.status)}
-Booked on: ${new Date(booking.booking_date).toLocaleString()}
-    `.trim();
+        const bookedSeat = booking.booked_seats[index];
+        const qrPayload = buildTicketQrPayload(booking, event, bookedSeat, index + 1);
+        const qrDataUrl =
+          ticketQRCodes[bookedSeat.id] ||
+          (await QRCode.toDataURL(qrPayload, {
+            width: 220,
+            margin: 1,
+            errorCorrectionLevel: 'M',
+            color: {
+              dark: '#111827',
+              light: '#FFFFFF',
+            },
+          }));
 
-    // Create and download file
-    const blob = new Blob([bookingText], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `booking-${booking.booking_reference}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+        doc.setFillColor(245, 243, 255);
+        doc.roundedRect(10, 10, 190, 277, 4, 4, 'F');
+
+        doc.setFillColor(124, 58, 237);
+        doc.roundedRect(10, 10, 190, 30, 4, 4, 'F');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(20);
+        doc.text('Eventra Ticket', 18, 24);
+        doc.setFontSize(11);
+        doc.text(`Booking #${booking.booking_reference}`, 18, 32);
+
+        doc.setTextColor(17, 24, 39);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text(eventName, 18, 54, { maxWidth: 112 });
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(11);
+        doc.text(`Ticket ${index + 1} of ${booking.booked_seats.length}`, 18, 66);
+        doc.text(`Venue: ${eventVenue}`, 18, 74, { maxWidth: 112 });
+        doc.text(`Date: ${eventDate}`, 18, 82, { maxWidth: 112 });
+        doc.text(`Seat/Pass: ${getSeatLabel(bookedSeat)}`, 18, 90, { maxWidth: 112 });
+        doc.text(`Price: INR ${bookedSeat.seat.price.toFixed(2)}`, 18, 98);
+        doc.text(`Status: ${formatStatus(booking.status)}`, 18, 106);
+
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(136, 52, 54, 54, 3, 3, 'F');
+        doc.addImage(qrDataUrl, 'PNG', 141, 57, 44, 44, undefined, 'FAST');
+        doc.setFontSize(8);
+        doc.setTextColor(75, 85, 99);
+        doc.text('Scan this QR at entry', 163, 110, { align: 'center' });
+
+        doc.setDrawColor(196, 181, 253);
+        doc.line(18, 118, 192, 118);
+
+        doc.setTextColor(31, 41, 55);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.text('Entry Instructions', 18, 128);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text('1. Bring a valid photo ID along with this ticket.', 18, 136);
+        doc.text('2. Each QR code is unique and can be scanned only once.', 18, 144);
+        doc.text('3. Reach the venue at least 30 minutes before start time.', 18, 152);
+        doc.text('4. Digital or printed copy of this PDF is accepted.', 18, 160);
+
+        doc.setFillColor(237, 233, 254);
+        doc.roundedRect(18, 238, 174, 36, 3, 3, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.text('Order Summary', 24, 248);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text(`Total Tickets: ${booking.total_tickets}`, 24, 256);
+        doc.text(`Subtotal: INR ${booking.subtotal.toFixed(2)}`, 24, 262);
+        doc.text(`Grand Total: INR ${booking.total.toFixed(2)}`, 24, 268);
+        doc.text(`Generated: ${generatedOn}`, 188, 268, { align: 'right' });
+      }
+
+      doc.save(`tickets-${booking.booking_reference}.pdf`);
+    } catch (downloadError) {
+      console.error('Failed to download booking PDF', downloadError);
+      setError('Failed to download ticket PDF. Please try again.');
+    } finally {
+      setDownloadingPdf(false);
+    }
   };
 
   const handleShareBooking = async () => {
@@ -223,23 +400,67 @@ Booked on: ${new Date(booking.booking_date).toLocaleString()}
           />
         )}
 
-        {/* QR Code / Booking Reference */}
+        {/* Ticket Cards */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">
-            Entry Pass
+            Your Tickets
+          </h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-5">
+            One ticket is generated for each seat/pass. Show the QR at venue entry.
+          </p>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {booking.booked_seats.map((bookedSeat, index) => (
+              <div
+                key={bookedSeat.id}
+                className="rounded-lg border border-purple-200 bg-purple-50/70 p-4 dark:border-purple-800 dark:bg-purple-900/20"
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Ticket {index + 1}</p>
+                  <span className="rounded-full bg-white px-2 py-1 text-xs font-semibold text-purple-700 dark:bg-gray-900 dark:text-purple-300">
+                    {booking.booking_reference}
+                  </span>
+                </div>
+
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">{booking.event_name}</p>
+                <p className="mt-1 text-xs text-gray-700 dark:text-gray-300">{getSeatLabel(bookedSeat)}</p>
+                <p className="text-xs text-gray-700 dark:text-gray-300">INR {bookedSeat.seat.price.toFixed(2)}</p>
+
+                <div className="mt-3 rounded-md border border-dashed border-purple-300 bg-white p-3 dark:border-purple-700 dark:bg-gray-900">
+                  {ticketQRCodes[bookedSeat.id] ? (
+                    <img
+                      src={ticketQRCodes[bookedSeat.id]}
+                      alt={`QR code for ticket ${index + 1}`}
+                      className="mx-auto h-40 w-40 rounded"
+                    />
+                  ) : (
+                    <div className="flex h-40 items-center justify-center text-sm text-gray-500 dark:text-gray-400">
+                      Generating QR code...
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-sm text-gray-600 dark:text-gray-400 text-center mt-4">
+            Keep this page or your PDF ticket ready for smooth check-in.
+          </p>
+        </div>
+
+        {/* Booking Reference */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">
+            Booking Reference
           </h2>
           <div className="flex flex-col items-center">
-            {/* Display booking reference prominently */}
             <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-500 rounded-lg p-8 mb-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-2">
-                Show this at the venue
-              </p>
               <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 text-center tracking-wider">
                 {booking.booking_reference}
               </p>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-              Present this booking reference at the venue for entry
+              Share this reference with support for any booking assistance.
             </p>
           </div>
         </div>
@@ -276,31 +497,6 @@ Booked on: ${new Date(booking.booking_date).toLocaleString()}
           </div>
         )}
 
-        {/* Booked Seats */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            Your Seats
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {booking.booked_seats.map((bookedSeat) => (
-              <div
-                key={bookedSeat.id}
-                className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3 text-center"
-              >
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                  {bookedSeat.seat.section}
-                </p>
-                <p className="font-bold text-purple-600 dark:text-purple-400">
-                  {bookedSeat.seat.row}{bookedSeat.seat.seat_number}
-                </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  ₹{bookedSeat.seat.price}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Payment Summary */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
@@ -327,9 +523,10 @@ Booked on: ${new Date(booking.booking_date).toLocaleString()}
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={handleDownloadBooking}
+              disabled={downloadingPdf}
               className="flex-1 px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-medium"
             >
-              📥 Download Booking
+              {downloadingPdf ? 'Preparing PDF...' : '📥 Download Tickets (PDF)'}
             </button>
             <button
               onClick={handleShareBooking}

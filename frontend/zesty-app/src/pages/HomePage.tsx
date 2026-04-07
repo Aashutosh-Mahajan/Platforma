@@ -81,7 +81,7 @@ const HomePage: React.FC = () => {
             {/* Eventra Card */}
             <article>
               <Link
-                to="/eventra/events"
+                to="/eventra"
                 className="bg-white rounded-xl shadow-lg p-6 sm:p-8 hover:shadow-xl transition transform hover:-translate-y-1 block focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 aria-label="Explore Eventra events for ticket booking"
               >

@@ -76,9 +76,23 @@ export const RestaurantOwnerDashboard: React.FC = () => {
     if (selectedRestaurant) {
       loadMenuItems();
       loadOrders();
-      calculateAnalytics();
     }
-  }, [selectedRestaurant]);
+  }, [selectedRestaurant?.id]);
+
+  useEffect(() => {
+    calculateAnalytics();
+  }, [orders, selectedRestaurant?.id]);
+
+  useEffect(() => {
+    if (!selectedRestaurant) return;
+    if (activeTab !== 'orders' && activeTab !== 'analytics') return;
+
+    const intervalId = window.setInterval(() => {
+      loadOrders();
+    }, 15000);
+
+    return () => window.clearInterval(intervalId);
+  }, [selectedRestaurant?.id, activeTab]);
 
   const loadRestaurants = async () => {
     try {
@@ -107,11 +121,13 @@ export const RestaurantOwnerDashboard: React.FC = () => {
   };
 
   const loadOrders = async () => {
+    if (!selectedRestaurant) return;
+
     try {
       const data = await orderAPI.list();
       // Filter orders for selected restaurant
       const restaurantOrders = data.results.filter(
-        (order) => order.restaurant === selectedRestaurant?.id
+        (order) => order.restaurant === selectedRestaurant.id
       );
       setOrders(restaurantOrders);
     } catch (err: any) {

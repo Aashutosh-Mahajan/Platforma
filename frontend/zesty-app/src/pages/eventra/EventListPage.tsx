@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { eventAPI } from '../../api/eventra';
 import type { Event } from '../../types';
 import { useDebounce } from '../../hooks';
@@ -17,12 +17,17 @@ const CATEGORIES = [
 
 const EventListPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedCategory = searchParams.get('category') || 'all';
+  const initialCategory = CATEGORIES.some((category) => category.id === requestedCategory)
+    ? requestedCategory
+    : 'all';
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 300); // Use custom hook with 300ms delay
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [minPrice, setMinPrice] = useState('');
@@ -35,6 +40,17 @@ const EventListPage: React.FC = () => {
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch]);
+
+  useEffect(() => {
+    const nextCategory = CATEGORIES.some((category) => category.id === requestedCategory)
+      ? requestedCategory
+      : 'all';
+
+    if (nextCategory !== selectedCategory) {
+      setSelectedCategory(nextCategory);
+      setPage(1);
+    }
+  }, [requestedCategory, selectedCategory]);
 
   const fetchEvents = useCallback(async (pageNum: number, append = false) => {
     try {
@@ -70,6 +86,16 @@ const EventListPage: React.FC = () => {
     fetchEvents(1, false);
   }, [fetchEvents]);
 
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      if (page === 1) {
+        fetchEvents(1, false);
+      }
+    }, 15000);
+
+    return () => window.clearInterval(intervalId);
+  }, [fetchEvents, page]);
+
   const handleLoadMore = () => {
     if (!loading && hasMore) {
       const nextPage = page + 1;
@@ -78,12 +104,17 @@ const EventListPage: React.FC = () => {
     }
   };
 
-  const handleEventClick = (id: number) => {
-    navigate(`/eventra/events/${id}`);
+  const handleEventClick = (id: number, category: string) => {
+    navigate(`/eventra/events/${id}?category=${encodeURIComponent(category)}`);
   };
 
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategory(categoryId);
+    if (categoryId === 'all') {
+      setSearchParams({});
+    } else {
+      setSearchParams({ category: categoryId });
+    }
     setPage(1);
   };
 
@@ -252,7 +283,7 @@ const EventListPage: React.FC = () => {
               {events.map((event) => (
                 <div
                   key={event.id}
-                  onClick={() => handleEventClick(event.id)}
+                  onClick={() => handleEventClick(event.id, event.category)}
                   className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden"
                 >
                   {/* Event Image */}

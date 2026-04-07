@@ -18,9 +18,9 @@ interface BookingContextType {
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
 
 export const BookingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [event, setEvent] = useState<Event | null>(null);
+  const [event, setEventState] = useState<Event | null>(null);
   const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
-  const [ticketType, setTicketType] = useState<TicketType | null>(null);
+  const [ticketType, setTicketTypeState] = useState<TicketType | null>(null);
 
   // Calculate totals
   const subtotal = selectedSeats.reduce((sum, seat) => sum + seat.price, 0);
@@ -42,9 +42,30 @@ export const BookingProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const clearBooking = () => {
-    setEvent(null);
+    setEventState(null);
     setSelectedSeats([]);
-    setTicketType(null);
+    setTicketTypeState(null);
+  };
+
+  const setEvent = (nextEvent: Event) => {
+    const eventChanged = event?.id !== nextEvent.id;
+
+    if (eventChanged) {
+      setSelectedSeats([]);
+      setTicketTypeState(null);
+    }
+
+    setEventState(nextEvent);
+  };
+
+  const setTicketType = (nextTicketType: TicketType) => {
+    const ticketTypeChanged = ticketType?.id !== nextTicketType.id;
+
+    if (ticketTypeChanged) {
+      setSelectedSeats([]);
+    }
+
+    setTicketTypeState(nextTicketType);
   };
 
   const value: BookingContextType = {

@@ -56,9 +56,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ vari
     
     // Navigate to related item if needed
     if (notification.related_type === 'order' && notification.related_id) {
-      navigate(`/orders/${notification.related_id}`);
+      navigate(`/zesty/orders/${notification.related_id}`);
     } else if (notification.related_type === 'booking' && notification.related_id) {
-      navigate(`/bookings/${notification.related_id}`);
+      navigate(`/eventra/bookings/${notification.related_id}`);
+    } else if (notification.related_type === 'event' && notification.related_id) {
+      navigate(`/eventra/events/${notification.related_id}`);
     }
   };
 

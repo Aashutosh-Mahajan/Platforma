@@ -4,9 +4,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.exceptions import PermissionDenied
 from django.utils import timezone
 from django.db import transaction
 from datetime import timedelta
+from decimal import Decimal
 
 from eventra.models import (
     Event, TicketType, Seat, Booking, BookingSeat, EventReview, EventAnalytics
@@ -30,12 +32,33 @@ class EventViewSet(viewsets.ModelViewSet):
     filterset_fields = ['category']
     pagination_class = StandardPagination
 
+    def _can_manage_events(self, user):
+        return user.is_staff or user.role in ('event_organizer', 'admin')
+
+    def get_permissions(self):
+        # Public browsing endpoints for frontend discovery flows.
+        if self.action in {'list', 'retrieve', 'seats'}:
+            return [AllowAny()]
+
+        if self.action == 'reviews' and self.request.method == 'GET':
+            return [AllowAny()]
+
+        return [IsAuthenticated()]
+
     def get_queryset(self):
-        # For organizers, show their own events (published or not)
-        if self.action in ['update', 'partial_update', 'destroy', 'toggle_published', 'cancel_event']:
-            return Event.objects.filter(organizer=self.request.user)
-        
-        # For list/retrieve, show only published events
+        user = self.request.user
+
+        # Organizers should see their own events for dashboards and management.
+        if user.is_authenticated and self._can_manage_events(user):
+            if user.is_staff or user.role == 'admin':
+                organizer_qs = Event.objects.all()
+            else:
+                organizer_qs = Event.objects.filter(organizer=user)
+
+            if self.action in ['list', 'retrieve', 'seats', 'update', 'partial_update', 'destroy', 'toggle_published', 'cancel_event']:
+                return organizer_qs
+
+        # Public browsing sees only published and active events.
         qs = Event.objects.filter(is_published=True, is_cancelled=False)
 
         # Date filtering
@@ -63,6 +86,18 @@ class EventViewSet(viewsets.ModelViewSet):
             qs = qs.filter(address__icontains=city)
 
         return qs
+
+    def perform_create(self, serializer):
+        if not self._can_manage_events(self.request.user):
+            raise PermissionDenied('Only event organizers can create events.')
+
+        raw_publish_value = self.request.data.get('is_published', True)
+        if isinstance(raw_publish_value, str):
+            is_published = raw_publish_value.strip().lower() not in ('false', '0', 'no', 'off')
+        else:
+            is_published = bool(raw_publish_value)
+
+        serializer.save(organizer=self.request.user, is_published=is_published)
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -164,7 +199,7 @@ class EventViewSet(viewsets.ModelViewSet):
     def toggle_published(self, request, pk=None):
         """Toggle event published status."""
         event = self.get_object()
-        if event.organizer != request.user:
+        if event.organizer != request.user and not request.user.is_staff and request.user.role != 'admin':
             return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
         
         event.is_published = not event.is_published
@@ -175,7 +210,7 @@ class EventViewSet(viewsets.ModelViewSet):
     def cancel_event(self, request, pk=None):
         """Cancel an event."""
         event = self.get_object()
-        if event.organizer != request.user:
+        if event.organizer != request.user and not request.user.is_staff and request.user.role != 'admin':
             return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
         
         event.is_cancelled = True
@@ -202,19 +237,31 @@ class TicketTypeViewSet(viewsets.ModelViewSet):
     serializer_class = TicketTypeSerializer
     pagination_class = StandardPagination
 
+    def _can_manage_ticket_types(self, user):
+        return user.is_staff or user.role in ('event_organizer', 'admin')
+
     def get_queryset(self):
-        # For owners, show their own event's ticket types
-        if self.action in ['update', 'partial_update', 'destroy']:
-            return TicketType.objects.filter(event__organizer=self.request.user)
-        
-        # For list/retrieve, show all ticket types
-        return TicketType.objects.all()
+        user = self.request.user
+
+        if user.is_staff or user.role == 'admin':
+            return TicketType.objects.all()
+
+        if user.role == 'event_organizer':
+            return TicketType.objects.filter(event__organizer=user)
+
+        return TicketType.objects.none()
 
     def perform_create(self, serializer):
+        if not self._can_manage_ticket_types(self.request.user):
+            raise PermissionDenied('Only event organizers can create ticket types.')
+
         # Ensure the event belongs to the user
         event_id = self.request.data.get('event')
         try:
-            event = Event.objects.get(id=event_id, organizer=self.request.user)
+            if self.request.user.is_staff or self.request.user.role == 'admin':
+                event = Event.objects.get(id=event_id)
+            else:
+                event = Event.objects.get(id=event_id, organizer=self.request.user)
             serializer.save(event=event)
         except Event.DoesNotExist:
             raise serializers.ValidationError({'error': 'Event not found.'})
@@ -226,19 +273,31 @@ class SeatViewSet(viewsets.ModelViewSet):
     serializer_class = SeatSerializer
     pagination_class = StandardPagination
 
+    def _can_manage_seats(self, user):
+        return user.is_staff or user.role in ('event_organizer', 'admin')
+
     def get_queryset(self):
-        # For owners, show their own event's seats
-        if self.action in ['update', 'partial_update', 'destroy', 'bulk_create']:
-            return Seat.objects.filter(event__organizer=self.request.user)
-        
-        # For list/retrieve, show all seats
-        return Seat.objects.all()
+        user = self.request.user
+
+        if user.is_staff or user.role == 'admin':
+            return Seat.objects.all()
+
+        if user.role == 'event_organizer':
+            return Seat.objects.filter(event__organizer=user)
+
+        return Seat.objects.none()
 
     def perform_create(self, serializer):
+        if not self._can_manage_seats(self.request.user):
+            raise PermissionDenied('Only event organizers can create seats.')
+
         # Ensure the event belongs to the user
         event_id = self.request.data.get('event')
         try:
-            event = Event.objects.get(id=event_id, organizer=self.request.user)
+            if self.request.user.is_staff or self.request.user.role == 'admin':
+                event = Event.objects.get(id=event_id)
+            else:
+                event = Event.objects.get(id=event_id, organizer=self.request.user)
             serializer.save(event=event)
         except Event.DoesNotExist:
             raise serializers.ValidationError({'error': 'Event not found.'})
@@ -246,11 +305,20 @@ class SeatViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def bulk_create(self, request):
         """Bulk create seats for an event."""
+        if not self._can_manage_seats(request.user):
+            return Response(
+                {'error': 'Only event organizers can create seats.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         event_id = request.data.get('event_id')
         seats_data = request.data.get('seats', [])
         
         try:
-            event = Event.objects.get(id=event_id, organizer=request.user)
+            if request.user.is_staff or request.user.role == 'admin':
+                event = Event.objects.get(id=event_id)
+            else:
+                event = Event.objects.get(id=event_id, organizer=request.user)
         except Event.DoesNotExist:
             return Response({'error': 'Event not found.'}, status=status.HTTP_404_NOT_FOUND)
         
@@ -290,7 +358,16 @@ class BookingViewSet(viewsets.ModelViewSet):
     pagination_class = StandardPagination
 
     def get_queryset(self):
-        qs = Booking.objects.filter(user=self.request.user).select_related(
+        user = self.request.user
+
+        if user.is_staff or user.role == 'admin':
+            qs = Booking.objects.all()
+        elif user.role == 'event_organizer':
+            qs = Booking.objects.filter(event__organizer=user)
+        else:
+            qs = Booking.objects.filter(user=user)
+
+        qs = qs.select_related(
             'event', 'payment'
         ).prefetch_related('booked_seats__seat')
 
@@ -302,6 +379,12 @@ class BookingViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         """Create a booking with tickets."""
+        if request.user.role != 'customer':
+            return Response(
+                {'error': 'Only customers can create bookings.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = CreateBookingSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -323,7 +406,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         )
 
         total_tickets = 0
-        subtotal = 0
+        subtotal = Decimal('0.00')
 
         for ticket_data in data['tickets']:
             try:
@@ -376,7 +459,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             subtotal += ticket_type.price * quantity
 
         # Calculate totals
-        tax = subtotal * 0.18  # 18% GST
+        tax = subtotal * Decimal('0.18')  # 18% GST
         total = subtotal + tax
 
         booking.total_tickets = total_tickets
@@ -436,12 +519,29 @@ class BookingViewSet(viewsets.ModelViewSet):
             related_type='booking',
         )
 
+        if event.organizer_id != request.user.id:
+            customer_name = request.user.get_full_name() or request.user.email
+            Notification.objects.create(
+                user=event.organizer,
+                type='booking_confirmation',
+                title='New Booking Received',
+                message=f'New booking {booking.booking_reference} by {customer_name}.',
+                related_id=booking.id,
+                related_type='booking',
+            )
+
         return Response(BookingSerializer(booking).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['patch'])
     def cancel(self, request, pk=None):
         """Cancel a booking."""
         booking = self.get_object()
+
+        if booking.user != request.user:
+            return Response(
+                {'error': 'Only the customer can cancel this booking.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         
         # Validate booking can be cancelled
         if booking.status not in ('pending', 'confirmed'):
@@ -485,6 +585,17 @@ class BookingViewSet(viewsets.ModelViewSet):
             related_type='booking',
         )
 
+        if booking.event.organizer_id != request.user.id:
+            customer_name = request.user.get_full_name() or request.user.email
+            Notification.objects.create(
+                user=booking.event.organizer,
+                type='booking_confirmation',
+                title='Booking Cancelled by Customer',
+                message=f'Booking {booking.booking_reference} was cancelled by {customer_name}.',
+                related_id=booking.id,
+                related_type='booking',
+            )
+
         return Response({
             'booking': BookingSerializer(booking).data,
             'message': 'Booking cancelled. Refund will be processed.',
@@ -495,6 +606,13 @@ class BookingViewSet(viewsets.ModelViewSet):
     def review(self, request, pk=None):
         """Add a review for the booked event."""
         booking = self.get_object()
+
+        if booking.user != request.user:
+            return Response(
+                {'error': 'Only the customer can review this booking.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = EventReviewSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(

@@ -11,6 +11,8 @@ export interface RegisterData {
   last_name: string;
   phone?: string;
   role: string;
+  restaurant_name?: string;
+  company_name?: string;
 }
 
 export interface LoginData {

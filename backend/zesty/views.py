@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.views import APIView
+from rest_framework.exceptions import PermissionDenied
 from django.utils import timezone
 from django.db import transaction
 from datetime import timedelta
@@ -40,12 +41,30 @@ class RestaurantViewSet(viewsets.ModelViewSet):
     lookup_url_kwarg = 'pk'
     pagination_class = StandardPagination
 
+    def _can_manage_restaurants(self):
+        user = self.request.user
+        return user.is_staff or user.role in ('restaurant_owner', 'admin')
+
     def get_queryset(self):
-        # For owners, show their own restaurants
+        user = self.request.user
+
+        # Write operations are restricted to owners/admins.
         if self.action in ['update', 'partial_update', 'destroy', 'toggle_active']:
-            return Restaurant.objects.filter(owner=self.request.user)
-        
-        # For list/retrieve, show only active restaurants
+            if user.is_staff or user.role == 'admin':
+                return Restaurant.objects.all()
+            if user.role == 'restaurant_owner':
+                return Restaurant.objects.filter(owner=user)
+            return Restaurant.objects.none()
+
+        # Owner dashboard should see owned restaurants regardless of active state.
+        if user.role == 'restaurant_owner':
+            return Restaurant.objects.filter(owner=user)
+
+        # Admins can browse all restaurants.
+        if user.is_staff or user.role == 'admin':
+            return Restaurant.objects.all()
+
+        # Customer browsing only sees active restaurants.
         return Restaurant.objects.filter(is_active=True)
 
     def get_object(self):
@@ -75,13 +94,19 @@ class RestaurantViewSet(viewsets.ModelViewSet):
         return RestaurantListSerializer
 
     def perform_create(self, serializer):
+        if not self._can_manage_restaurants():
+            raise PermissionDenied('Only restaurant owners can create restaurants.')
         serializer.save(owner=self.request.user)
 
     @action(detail=True, methods=['get'])
     def menu(self, request, pk=None):
         """Get menu items for a restaurant."""
         restaurant = self.get_object()
-        items = restaurant.menu_items.filter(is_available=True)
+
+        if restaurant.owner == request.user or request.user.is_staff or request.user.role == 'admin':
+            items = restaurant.menu_items.all()
+        else:
+            items = restaurant.menu_items.filter(is_available=True)
 
         category = request.query_params.get('category')
         if category:
@@ -145,7 +170,7 @@ class RestaurantViewSet(viewsets.ModelViewSet):
     def toggle_active(self, request, pk=None):
         """Toggle restaurant active status."""
         restaurant = self.get_object()
-        if restaurant.owner != request.user:
+        if restaurant.owner != request.user and not request.user.is_staff and request.user.role != 'admin':
             return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
         
         restaurant.is_active = not restaurant.is_active
@@ -159,19 +184,42 @@ class MenuItemViewSet(viewsets.ModelViewSet):
     serializer_class = MenuItemSerializer
     pagination_class = StandardPagination
 
+    def _can_manage_menu(self):
+        user = self.request.user
+        return user.is_staff or user.role in ('restaurant_owner', 'admin')
+
     def get_queryset(self):
-        # For owners, show their own restaurant's menu items
+        user = self.request.user
+
+        # Owner/admin write operations.
         if self.action in ['update', 'partial_update', 'destroy', 'toggle_available']:
-            return MenuItem.objects.filter(restaurant__owner=self.request.user)
-        
-        # For list/retrieve, show only available items
+            if user.is_staff or user.role == 'admin':
+                return MenuItem.objects.all()
+            if user.role == 'restaurant_owner':
+                return MenuItem.objects.filter(restaurant__owner=user)
+            return MenuItem.objects.none()
+
+        if user.is_staff or user.role == 'admin':
+            return MenuItem.objects.all()
+
+        # Owners should be able to see unavailable items in their own restaurants.
+        if user.role == 'restaurant_owner':
+            return MenuItem.objects.filter(restaurant__owner=user)
+
+        # Customers only see available items.
         return MenuItem.objects.filter(is_available=True)
 
     def perform_create(self, serializer):
+        if not self._can_manage_menu():
+            raise PermissionDenied('Only restaurant owners can create menu items.')
+
         # Ensure the restaurant belongs to the user
         restaurant_id = self.request.data.get('restaurant')
         try:
-            restaurant = Restaurant.objects.get(id=restaurant_id, owner=self.request.user)
+            if self.request.user.is_staff or self.request.user.role == 'admin':
+                restaurant = Restaurant.objects.get(id=restaurant_id)
+            else:
+                restaurant = Restaurant.objects.get(id=restaurant_id, owner=self.request.user)
             serializer.save(restaurant=restaurant)
         except Restaurant.DoesNotExist:
             raise serializers.ValidationError({'error': 'Restaurant not found.'})
@@ -180,7 +228,7 @@ class MenuItemViewSet(viewsets.ModelViewSet):
     def toggle_available(self, request, pk=None):
         """Toggle menu item availability."""
         menu_item = self.get_object()
-        if menu_item.restaurant.owner != request.user:
+        if menu_item.restaurant.owner != request.user and not request.user.is_staff and request.user.role != 'admin':
             return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
         
         menu_item.is_available = not menu_item.is_available
@@ -194,7 +242,16 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
 
     def get_queryset(self):
-        qs = Order.objects.filter(user=self.request.user).select_related(
+        user = self.request.user
+
+        if user.is_staff or user.role == 'admin':
+            qs = Order.objects.all()
+        elif user.role == 'restaurant_owner':
+            qs = Order.objects.filter(restaurant__owner=user)
+        else:
+            qs = Order.objects.filter(user=user)
+
+        qs = qs.select_related(
             'restaurant', 'payment', 'delivery_address'
         ).prefetch_related('items__menu_item')
 
@@ -215,6 +272,12 @@ class OrderViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         """Create a new order with items and process payment."""
+        if request.user.role != 'customer':
+            return Response(
+                {'error': 'Only customers can place orders.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = OrderCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -312,12 +375,30 @@ class OrderViewSet(viewsets.ModelViewSet):
             related_type='order',
         )
 
+        if restaurant.owner_id != request.user.id:
+            customer_name = request.user.get_full_name() or request.user.email
+            Notification.objects.create(
+                user=restaurant.owner,
+                type='order_status',
+                title='New Order Received',
+                message=f'New order #{order.id} placed by {customer_name}.',
+                related_id=order.id,
+                related_type='order',
+            )
+
         return Response(OrderDetailSerializer(order).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['patch'])
     def cancel(self, request, pk=None):
         """Cancel an order."""
         order = self.get_object()
+
+        if order.user != request.user:
+            return Response(
+                {'error': 'Only the customer can cancel this order.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         if order.status not in ('pending', 'confirmed'):
             return Response(
                 {'error': 'Order cannot be cancelled at this stage.'},
@@ -341,6 +422,17 @@ class OrderViewSet(viewsets.ModelViewSet):
             related_id=order.id,
             related_type='order',
         )
+
+        if order.restaurant.owner_id != request.user.id:
+            customer_name = request.user.get_full_name() or request.user.email
+            Notification.objects.create(
+                user=order.restaurant.owner,
+                type='order_status',
+                title='Order Cancelled by Customer',
+                message=f'Order #{order.id} was cancelled by {customer_name}.',
+                related_id=order.id,
+                related_type='order',
+            )
         
         return Response(OrderDetailSerializer(order).data)
 
@@ -365,7 +457,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         order = self.get_object()
         
         # Check if user is the restaurant owner or admin
-        if order.restaurant.owner != request.user and not request.user.is_staff:
+        if order.restaurant.owner != request.user and not request.user.is_staff and request.user.role != 'admin':
             return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
         
         new_status = request.data.get('status')

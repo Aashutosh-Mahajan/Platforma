@@ -157,7 +157,7 @@ export default function FilterBar({
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
             <Link
-              to="/eventra/events"
+              to="/eventra"
               className="inline-flex items-center rounded-full bg-[#4F46E5] px-4 py-2 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(79,70,229,0.35)] transition-transform duration-200 hover:-translate-y-0.5"
             >
               Eventra
