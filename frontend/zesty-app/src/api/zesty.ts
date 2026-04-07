@@ -3,6 +3,11 @@ import type { Restaurant, MenuItem, Order, Review, DeliveryTracking, PaginatedRe
 
 export interface RestaurantListParams {
   search?: string;
+  area?: string;
+  cuisine?: string;
+  veg_only?: boolean;
+  price_range?: number;
+  is_open?: boolean;
   ordering?: string;
   page?: number;
 }

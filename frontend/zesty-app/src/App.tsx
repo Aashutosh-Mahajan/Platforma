@@ -1,5 +1,5 @@
 import { useEffect, lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import {
   AuthProvider,
   CartProvider,
@@ -14,9 +14,9 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
 const ProfilePage = lazy(() => import('./pages/auth/ProfilePage'));
+const RestaurantsPage = lazy(() => import('./pages/restaurants.jsx'));
 
 // Zesty pages
-const RestaurantListPage = lazy(() => import('./pages/zesty/RestaurantListPage'));
 const RestaurantDetailPage = lazy(() => import('./pages/zesty/RestaurantDetailPage'));
 const CartPage = lazy(() => import('./pages/zesty/CartPage'));
 const CheckoutPage = lazy(() => import('./pages/zesty/CheckoutPage'));
@@ -53,6 +53,7 @@ const PageTitleUpdater = () => {
       '/register': 'Register',
       '/profile': 'Profile',
       '/zesty/restaurants': 'Restaurants',
+      '/restaurants': 'Restaurants',
       '/zesty/cart': 'Cart',
       '/zesty/checkout': 'Checkout',
       '/zesty/orders': 'Order History',
@@ -70,6 +71,8 @@ const PageTitleUpdater = () => {
     // Check for dynamic routes
     if (!title) {
       if (location.pathname.startsWith('/zesty/restaurants/')) {
+        title = 'Restaurant Details';
+      } else if (location.pathname.startsWith('/restaurants/')) {
         title = 'Restaurant Details';
       } else if (location.pathname.startsWith('/zesty/orders/')) {
         title = 'Order Details';
@@ -118,7 +121,10 @@ function App() {
                     />
 
                     {/* Zesty Routes */}
-                    <Route path="/zesty/restaurants" element={<RestaurantListPage />} />
+                    <Route path="/zesty" element={<Navigate to="/zesty/" replace />} />
+                    <Route path="/restaurants" element={<Navigate to="/zesty/restaurants" replace />} />
+                    <Route path="/restaurants/:id" element={<RestaurantDetailPage />} />
+                    <Route path="/zesty/restaurants" element={<RestaurantsPage />} />
                     <Route path="/zesty/restaurants/:id" element={<RestaurantDetailPage />} />
                     <Route path="/zesty/cart" element={<CartPage />} />
                     <Route

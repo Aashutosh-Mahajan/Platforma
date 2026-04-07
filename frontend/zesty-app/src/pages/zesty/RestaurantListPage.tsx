@@ -4,24 +4,40 @@ import { restaurantAPI } from '../../api/zesty';
 import type { Restaurant } from '../../types';
 import { useDebounce } from '../../hooks';
 
+const AREA_OPTIONS = ['Bandra', 'Andheri', 'Juhu', 'Colaba', 'Dadar', 'Powai', 'Worli', 'Churchgate', 'Thane', 'Borivali'];
+const CUISINE_OPTIONS = ['Indian', 'Chinese', 'Italian', 'Continental', 'Fast Food', 'Street Food', 'Seafood', 'Mughlai', 'South Indian', 'North Indian'];
+
+const getRatingStars = (rating: number): string => {
+  const safeRating = Number.isFinite(rating) ? rating : 0;
+  const filledStars = Math.max(0, Math.min(5, Math.round(safeRating)));
+  return `${'★'.repeat(filledStars)}${'☆'.repeat(5 - filledStars)}`;
+};
+
+const getPriceSymbols = (priceRange: number): string => {
+  const safeRange = Math.max(1, Math.min(4, Math.round(priceRange || 1)));
+  return '₹'.repeat(safeRange);
+};
+
 const RestaurantListPage: React.FC = () => {
   const navigate = useNavigate();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const debouncedSearch = useDebounce(searchQuery, 300); // Use custom hook with 300ms delay
+  const debouncedSearch = useDebounce(searchQuery, 300);
+  const [areaFilter, setAreaFilter] = useState('');
   const [cuisineFilter, setCuisineFilter] = useState('');
-  const [ratingFilter, setRatingFilter] = useState('');
-  const [deliveryTimeFilter, setDeliveryTimeFilter] = useState('');
+  const [vegOnlyFilter, setVegOnlyFilter] = useState('');
+  const [priceRangeFilter, setPriceRangeFilter] = useState('');
+  const [isOpenFilter, setIsOpenFilter] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  // Reset to first page when search changes
+  // Reset to first page when search/filters change.
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, areaFilter, cuisineFilter, vegOnlyFilter, priceRangeFilter, isOpenFilter, sortBy]);
 
   const fetchRestaurants = useCallback(async (pageNum: number, append = false) => {
     try {
@@ -30,6 +46,11 @@ const RestaurantListPage: React.FC = () => {
 
       const params: any = { page: pageNum };
       if (debouncedSearch) params.search = debouncedSearch;
+      if (areaFilter) params.area = areaFilter;
+      if (cuisineFilter) params.cuisine = cuisineFilter;
+      if (vegOnlyFilter) params.veg_only = vegOnlyFilter === 'true';
+      if (priceRangeFilter) params.price_range = parseInt(priceRangeFilter, 10);
+      if (isOpenFilter) params.is_open = isOpenFilter === 'true';
       if (sortBy) params.ordering = sortBy;
 
       const response = await restaurantAPI.list(params);
@@ -46,7 +67,7 @@ const RestaurantListPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, sortBy]);
+  }, [debouncedSearch, areaFilter, cuisineFilter, vegOnlyFilter, priceRangeFilter, isOpenFilter, sortBy]);
 
   useEffect(() => {
     fetchRestaurants(1, false);
@@ -63,20 +84,6 @@ const RestaurantListPage: React.FC = () => {
   const handleRestaurantClick = (id: number) => {
     navigate(`/zesty/restaurants/${id}`);
   };
-
-  // Filter restaurants client-side for cuisine, rating, and delivery time
-  const filteredRestaurants = restaurants.filter(restaurant => {
-    if (cuisineFilter && !restaurant.cuisine_types.toLowerCase().includes(cuisineFilter.toLowerCase())) {
-      return false;
-    }
-    if (ratingFilter && restaurant.rating < parseFloat(ratingFilter)) {
-      return false;
-    }
-    if (deliveryTimeFilter && restaurant.delivery_time_max > parseInt(deliveryTimeFilter)) {
-      return false;
-    }
-    return true;
-  });
 
   return (
     <div className="theme-zesty theme-zesty-page min-h-screen bg-gray-50">
@@ -96,67 +103,106 @@ const RestaurantListPage: React.FC = () => {
           {/* Search */}
           <div className="mb-4">
             <label htmlFor="restaurant-search" className="sr-only">
-              Search restaurants or cuisines
+              Search restaurants by name or description
             </label>
             <input
               id="restaurant-search"
               type="text"
-              placeholder="Search restaurants or cuisines..."
+              placeholder="Search restaurants..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              aria-label="Search restaurants or cuisines"
+              aria-label="Search restaurants"
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             />
           </div>
 
           {/* Filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="cuisine-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Cuisine
-              </label>
-              <input
-                id="cuisine-filter"
-                type="text"
-                placeholder="e.g., Italian, Chinese"
-                value={cuisineFilter}
-                onChange={(e) => setCuisineFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="rating-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Min Rating
+              <label htmlFor="area-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Area
               </label>
               <select
-                id="rating-filter"
-                value={ratingFilter}
-                onChange={(e) => setRatingFilter(e.target.value)}
+                id="area-filter"
+                value={areaFilter}
+                onChange={(e) => setAreaFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               >
-                <option value="">Any</option>
-                <option value="4.5">4.5+</option>
-                <option value="4.0">4.0+</option>
-                <option value="3.5">3.5+</option>
-                <option value="3.0">3.0+</option>
+                <option value="">All Areas</option>
+                {AREA_OPTIONS.map((area) => (
+                  <option key={area} value={area}>
+                    {area}
+                  </option>
+                ))}
               </select>
             </div>
 
             <div>
-              <label htmlFor="delivery-time-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Max Delivery Time
+              <label htmlFor="cuisine-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Cuisine
               </label>
               <select
-                id="delivery-time-filter"
-                value={deliveryTimeFilter}
-                onChange={(e) => setDeliveryTimeFilter(e.target.value)}
+                id="cuisine-filter"
+                value={cuisineFilter}
+                onChange={(e) => setCuisineFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               >
-                <option value="">Any</option>
-                <option value="30">30 min</option>
-                <option value="45">45 min</option>
-                <option value="60">60 min</option>
+                <option value="">All Cuisines</option>
+                {CUISINE_OPTIONS.map((cuisine) => (
+                  <option key={cuisine} value={cuisine}>
+                    {cuisine}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="veg-only-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Veg Preference
+              </label>
+              <select
+                id="veg-only-filter"
+                value={vegOnlyFilter}
+                onChange={(e) => setVegOnlyFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">All</option>
+                <option value="true">Veg Only</option>
+                <option value="false">Non-Veg Included</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="price-range-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Price Range
+              </label>
+              <select
+                id="price-range-filter"
+                value={priceRangeFilter}
+                onChange={(e) => setPriceRangeFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">All</option>
+                <option value="1">₹</option>
+                <option value="2">₹₹</option>
+                <option value="3">₹₹₹</option>
+                <option value="4">₹₹₹₹</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="open-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Open Status
+              </label>
+              <select
+                id="open-filter"
+                value={isOpenFilter}
+                onChange={(e) => setIsOpenFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">All</option>
+                <option value="true">Open Now</option>
+                <option value="false">Closed</option>
               </select>
             </div>
 
@@ -174,12 +220,12 @@ const RestaurantListPage: React.FC = () => {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               >
                 <option value="">Default</option>
+                <option value="name">Name (A to Z)</option>
+                <option value="-name">Name (Z to A)</option>
                 <option value="-rating">Rating (High to Low)</option>
                 <option value="rating">Rating (Low to High)</option>
-                <option value="delivery_fee">Delivery Fee (Low to High)</option>
-                <option value="-delivery_fee">Delivery Fee (High to Low)</option>
-                <option value="delivery_time_max">Delivery Time (Fast First)</option>
-                <option value="-delivery_time_max">Delivery Time (Slow First)</option>
+                <option value="price_range">Price (Low to High)</option>
+                <option value="-price_range">Price (High to Low)</option>
               </select>
             </div>
           </div>
@@ -198,7 +244,7 @@ const RestaurantListPage: React.FC = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
             <span className="sr-only">Loading restaurants...</span>
           </div>
-        ) : filteredRestaurants.length === 0 ? (
+        ) : restaurants.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500 dark:text-gray-400 text-base sm:text-lg">
               No restaurants found. Try adjusting your filters.
@@ -207,11 +253,18 @@ const RestaurantListPage: React.FC = () => {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6" role="list" aria-label="Restaurant listings">
-              {filteredRestaurants.map((restaurant) => (
-                <article
-                  key={restaurant.id}
-                  role="listitem"
-                >
+              {restaurants.map((restaurant) => {
+                const imageSrc = restaurant.image_url || restaurant.image;
+                const cuisineLabel = restaurant.cuisine || restaurant.cuisine_types;
+                const ratingValue = Number(restaurant.rating || 0);
+                const priceRangeValue = Number(restaurant.price_range || 1);
+                const isOpen = typeof restaurant.is_open === 'boolean'
+                  ? restaurant.is_open
+                  : Boolean(restaurant.is_active);
+                const hoursLabel = restaurant.hours || 'Hours not listed';
+
+                return (
+                <article key={restaurant.id} role="listitem">
                   <button
                     onClick={() => handleRestaurantClick(restaurant.id)}
                     className="w-full text-left bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -219,9 +272,9 @@ const RestaurantListPage: React.FC = () => {
                   >
                     {/* Restaurant Image */}
                     <div className="h-40 sm:h-48 bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                      {restaurant.image ? (
+                      {imageSrc ? (
                         <img
-                          src={restaurant.image}
+                          src={imageSrc}
                           alt={`${restaurant.name} restaurant`}
                           className="w-full h-full object-cover"
                         />
@@ -238,37 +291,48 @@ const RestaurantListPage: React.FC = () => {
                         {restaurant.name}
                       </h2>
                       <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2">
-                        {restaurant.cuisine_types}
+                        {cuisineLabel || 'Cuisine not listed'}
                       </p>
                       <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-500 mb-3 line-clamp-2">
                         {restaurant.description}
                       </p>
 
-                      {/* Rating and Reviews */}
-                      <div className="flex items-center mb-3">
-                        <span className="text-yellow-500 mr-1" aria-hidden="true">⭐</span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {restaurant.rating.toFixed(1)}
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-amber-500 tracking-tight" aria-hidden="true">
+                          {getRatingStars(ratingValue)}
                         </span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">
-                          ({restaurant.review_count} reviews)
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {ratingValue.toFixed(1)}
                         </span>
                       </div>
 
-                      {/* Delivery Info */}
-                      <div className="flex items-center justify-between text-xs sm:text-sm">
-                        <div className="flex items-center text-gray-600 dark:text-gray-400">
-                          <span className="mr-1" aria-hidden="true">🕒</span>
-                          <span>{restaurant.delivery_time_min}-{restaurant.delivery_time_max} min</span>
+                      <div className="flex items-center justify-between text-xs sm:text-sm mb-3">
+                        <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                          <span className={`h-2.5 w-2.5 rounded-full ${isOpen ? 'bg-green-500' : 'bg-red-500'}`} aria-hidden="true" />
+                          <span>{isOpen ? 'Open' : 'Closed'}</span>
                         </div>
-                        <div className="text-gray-900 dark:text-white font-medium">
-                          ₹{restaurant.delivery_fee} delivery
+                        {restaurant.veg_only && (
+                          <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
+                            Veg
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                        <span>{restaurant.area || 'Mumbai'}</span>
+                        <div className="font-semibold text-gray-900 dark:text-white">
+                          {getPriceSymbols(priceRangeValue)}
                         </div>
                       </div>
+
+                      <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                        {hoursLabel}
+                      </p>
                     </div>
                   </button>
                 </article>
-              ))}
+                );
+              })}
             </div>
 
             {/* Load More Button */}
