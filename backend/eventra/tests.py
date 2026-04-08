@@ -31,6 +31,14 @@ class EventraDynamicSyncTests(APITestCase):
             last_name='User',
             role='customer',
         )
+        self.customer_two = User.objects.create_user(
+            email='customer2@test.com',
+            username='customer2',
+            password='CustomerPass123!',
+            first_name='Customer',
+            last_name='Two',
+            role='customer',
+        )
 
     def test_new_organizer_event_is_visible_to_customer(self):
         """Organizer-created events should become visible in customer event listings."""
@@ -136,3 +144,96 @@ class EventraDynamicSyncTests(APITestCase):
                 title='New Booking Received',
             ).exists()
         )
+
+    def test_published_event_is_visible_to_all_customers(self):
+        """Published events should be visible to every customer account."""
+        event_date = timezone.now() + timedelta(days=7)
+        event = Event.objects.create(
+            organizer=self.organizer,
+            name='Shared Visibility Event',
+            description='Visible to all customers',
+            category='concert',
+            venue_name='Public Venue',
+            address='Shared Street',
+            event_date=event_date,
+            event_end_date=event_date + timedelta(hours=2),
+            is_published=True,
+            is_cancelled=False,
+        )
+
+        self.client.force_authenticate(self.customer)
+        first_response = self.client.get('/api/v1/eventra/events/')
+        self.assertEqual(first_response.status_code, status.HTTP_200_OK)
+        first_ids = [listed_event['id'] for listed_event in first_response.data['results']]
+        self.assertIn(event.id, first_ids)
+
+        self.client.force_authenticate(self.customer_two)
+        second_response = self.client.get('/api/v1/eventra/events/')
+        self.assertEqual(second_response.status_code, status.HTTP_200_OK)
+        second_ids = [listed_event['id'] for listed_event in second_response.data['results']]
+        self.assertIn(event.id, second_ids)
+
+    def test_organizer_only_filter_keeps_dashboard_scope(self):
+        """Organizer-only query parameter should include drafts and exclude other organizers."""
+        other_organizer = User.objects.create_user(
+            email='other.organizer@test.com',
+            username='other-organizer',
+            password='OrganizerPass123!',
+            first_name='Other',
+            last_name='Organizer',
+            role='event_organizer',
+        )
+
+        now = timezone.now() + timedelta(days=12)
+        own_published = Event.objects.create(
+            organizer=self.organizer,
+            name='Own Published Event',
+            description='Published and public',
+            category='concert',
+            venue_name='Organizer Venue',
+            address='Organizer Street',
+            event_date=now,
+            event_end_date=now + timedelta(hours=2),
+            is_published=True,
+            is_cancelled=False,
+        )
+        own_draft = Event.objects.create(
+            organizer=self.organizer,
+            name='Own Draft Event',
+            description='Draft for organizer dashboard',
+            category='concert',
+            venue_name='Organizer Venue',
+            address='Organizer Street',
+            event_date=now + timedelta(days=1),
+            event_end_date=now + timedelta(days=1, hours=2),
+            is_published=False,
+            is_cancelled=False,
+        )
+        other_published = Event.objects.create(
+            organizer=other_organizer,
+            name='Other Organizer Published Event',
+            description='Should be excluded from organizer scope',
+            category='sports',
+            venue_name='Other Venue',
+            address='Other Street',
+            event_date=now + timedelta(days=2),
+            event_end_date=now + timedelta(days=2, hours=2),
+            is_published=True,
+            is_cancelled=False,
+        )
+
+        self.client.force_authenticate(self.organizer)
+
+        public_response = self.client.get('/api/v1/eventra/events/')
+        self.assertEqual(public_response.status_code, status.HTTP_200_OK)
+        public_ids = [listed_event['id'] for listed_event in public_response.data['results']]
+        self.assertIn(own_published.id, public_ids)
+        self.assertIn(other_published.id, public_ids)
+        self.assertNotIn(own_draft.id, public_ids)
+
+        organizer_response = self.client.get('/api/v1/eventra/events/?organizer_only=true')
+        self.assertEqual(organizer_response.status_code, status.HTTP_200_OK)
+        organizer_ids = [listed_event['id'] for listed_event in organizer_response.data['results']]
+        self.assertIn(own_published.id, organizer_ids)
+        self.assertIn(own_draft.id, organizer_ids)
+        self.assertNotIn(other_published.id, organizer_ids)

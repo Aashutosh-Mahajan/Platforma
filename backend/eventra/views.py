@@ -35,6 +35,12 @@ class EventViewSet(viewsets.ModelViewSet):
     def _can_manage_events(self, user):
         return user.is_staff or user.role in ('event_organizer', 'admin')
 
+    def _wants_organizer_scope(self):
+        organizer_only = self.request.query_params.get('organizer_only')
+        if organizer_only is None:
+            return False
+        return organizer_only.strip().lower() in {'1', 'true', 'yes', 'on'}
+
     def get_permissions(self):
         # Public browsing endpoints for frontend discovery flows.
         if self.action in {'list', 'retrieve', 'seats'}:
@@ -48,14 +54,19 @@ class EventViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        # Organizers should see their own events for dashboards and management.
+        # Organizers can opt into organizer-scoped browsing for dashboards.
         if user.is_authenticated and self._can_manage_events(user):
             if user.is_staff or user.role == 'admin':
                 organizer_qs = Event.objects.all()
             else:
                 organizer_qs = Event.objects.filter(organizer=user)
 
-            if self.action in ['list', 'retrieve', 'seats', 'update', 'partial_update', 'destroy', 'toggle_published', 'cancel_event']:
+            # Mutating actions must always stay organizer-scoped.
+            if self.action in ['update', 'partial_update', 'destroy', 'toggle_published', 'cancel_event']:
+                return organizer_qs
+
+            # Dashboards can request organizer-only data, including drafts.
+            if self.action in ['list', 'retrieve', 'seats'] and self._wants_organizer_scope():
                 return organizer_qs
 
         # Public browsing sees only published and active events.
