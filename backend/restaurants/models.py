@@ -40,6 +40,7 @@ class Restaurant(models.Model):
     slug = models.SlugField(max_length=255, unique=True, blank=True)
     area = models.CharField(max_length=100, choices=AREA_CHOICES, default="Bandra")
     cuisine = models.CharField(max_length=100, choices=CUISINE_CHOICES, default="Indian")
+    cuisine_types = models.CharField(max_length=255, blank=True, default="")
     rating = models.DecimalField(
         max_digits=3,
         decimal_places=2,

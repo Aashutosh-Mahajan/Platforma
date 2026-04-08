@@ -71,8 +71,8 @@ export default function FilterBar({
     setIsLocationMenuOpen(false);
   };
 
-  const isVegOnlyActive = filters.foodPreference !== "non-veg";
-  const foodPreferenceLabel = isVegOnlyActive ? "VEG" : "NON-VEG";
+  const isVegOnlyActive = filters.foodPreference === "veg";
+  const foodPreferenceLabel = isVegOnlyActive ? "VEG ONLY" : "ALL";
   const userDisplayName = `${user?.first_name || ""} ${user?.last_name || ""}`.trim()
     || user?.first_name
     || "Account";
@@ -176,9 +176,9 @@ export default function FilterBar({
                 type="button"
                 role="switch"
                 aria-checked={isVegOnlyActive}
-                onClick={() => updateFilter("foodPreference", isVegOnlyActive ? "non-veg" : "veg")}
+                onClick={() => updateFilter("foodPreference", isVegOnlyActive ? "all" : "veg")}
                 className={`relative h-7 w-14 overflow-hidden rounded-full transition-colors duration-200 ${
-                  isVegOnlyActive ? "bg-[#00C853]" : "bg-[#FF5252]"
+                  isVegOnlyActive ? "bg-[#00C853]" : "bg-white/40"
                 }`}
               >
                 <span

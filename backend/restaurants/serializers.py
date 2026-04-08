@@ -13,6 +13,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
             "slug",
             "area",
             "cuisine",
+            "cuisine_types",
             "rating",
             "data_source",
             "price_range",

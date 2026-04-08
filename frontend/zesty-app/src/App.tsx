@@ -25,7 +25,8 @@ const OrderDetailPage = lazy(() => import('./pages/zesty/OrderDetailPage'));
 
 // Eventra pages
 const EventListPage = lazy(() => import('./pages/eventra/EventListPage'));
-const EventraLandingPage = lazy(() => import('./pages/eventra/EventraLandingPage.jsx'));
+const EventraPremiumLandingPage = lazy(() => import('./pages/eventra/EventraPremiumLandingPage'));
+const EventraLegacyDiscoverPage = lazy(() => import('./pages/eventra/EventraLandingPage.jsx'));
 const EventDetailPage = lazy(() => import('./pages/eventra/EventDetailPage'));
 const SeatSelectionPage = lazy(() => import('./pages/eventra/SeatSelectionPage'));
 const BookingCheckoutPage = lazy(() => import('./pages/eventra/BookingCheckoutPage'));
@@ -42,7 +43,7 @@ const PageTitleUpdater = () => {
 
   useEffect(() => {
     const routeTitles: Record<string, string> = {
-      '/': 'Home',
+      '/': 'Explore The Best Food & Events',
       '/login': 'Login',
       '/register': 'Register',
       '/profile': 'Profile',
@@ -55,6 +56,7 @@ const PageTitleUpdater = () => {
       '/eventra/checkout': 'Booking Checkout',
       '/eventra/bookings': 'Booking History',
       '/eventra': 'Eventra | The Digital Curator',
+      '/eventra/discover': 'Eventra Discover',
       '/dashboard/restaurant-owner': 'Restaurant Dashboard',
       '/dashboard/event-organizer': 'Event Dashboard',
     };
@@ -147,7 +149,8 @@ function App() {
                     />
 
                     {/* Eventra Routes */}
-                    <Route path="/eventra" element={<EventraLandingPage />} />
+                    <Route path="/eventra" element={<EventraPremiumLandingPage />} />
+                    <Route path="/eventra/discover" element={<EventraLegacyDiscoverPage />} />
                     <Route path="/eventra/events" element={<EventListPage />} />
                     <Route path="/eventra/events/:id" element={<EventDetailPage />} />
                     <Route

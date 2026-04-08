@@ -15,10 +15,9 @@ export const Header: React.FC = () => {
   const isZestyRoute = location.pathname.startsWith('/zesty');
   const isRestaurantsListRoute =
     location.pathname === '/zesty/restaurants' || location.pathname === '/restaurants';
-
-  if (isRestaurantsListRoute) {
-    return null;
-  }
+  const isEventraStandaloneLandingRoute =
+    location.pathname === '/eventra' || location.pathname === '/eventra/discover';
+  const isPlatformaLandingRoute = location.pathname === '/';
 
   const headerClass = isZestyRoute
     ? 'bg-surface-container-lowest/95 border-b border-outline-variant/70 backdrop-blur-md shadow-[0px_10px_24px_rgba(183,18,42,0.08)]'
@@ -82,6 +81,10 @@ export const Header: React.FC = () => {
   const handleMobileNavClick = () => {
     setShowMobileMenu(false);
   };
+
+  if (isRestaurantsListRoute || isEventraStandaloneLandingRoute || isPlatformaLandingRoute) {
+    return null;
+  }
 
   return (
     <header className={headerClass} role="banner">
