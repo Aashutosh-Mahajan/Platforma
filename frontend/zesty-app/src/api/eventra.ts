@@ -69,12 +69,18 @@ export interface EventListParams {
   ordering?: string;
   page?: number;
   limit?: number;
+  organizer_only?: boolean;
+}
+
+export interface EventAccessParams {
+  organizer_only?: boolean;
 }
 
 export interface SeatListParams {
   ticket_type_id?: number;
   section?: string;
   status?: string;
+  organizer_only?: boolean;
 }
 
 export interface BookingCreateData {
@@ -135,8 +141,8 @@ export const eventAPI = {
     return normalizePaginated(response.data, normalizeEvent);
   },
 
-  retrieve: async (id: number): Promise<Event> => {
-    const response = await apiClient.get(`/eventra/events/${id}/`);
+  retrieve: async (id: number, params?: EventAccessParams): Promise<Event> => {
+    const response = await apiClient.get(`/eventra/events/${id}/`, { params });
     return normalizeEvent(response.data);
   },
 

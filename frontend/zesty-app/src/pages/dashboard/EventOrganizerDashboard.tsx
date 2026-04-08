@@ -108,7 +108,7 @@ export const EventOrganizerDashboard: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await eventAPI.list({ page: 1 });
+      const data = await eventAPI.list({ page: 1, organizer_only: true });
       setEvents(data.results);
       if (data.results.length > 0) {
         setSelectedEvent(data.results[0]);
@@ -124,7 +124,7 @@ export const EventOrganizerDashboard: React.FC = () => {
     if (!selectedEvent) return;
     try {
       // Ticket types are included in event detail, but we can also fetch separately
-      const eventDetail = await eventAPI.retrieve(selectedEvent.id);
+      const eventDetail = await eventAPI.retrieve(selectedEvent.id, { organizer_only: true });
       setTicketTypes(eventDetail.ticket_types || []);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load ticket types');
@@ -134,7 +134,7 @@ export const EventOrganizerDashboard: React.FC = () => {
   const loadSeats = async () => {
     if (!selectedEvent) return;
     try {
-      const data = await eventAPI.getSeats(selectedEvent.id, {});
+      const data = await eventAPI.getSeats(selectedEvent.id, { organizer_only: true });
       // Flatten sections into single array
       const allSeats = data.sections.flatMap(section => section.seats);
       setSeats(allSeats);
@@ -162,7 +162,7 @@ export const EventOrganizerDashboard: React.FC = () => {
     if (!selectedEvent) return;
 
     try {
-      const updatedEvent = await eventAPI.retrieve(selectedEvent.id);
+      const updatedEvent = await eventAPI.retrieve(selectedEvent.id, { organizer_only: true });
       setSelectedEvent(updatedEvent);
       setEvents((prev) => prev.map((event) => (event.id === updatedEvent.id ? updatedEvent : event)));
     } catch {
@@ -318,7 +318,7 @@ export const EventOrganizerDashboard: React.FC = () => {
       setBulkSeatConfig({ section: '', rows: '', seatsPerRow: '', ticket_type_id: 0 });
       
       // Reload event to update seat counts
-      const updatedEvent = await eventAPI.retrieve(selectedEvent.id);
+      const updatedEvent = await eventAPI.retrieve(selectedEvent.id, { organizer_only: true });
       setSelectedEvent(updatedEvent);
       setEvents(events.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)));
     } catch (err: any) {

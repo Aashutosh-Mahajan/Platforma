@@ -4,9 +4,18 @@ Django settings for Platforma project.
 import os
 from pathlib import Path
 from datetime import timedelta
+from urllib.parse import parse_qsl, unquote, urlparse
+
 from decouple import config, Csv
+from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = BASE_DIR.parent
+
+# Load environment variables before reading any config values.
+load_dotenv(PROJECT_ROOT / '.env')
+load_dotenv(BASE_DIR / '.env')
 
 # ====================
 # CORE SETTINGS 
@@ -77,11 +86,48 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # ====================
 # DATABASE
 # ====================
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+def _build_postgres_database_config():
+    database_url = config('DATABASE_URL', default='').strip()
+    if not database_url:
+        raise ImproperlyConfigured(
+            'DATABASE_URL is required. SQLite is disabled for this project.'
+        )
+
+    parsed = urlparse(database_url)
+    allowed_schemes = {'postgres', 'postgresql', 'postgresql+psycopg2'}
+
+    if parsed.scheme not in allowed_schemes:
+        if parsed.scheme.startswith('sqlite'):
+            raise ImproperlyConfigured(
+                'SQLite is disabled. Set DATABASE_URL to a PostgreSQL URL.'
+            )
+        raise ImproperlyConfigured(
+            'Unsupported DATABASE_URL scheme. Use a PostgreSQL URL.'
+        )
+
+    db_name = parsed.path.lstrip('/')
+    if not db_name:
+        raise ImproperlyConfigured('DATABASE_URL must include a database name.')
+
+    db_config = {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': db_name,
+        'USER': unquote(parsed.username or ''),
+        'PASSWORD': unquote(parsed.password or ''),
+        'HOST': parsed.hostname or '',
+        'PORT': str(parsed.port) if parsed.port else '',
+        'CONN_MAX_AGE': 600,
     }
+
+    options = dict(parse_qsl(parsed.query, keep_blank_values=False))
+    if options:
+        db_config['OPTIONS'] = options
+
+    return db_config
+
+
+DATABASES = {
+    'default': _build_postgres_database_config(),
 }
 
 # ====================
@@ -183,9 +229,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ====================
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@platforma.com')
-
-import os
-from dotenv import load_dotenv
-load_dotenv()
 
 UNSPLASH_ACCESS_KEY = os.environ.get('UNSPLASH_ACCESS_KEY')
