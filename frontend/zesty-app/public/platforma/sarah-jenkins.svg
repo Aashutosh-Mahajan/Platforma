@@ -1,0 +1,12 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="avatarSarah" x1="12" y1="12" x2="148" y2="148" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0066FF"/>
+      <stop offset="1" stop-color="#00D4FF"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="80" fill="url(#avatarSarah)"/>
+  <circle cx="80" cy="62" r="30" fill="rgba(255,255,255,0.85)"/>
+  <path d="M28 132C35 103 53 90 80 90C107 90 125 103 132 132" fill="rgba(255,255,255,0.85)"/>
+  <text x="80" y="152" text-anchor="middle" font-size="24" font-family="Inter, sans-serif" fill="rgba(255,255,255,0.86)">SJ</text>
+</svg>

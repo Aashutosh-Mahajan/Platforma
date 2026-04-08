@@ -1,7 +1,9 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,700;0,900;1,900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400..800;1,400..800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 
@@ -19,6 +21,10 @@
 
   --font-lexend: "Lexend", sans-serif;
   --font-poppins: "Poppins", sans-serif;
+  --font-platforma-display: "Plus Jakarta Sans", sans-serif;
+  --font-platforma-body: "Inter", sans-serif;
+  --font-eventra-display: "Playfair Display", serif;
+  --font-eventra-body: "Inter", sans-serif;
   --font-eventra-headline: "Inter", sans-serif;
   --font-eventra-label: "Be Vietnam Pro", sans-serif;
 }
@@ -64,6 +70,79 @@
   .theme-zesty {
     --focus-ring: #b7122a;
     font-family: var(--font-lexend);
+  }
+
+  .theme-platforma {
+    --focus-ring: #0066ff;
+    font-family: var(--font-platforma-body);
+    background-color: #ffffff;
+    color: #1a202c;
+  }
+
+  .font-platforma-display {
+    font-family: var(--font-platforma-display);
+  }
+
+  .platforma-nav-link {
+    position: relative;
+    color: #1a202c;
+    transition: color 0.2s ease;
+  }
+
+  .platforma-nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -6px;
+    width: 100%;
+    height: 2px;
+    background-color: #0066ff;
+    transform: scaleX(0.4);
+    transform-origin: center;
+    opacity: 0;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+  }
+
+  .platforma-nav-link:hover {
+    color: #0066ff;
+  }
+
+  .platforma-nav-link:hover::after,
+  .platforma-nav-link-active::after {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+
+  .platforma-nav-link-active {
+    color: #0066ff;
+  }
+
+  .platforma-float {
+    animation: platformaFloat 3s ease-in-out infinite;
+  }
+
+  .platforma-float-reverse {
+    animation: platformaFloatReverse 3s ease-in-out infinite;
+  }
+
+  @keyframes platformaFloat {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  @keyframes platformaFloatReverse {
+    0%,
+    100% {
+      transform: translateY(-8px);
+    }
+    50% {
+      transform: translateY(0);
+    }
   }
 
   .theme-zesty-page {
@@ -174,6 +253,21 @@
   .theme-eventra {
     --focus-ring: #5426e4;
     font-family: var(--font-eventra-headline);
+  }
+
+  .theme-eventra-premium {
+    --focus-ring: #c4621a;
+    font-family: var(--font-eventra-body);
+    background-color: #0a0a0a;
+    color: #f5f0e8;
+  }
+
+  .font-eventra-display {
+    font-family: var(--font-eventra-display);
+  }
+
+  .font-eventra-body {
+    font-family: var(--font-eventra-body);
   }
 
   .font-eventra-label {

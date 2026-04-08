@@ -8,6 +8,16 @@ export default {
   theme: {
     extend: {
         "colors": {
+        "eventra": {
+          "bg": "#0A0A0A",
+          "surface": "#141414",
+          "amber": "#C4621A",
+          "amberLight": "#E8824A",
+          "text": "#F5F0E8",
+          "muted": "#9A9A9A",
+          "white": "#FFFFFF",
+          "tickerBg": "#A0521A"
+        },
             "eventra-on-primary-container": "#f3ecff",
             "eventra-inverse-on-surface": "#f2f0f6",
             "eventra-secondary-fixed": "#e4e2e4",
@@ -113,6 +123,8 @@ export default {
         "fontFamily": {
             "eventra-headline": ["Inter", "sans-serif"],
             "eventra-body": ["Inter", "sans-serif"],
+          "eventra-display": ["Playfair Display", "serif"],
+          "eventra-premium-body": ["Inter", "sans-serif"],
             "eventra-label": ["Be Vietnam Pro", "sans-serif"],
             "headline": ["Lexend", "sans-serif"],
             "body": ["Lexend", "sans-serif"],

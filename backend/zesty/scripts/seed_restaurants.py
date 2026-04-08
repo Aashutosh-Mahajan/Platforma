@@ -1,548 +1,406 @@
-RESTAURANTS = [
-	{
-		"name": "Bandra Spice Courtyard",
-		"area": "Bandra",
-		"cuisine": "Indian",
-		"rating": 4.6,
-		"price_range": 3,
-		"address": "14 Perry Road, Bandra West, Mumbai 400050",
-		"hours": "11:00 AM - 11:30 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "A warm dining room serving regional Indian favorites with modern plating. The kitchen is known for consistent spice profiles and generous portions.",
-		"image_url": "",
-	},
-	{
-		"name": "Dragon Lantern Bandra",
-		"area": "Bandra",
-		"cuisine": "Chinese",
-		"rating": 4.2,
-		"price_range": 2,
-		"address": "22 Hill Road, Bandra West, Mumbai 400050",
-		"hours": "12:00 PM - 11:00 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "This spot offers wok-tossed noodles, dim sum, and crispy starters in a lively setting. Service is quick and ideal for weekday lunches.",
-		"image_url": "",
-	},
-	{
-		"name": "Trattoria by the Sea",
-		"area": "Bandra",
-		"cuisine": "Italian",
-		"rating": 4.4,
-		"price_range": 3,
-		"address": "8 Carter Road, Bandra West, Mumbai 400050",
-		"hours": "12:00 PM - 11:30 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "Handmade pasta and wood-fired pizzas are the house specialties here. The menu focuses on classic Italian comfort with fresh ingredients.",
-		"image_url": "",
-	},
-	{
-		"name": "Carter Road Grill House",
-		"area": "Bandra",
-		"cuisine": "Continental",
-		"rating": 4.1,
-		"price_range": 3,
-		"address": "31 Pali Naka, Bandra West, Mumbai 400050",
-		"hours": "10:30 AM - 11:00 PM",
-		"is_open": False,
-		"veg_only": False,
-		"description": "An all-day bistro serving grilled mains, salads, and baked sides. The calm interiors make it popular for family dinners.",
-		"image_url": "",
-	},
-	{
-		"name": "Pali Village Chaat Co",
-		"area": "Bandra",
-		"cuisine": "Street Food",
-		"rating": 4.3,
-		"price_range": 1,
-		"address": "5 Linking Road, Bandra West, Mumbai 400050",
-		"hours": "04:30 PM - 11:30 PM",
-		"is_open": True,
-		"veg_only": True,
-		"description": "Crunchy chaats, pav bhaji, and masala sandwiches lead the menu. Portions are affordable and packed with classic Mumbai flavors.",
-		"image_url": "",
-	},
-	{
-		"name": "Bandra Tandoor Kebab Room",
-		"area": "Bandra",
-		"cuisine": "Mughlai",
-		"rating": 4.5,
-		"price_range": 3,
-		"address": "17 Turner Road, Bandra West, Mumbai 400050",
-		"hours": "12:30 PM - 12:00 AM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "Slow-cooked gravies and smoky kebabs are prepared in traditional style. The rich menu is ideal for festive group meals.",
-		"image_url": "",
-	},
-	{
-		"name": "Andheri Coastal Catch",
-		"area": "Andheri",
-		"cuisine": "Seafood",
-		"rating": 4.7,
-		"price_range": 4,
-		"address": "4 JP Road, Andheri West, Mumbai 400058",
-		"hours": "12:00 PM - 11:00 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "Fresh fish curries and tawa specials are sourced daily from local markets. Guests often return for the signature prawn gassi.",
-		"image_url": "",
-	},
-	{
-		"name": "Metro Burger Junction",
-		"area": "Andheri",
-		"cuisine": "Fast Food",
-		"rating": 3.9,
-		"price_range": 1,
-		"address": "19 Lokhandwala Main Market Road, Andheri West, Mumbai 400053",
-		"hours": "11:00 AM - 01:00 AM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "Loaded burgers, crispy fries, and quick wraps dominate this casual outlet. Late-night service makes it a favorite after shows.",
-		"image_url": "",
-	},
-	{
-		"name": "Andheri Udupi Bhavan",
-		"area": "Andheri",
-		"cuisine": "South Indian",
-		"rating": 4.4,
-		"price_range": 2,
-		"address": "11 SV Road, Andheri East, Mumbai 400069",
-		"hours": "07:00 AM - 10:30 PM",
-		"is_open": True,
-		"veg_only": True,
-		"description": "Crisp dosas and fluffy idlis are served from early morning till late evening. Filter coffee and quick service keep the tables busy.",
-		"image_url": "",
-	},
-	{
-		"name": "Lokhandwala Dum Biryani",
-		"area": "Andheri",
-		"cuisine": "North Indian",
-		"rating": 4.3,
-		"price_range": 2,
-		"address": "7 Veera Desai Road, Andheri West, Mumbai 400053",
-		"hours": "12:00 PM - 11:45 PM",
-		"is_open": False,
-		"veg_only": False,
-		"description": "This kitchen specializes in fragrant biryanis and robust tandoori platters. Their gravies are balanced for both spice and depth.",
-		"image_url": "",
-	},
-	{
-		"name": "Versova Olive Table",
-		"area": "Andheri",
-		"cuisine": "Italian",
-		"rating": 4.0,
-		"price_range": 3,
-		"address": "26 Yari Road, Andheri West, Mumbai 400061",
-		"hours": "12:00 PM - 10:45 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "A neighborhood Italian kitchen with handmade sauces and oven bakes. The menu is simple, comforting, and family friendly.",
-		"image_url": "",
-	},
-	{
-		"name": "Seven Bungalows Wok Bar",
-		"area": "Andheri",
-		"cuisine": "Chinese",
-		"rating": 4.1,
-		"price_range": 2,
-		"address": "12 Seven Bungalows Road, Andheri West, Mumbai 400061",
-		"hours": "01:00 PM - 11:30 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "Popular for stir-fry bowls, chilli chicken, and schezwan fried rice. The kitchen delivers bold flavors with quick turnaround.",
-		"image_url": "",
-	},
-	{
-		"name": "Juhu Chowpatty Classics",
-		"area": "Juhu",
-		"cuisine": "Street Food",
-		"rating": 4.5,
-		"price_range": 1,
-		"address": "3 Juhu Tara Road, Juhu, Mumbai 400049",
-		"hours": "05:00 PM - 11:30 PM",
-		"is_open": True,
-		"veg_only": True,
-		"description": "An evening hotspot for pav bhaji, bhel, and sev puri by the beach. The flavors are nostalgic and consistently fresh.",
-		"image_url": "",
-	},
-	{
-		"name": "Juhu Royal Korma House",
-		"area": "Juhu",
-		"cuisine": "Mughlai",
-		"rating": 4.6,
-		"price_range": 4,
-		"address": "18 NS Road 10, Juhu, Mumbai 400049",
-		"hours": "12:30 PM - 11:30 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "Creamy kormas and charcoal kebabs are prepared from long-standing recipes. It is a top pick for rich celebratory meals.",
-		"image_url": "",
-	},
-	{
-		"name": "Palm Grove Seafood Kitchen",
-		"area": "Juhu",
-		"cuisine": "Seafood",
-		"rating": 4.4,
-		"price_range": 4,
-		"address": "9 Juhu Beach Road, Juhu, Mumbai 400049",
-		"hours": "12:00 PM - 11:00 PM",
-		"is_open": False,
-		"veg_only": False,
-		"description": "Known for coastal curries, grilled pomfret, and prawn starters. The menu leans toward fresh produce and clean spice profiles.",
-		"image_url": "",
-	},
-	{
-		"name": "Juhu Sunrise Dosa Cafe",
-		"area": "Juhu",
-		"cuisine": "South Indian",
-		"rating": 4.2,
-		"price_range": 2,
-		"address": "21 Gulmohar Road, Juhu, Mumbai 400049",
-		"hours": "07:30 AM - 10:30 PM",
-		"is_open": True,
-		"veg_only": True,
-		"description": "This cafe serves crisp dosas, vadas, and comforting sambar all day. Breakfast combos are especially popular with regulars.",
-		"image_url": "",
-	},
-	{
-		"name": "Prithvi Garden Bistro",
-		"area": "Juhu",
-		"cuisine": "Continental",
-		"rating": 4.3,
-		"price_range": 3,
-		"address": "5 Vile Parle Scheme Road 1, Juhu, Mumbai 400049",
-		"hours": "10:00 AM - 11:00 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "Seasonal salads, grills, and soups anchor this relaxed bistro menu. The courtyard setting gives it a calm neighborhood vibe.",
-		"image_url": "",
-	},
-	{
-		"name": "Juhu Rasoi Ghar",
-		"area": "Juhu",
-		"cuisine": "Indian",
-		"rating": 4.1,
-		"price_range": 2,
-		"address": "16 JVPD Scheme, Juhu, Mumbai 400049",
-		"hours": "11:30 AM - 10:45 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "A homestyle Indian menu featuring regional curries and fresh breads. It is known for hearty thalis and reliable quality.",
-		"image_url": "",
-	},
-	{
-		"name": "Colaba Causeway Curry Club",
-		"area": "Colaba",
-		"cuisine": "North Indian",
-		"rating": 4.4,
-		"price_range": 3,
-		"address": "10 Colaba Causeway, Colaba, Mumbai 400005",
-		"hours": "12:00 PM - 11:30 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "Rich gravies, kebab platters, and butter naan define this menu. The location attracts both office crowds and tourists.",
-		"image_url": "",
-	},
-	{
-		"name": "Apollo Bay Fry House",
-		"area": "Colaba",
-		"cuisine": "Seafood",
-		"rating": 4.8,
-		"price_range": 4,
-		"address": "6 Apollo Bunder Road, Colaba, Mumbai 400001",
-		"hours": "12:30 PM - 11:00 PM",
-		"is_open": False,
-		"veg_only": False,
-		"description": "Signature fish fry platters and crab masala draw loyal guests daily. The kitchen focuses on bold coastal seasoning.",
-		"image_url": "",
-	},
-	{
-		"name": "Colaba Canton Corner",
-		"area": "Colaba",
-		"cuisine": "Chinese",
-		"rating": 4.0,
-		"price_range": 2,
-		"address": "24 Shahid Bhagat Singh Road, Colaba, Mumbai 400039",
-		"hours": "01:00 PM - 11:00 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "An approachable Chinese menu with soups, wok bowls, and starters. Great for small groups and quick dinner plans.",
-		"image_url": "",
-	},
-	{
-		"name": "Regal Pasta Atelier",
-		"area": "Colaba",
-		"cuisine": "Italian",
-		"rating": 4.5,
-		"price_range": 4,
-		"address": "2 Rope Walk Lane, Colaba, Mumbai 400005",
-		"hours": "12:00 PM - 11:15 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "Fresh pasta, baked lasagna, and tiramisu headline this elegant kitchen. The menu blends traditional recipes with local produce.",
-		"image_url": "",
-	},
-	{
-		"name": "Colaba Quick Bite Depot",
-		"area": "Colaba",
-		"cuisine": "Fast Food",
-		"rating": 3.8,
-		"price_range": 1,
-		"address": "15 Wodehouse Road, Colaba, Mumbai 400005",
-		"hours": "11:00 AM - 12:00 AM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "Burgers, loaded fries, and wraps are served in a compact fast-paced space. It works well for quick meals on busy days.",
-		"image_url": "",
-	},
-	{
-		"name": "Kala Ghoda Tiffin Room",
-		"area": "Colaba",
-		"cuisine": "Indian",
-		"rating": 4.3,
-		"price_range": 2,
-		"address": "9 Rampart Row, Colaba, Mumbai 400001",
-		"hours": "11:00 AM - 10:30 PM",
-		"is_open": True,
-		"veg_only": True,
-		"description": "Comfort food thalis and snack plates celebrate everyday Indian classics. Guests appreciate the simple flavors and tidy portions.",
-		"image_url": "",
-	},
-	{
-		"name": "Worli Skyline Smokehouse",
-		"area": "Worli",
-		"cuisine": "Continental",
-		"rating": 4.5,
-		"price_range": 4,
-		"address": "27 Dr Annie Besant Road, Worli, Mumbai 400018",
-		"hours": "12:00 PM - 11:30 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "Grilled mains and roast platters are the heart of this modern smokehouse. The menu also features light soups and fresh salads.",
-		"image_url": "",
-	},
-	{
-		"name": "Worli Matka Chaat Hub",
-		"area": "Worli",
-		"cuisine": "Street Food",
-		"rating": 4.1,
-		"price_range": 1,
-		"address": "11 Worli Sea Face Road, Worli, Mumbai 400030",
-		"hours": "04:00 PM - 11:00 PM",
-		"is_open": True,
-		"veg_only": True,
-		"description": "Matka chaat, dahi puri, and spicy sandwiches keep the crowd engaged. Every dish is assembled fresh for crisp texture.",
-		"image_url": "",
-	},
-	{
-		"name": "Sea Link Prawn Pot",
-		"area": "Worli",
-		"cuisine": "Seafood",
-		"rating": 4.6,
-		"price_range": 4,
-		"address": "3 Khan Abdul Gaffar Khan Marg, Worli, Mumbai 400018",
-		"hours": "12:30 PM - 11:00 PM",
-		"is_open": False,
-		"veg_only": False,
-		"description": "Prawn curries, fried bombil, and shellfish specials anchor the seafood menu. Guests visit for both freshness and flavor depth.",
-		"image_url": "",
-	},
-	{
-		"name": "Worli Mughal Darbar",
-		"area": "Worli",
-		"cuisine": "Mughlai",
-		"rating": 4.4,
-		"price_range": 3,
-		"address": "19 Worli Naka, Worli, Mumbai 400018",
-		"hours": "12:00 PM - 11:45 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "Creamy curries and charcoal-grilled meats are prepared in traditional style. It is a strong choice for indulgent dinners.",
-		"image_url": "",
-	},
-	{
-		"name": "Worli Green Udupi",
-		"area": "Worli",
-		"cuisine": "South Indian",
-		"rating": 4.0,
-		"price_range": 2,
-		"address": "8 Century Bazaar Lane, Worli, Mumbai 400025",
-		"hours": "07:00 AM - 10:30 PM",
-		"is_open": True,
-		"veg_only": True,
-		"description": "This vegetarian kitchen serves classic South Indian breakfasts and mini meals. The flavors are clean, balanced, and comforting.",
-		"image_url": "",
-	},
-	{
-		"name": "Pandurang Handi House",
-		"area": "Worli",
-		"cuisine": "North Indian",
-		"rating": 4.2,
-		"price_range": 3,
-		"address": "42 Pandurang Budhkar Marg, Worli, Mumbai 400018",
-		"hours": "12:00 PM - 11:30 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "Handi gravies and tandoori breads make up the core of this menu. The portions are generous and ideal for sharing.",
-		"image_url": "",
-	},
-	{
-		"name": "Dadar Plaza Thali House",
-		"area": "Dadar",
-		"cuisine": "Indian",
-		"rating": 4.3,
-		"price_range": 2,
-		"address": "7 Ranade Road, Dadar West, Mumbai 400028",
-		"hours": "11:30 AM - 10:30 PM",
-		"is_open": True,
-		"veg_only": True,
-		"description": "Wholesome thalis and rotating seasonal sabzis are served throughout the day. Locals rely on it for clean and familiar meals.",
-		"image_url": "",
-	},
-	{
-		"name": "Shivaji Park Noodle Pot",
-		"area": "Dadar",
-		"cuisine": "Chinese",
-		"rating": 3.9,
-		"price_range": 2,
-		"address": "13 Cadell Road, Dadar West, Mumbai 400028",
-		"hours": "12:30 PM - 11:00 PM",
-		"is_open": False,
-		"veg_only": False,
-		"description": "Classic Indo-Chinese favorites are prepared with fast kitchen service. The menu is simple, punchy, and wallet friendly.",
-		"image_url": "",
-	},
-	{
-		"name": "Dadar Fast Lane Burgers",
-		"area": "Dadar",
-		"cuisine": "Fast Food",
-		"rating": 3.7,
-		"price_range": 1,
-		"address": "28 Senapati Bapat Marg, Dadar West, Mumbai 400028",
-		"hours": "11:00 AM - 12:30 AM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "A compact outlet focused on burgers, fries, and milkshake combos. It is ideal for quick meals between commutes.",
-		"image_url": "",
-	},
-	{
-		"name": "Portuguese Church Pasta Bar",
-		"area": "Dadar",
-		"cuisine": "Italian",
-		"rating": 4.1,
-		"price_range": 3,
-		"address": "4 Gokhale Road North, Dadar West, Mumbai 400028",
-		"hours": "12:00 PM - 10:45 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "Cream sauces, baked pasta, and garlic breads are served in generous portions. The dining room is casual and family oriented.",
-		"image_url": "",
-	},
-	{
-		"name": "Dadar Station Chaat Adda",
-		"area": "Dadar",
-		"cuisine": "Street Food",
-		"rating": 4.2,
-		"price_range": 1,
-		"address": "2 Dadar TT Circle, Dadar East, Mumbai 400014",
-		"hours": "04:30 PM - 11:00 PM",
-		"is_open": True,
-		"veg_only": True,
-		"description": "The menu features classic Mumbai chaat and seasonal snack specials. It remains a dependable evening stop for local shoppers.",
-		"image_url": "",
-	},
-	{
-		"name": "Matunga Filter Feast",
-		"area": "Dadar",
-		"cuisine": "South Indian",
-		"rating": 4.6,
-		"price_range": 2,
-		"address": "33 Dr Ambedkar Road, Dadar East, Mumbai 400014",
-		"hours": "07:00 AM - 10:00 PM",
-		"is_open": True,
-		"veg_only": True,
-		"description": "Known for crisp dosas, podi idlis, and excellent filter coffee. Service is efficient even during heavy breakfast rush.",
-		"image_url": "",
-	},
-	{
-		"name": "Powai Lakeview Curry Works",
-		"area": "Powai",
-		"cuisine": "Indian",
-		"rating": 4.5,
-		"price_range": 3,
-		"address": "6 Central Avenue, Hiranandani Gardens, Powai, Mumbai 400076",
-		"hours": "12:00 PM - 11:00 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "Regional Indian curries are plated with a modern neighborhood touch. The lake-facing location adds to the dining appeal.",
-		"image_url": "",
-	},
-	{
-		"name": "Hiranandani Lakeside Kebab House",
-		"area": "Powai",
-		"cuisine": "North Indian",
-		"rating": 4.3,
-		"price_range": 3,
-		"address": "14 Hiranandani Business Park, Powai, Mumbai 400076",
-		"hours": "12:30 PM - 11:30 PM",
-		"is_open": False,
-		"veg_only": False,
-		"description": "A robust North Indian menu with kebabs, biryanis, and rich gravies. Portions suit both small families and large groups.",
-		"image_url": "",
-	},
-	{
-		"name": "Powai Skydeck Bistro",
-		"area": "Powai",
-		"cuisine": "Continental",
-		"rating": 4.2,
-		"price_range": 4,
-		"address": "21 Cliff Avenue, Hiranandani Gardens, Powai, Mumbai 400076",
-		"hours": "11:00 AM - 11:00 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "This bistro serves continental classics with polished presentation and seasonal sides. It is popular for date nights and weekend brunch.",
-		"image_url": "",
-	},
-	{
-		"name": "IIT Gate Grill Stop",
-		"area": "Powai",
-		"cuisine": "Fast Food",
-		"rating": 3.8,
-		"price_range": 1,
-		"address": "9 IIT Main Gate Road, Powai, Mumbai 400076",
-		"hours": "10:30 AM - 12:30 AM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "A student-friendly fast food counter with burgers, wraps, and fries. The kitchen focuses on speed and value pricing.",
-		"image_url": "",
-	},
-	{
-		"name": "Powai Nawabi Pot",
-		"area": "Powai",
-		"cuisine": "Mughlai",
-		"rating": 4.4,
-		"price_range": 3,
-		"address": "31 Chandivali Farm Road, Powai, Mumbai 400072",
-		"hours": "12:00 PM - 11:45 PM",
-		"is_open": True,
-		"veg_only": False,
-		"description": "Traditional Mughlai recipes are cooked slowly for richer flavor and texture. Their kebab platters are especially well rated.",
-		"image_url": "",
-	},
-	{
-		"name": "Saki Vihar Dum Pulao Co",
-		"area": "Powai",
-		"cuisine": "North Indian",
-		"rating": 4.1,
-		"price_range": 2,
-		"address": "18 Saki Vihar Road, Powai, Mumbai 400072",
-		"hours": "12:00 PM - 11:15 PM",
-		"is_open": False,
-		"veg_only": False,
-		"description": "This kitchen is known for aromatic pulao, handi curries, and tandoori breads. It balances classic flavors with reasonable pricing.",
-		"image_url": "",
-	},
+import json
+import random
+import re
+from pathlib import Path
+
+
+AREA_CHOICES = (
+    "Bandra",
+    "Andheri",
+    "Juhu",
+    "Colaba",
+    "Dadar",
+    "Powai",
+    "Worli",
+    "Churchgate",
+    "Thane",
+    "Borivali",
+)
+
+# Keep this deterministic so repeated seeds are reproducible.
+MIXED_SELECTION_SEED = 20260408
+TARGET_MIXED_RATIO = 0.60
+
+SOURCE_JSON_CANDIDATES = (
+    Path(__file__).with_name("zesty_mumbai_restaurants.json"),
+    Path(__file__).resolve().parents[4] / "zesty_mumbai_restaurants.json",
+)
+
+LOCATION_AREA_KEYWORDS = {
+    "Bandra": ("bandra", "khar", "pali", "linking", "hill road", "turner"),
+    "Andheri": ("andheri", "lokhandwala", "versova", "jogeshwari", "dn nagar"),
+    "Juhu": ("juhu", "ville parle", "santacruz"),
+    "Colaba": ("colaba", "fort", "cuffe parade", "nariman", "marine drive"),
+    "Dadar": ("dadar", "matunga", "mahim", "sion", "prabhadevi"),
+    "Powai": ("powai", "chandivali", "saki vihar", "hiranandani", "vikhroli"),
+    "Worli": ("worli", "lower parel", "parel", "elphinstone"),
+    "Churchgate": ("churchgate", "marine lines", "charni", "grant road"),
+    "Thane": ("thane", "ghodbunder", "mira road", "kalwa", "dombivli"),
+    "Borivali": ("borivali", "kandivali", "malad", "dahisar", "eksar"),
+}
+
+TAG_ALIASES = {
+    "deserts": "dessert",
+    "desserts": "dessert",
+    "icecream": "ice cream",
+    "friedrice": "fried rice",
+    "vadapav": "vada pav",
+}
+
+NON_VEG_DISH_BANK = [
+    {
+        "name": "Chicken Tikka",
+        "description": "Char-grilled chicken tikka with smoky tandoori spices",
+    },
+    {
+        "name": "Butter Chicken",
+        "description": "Tender chicken in creamy tomato-makhani gravy",
+    },
+    {
+        "name": "Chicken Biryani",
+        "description": "Layered basmati biryani cooked with saffron and spices",
+    },
+    {
+        "name": "Mutton Rogan Josh",
+        "description": "Slow-cooked Kashmiri-style mutton curry",
+    },
+    {
+        "name": "Fish Curry",
+        "description": "Coastal fish curry with kokum and coconut",
+    },
+    {
+        "name": "Prawn Masala",
+        "description": "Juicy prawns tossed in a spicy masala base",
+    },
+    {
+        "name": "Chicken Shawarma Roll",
+        "description": "Grilled chicken wrapped with fresh veggies and sauce",
+    },
+    {
+        "name": "Chicken Fried Rice",
+        "description": "Wok-tossed fried rice with chicken and spring onions",
+    },
+    {
+        "name": "Chicken Hakka Noodles",
+        "description": "Stir-fried noodles with chicken strips and vegetables",
+    },
+    {
+        "name": "Pepper Chicken",
+        "description": "Chicken tossed in cracked pepper and herbs",
+    },
+    {
+        "name": "Chicken Kathi Roll",
+        "description": "Paratha roll filled with spiced chicken and onions",
+    },
+    {
+        "name": "Tandoori Pomfret",
+        "description": "Whole pomfret marinated and roasted in tandoor",
+    },
+    {
+        "name": "Egg Bhurji",
+        "description": "Mumbai-style scrambled eggs with masala",
+    },
+    {
+        "name": "Chicken Keema Pav",
+        "description": "Spiced minced chicken served with buttery pav",
+    },
+    {
+        "name": "Mutton Seekh Kebab",
+        "description": "Juicy minced mutton kebabs grilled over open flame",
+    },
 ]
+
+
+def _normalize_spaces(value):
+    return re.sub(r"\s+", " ", str(value or "")).strip()
+
+
+def _normalize_name(value):
+    return _normalize_spaces(value).lower()
+
+
+def _normalize_tag(value):
+    normalized = _normalize_spaces(value).lower().replace("_", " ").replace("-", " ")
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    return TAG_ALIASES.get(normalized, normalized)
+
+
+def _resolve_source_json_path():
+    for candidate in SOURCE_JSON_CANDIDATES:
+        if candidate.exists():
+            return candidate
+    checked = ", ".join(str(path) for path in SOURCE_JSON_CANDIDATES)
+    raise FileNotFoundError(f"Could not find source restaurant JSON. Checked: {checked}")
+
+
+def _load_source_records():
+    source_path = _resolve_source_json_path()
+    with source_path.open("r", encoding="utf-8") as handle:
+        payload = json.load(handle)
+
+    if not isinstance(payload, list):
+        raise ValueError("Source JSON must be a list of restaurant objects.")
+
+    return payload
+
+
+def _parse_int(value, default):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _parse_float(value, default):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _infer_area(location, name):
+    location_text = _normalize_spaces(location).lower()
+    for area_name, keywords in LOCATION_AREA_KEYWORDS.items():
+        if any(keyword in location_text for keyword in keywords):
+            return area_name
+
+    # Deterministic fallback for unknown localities.
+    seed_text = location_text or _normalize_spaces(name).lower()
+    seed_value = sum(ord(char) for char in seed_text) if seed_text else 0
+    return AREA_CHOICES[seed_value % len(AREA_CHOICES)]
+
+
+def _to_price_range(cost_for_two):
+    amount = _parse_int(cost_for_two, 250)
+    if amount <= 180:
+        return 1
+    if amount <= 320:
+        return 2
+    if amount <= 450:
+        return 3
+    return 4
+
+
+def _extract_cuisine_tags(record):
+    tag_candidates = []
+
+    primary = record.get("primary_cuisine")
+    if primary:
+        tag_candidates.append(primary)
+
+    cuisines = record.get("cuisines")
+    if isinstance(cuisines, list):
+        tag_candidates.extend(cuisines)
+    elif cuisines:
+        tag_candidates.extend(str(cuisines).replace(";", ",").split(","))
+
+    raw_cuisine_types = record.get("cuisine_types")
+    if raw_cuisine_types:
+        tag_candidates.extend(str(raw_cuisine_types).replace(";", ",").split(","))
+
+    deduped_tags = []
+    seen = set()
+    for raw_tag in tag_candidates:
+        normalized = _normalize_tag(raw_tag)
+        if not normalized:
+            continue
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        deduped_tags.append(normalized)
+
+    if not deduped_tags:
+        deduped_tags.append("indian")
+
+    return deduped_tags
+
+
+def _normalize_menu_item(item, index, rng, fallback_cost):
+    if not isinstance(item, dict):
+        return None
+
+    name = _normalize_spaces(item.get("name"))
+    description = _normalize_spaces(item.get("description"))
+    if not name:
+        return None
+
+    raw_price = item.get("price")
+    if isinstance(raw_price, str):
+        raw_price = re.sub(r"[^0-9]", "", raw_price)
+    parsed_price = _parse_int(raw_price, 0)
+    if parsed_price <= 0:
+        base_cost = max(120, _parse_int(fallback_cost, 250))
+        parsed_price = max(70, int(base_cost * rng.uniform(0.28, 0.52)))
+
+    if not description:
+        description = f"Chef special item #{index + 1}"
+
+    return {
+        "name": name,
+        "price": parsed_price,
+        "description": description,
+        "is_veg": bool(item.get("is_veg", True)),
+    }
+
+
+def _build_clean_menu(record, rng):
+    fallback_cost = record.get("cost_for_two")
+    raw_menu = record.get("menu")
+    if not isinstance(raw_menu, list):
+        raw_menu = []
+
+    normalized_menu = []
+    seen_items = set()
+
+    for index, item in enumerate(raw_menu):
+        cleaned = _normalize_menu_item(item, index, rng, fallback_cost)
+        if cleaned is None:
+            continue
+
+        key = _normalize_name(cleaned["name"])
+        if key in seen_items:
+            continue
+
+        seen_items.add(key)
+        normalized_menu.append(cleaned)
+
+    if normalized_menu:
+        return normalized_menu
+
+    # Safe fallback menu if source item list is missing.
+    cuisine_hint = _normalize_spaces(record.get("primary_cuisine") or "Indian")
+    return [
+        {
+            "name": f"{cuisine_hint} Signature Platter",
+            "price": 220,
+            "description": "Chef-crafted platter with house favorites",
+            "is_veg": True,
+        },
+        {
+            "name": "Classic Veg Combo",
+            "price": 180,
+            "description": "Balanced combo meal with main, side and bread",
+            "is_veg": True,
+        },
+    ]
+
+
+def _inject_non_veg_menu_items(menu, cost_for_two, rng):
+    mixed_menu = [dict(item) for item in menu]
+    existing_names = {_normalize_name(item.get("name")) for item in mixed_menu}
+    add_count = rng.randint(2, 4)
+
+    base_cost = max(180, _parse_int(cost_for_two, 300))
+    for dish in rng.sample(NON_VEG_DISH_BANK, add_count):
+        key = _normalize_name(dish["name"])
+        if key in existing_names:
+            continue
+
+        price = int(max(120, base_cost * rng.uniform(0.35, 0.65)))
+        mixed_menu.append(
+            {
+                "name": dish["name"],
+                "price": price,
+                "description": dish["description"],
+                "is_veg": False,
+            }
+        )
+        existing_names.add(key)
+
+    return mixed_menu
+
+
+def _dedupe_by_name(records):
+    deduped_records = []
+    seen_names = set()
+
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+
+        name = _normalize_spaces(record.get("name"))
+        key = _normalize_name(name)
+        if not key or key in seen_names:
+            continue
+
+        seen_names.add(key)
+        record["name"] = name
+        deduped_records.append(record)
+
+    return deduped_records
+
+
+def _build_description(primary_cuisine, location, menu, is_mixed):
+    style = "veg + non-veg" if is_mixed else "pure veg"
+    return (
+        f"Popular {primary_cuisine} kitchen in {location} with {style} offerings. "
+        f"Known for {len(menu)} curated dishes and reliable delivery."
+    )
+
+
+def build_seed_restaurants():
+    source_records = _dedupe_by_name(_load_source_records())
+    if not source_records:
+        return []
+
+    selection_rng = random.Random(MIXED_SELECTION_SEED)
+    mixed_target = int(round(len(source_records) * TARGET_MIXED_RATIO))
+    mixed_indices = set(selection_rng.sample(range(len(source_records)), mixed_target))
+
+    compiled = []
+    for index, source in enumerate(source_records):
+        name = _normalize_spaces(source.get("name") or f"Restaurant #{index + 1}")
+        location = _normalize_spaces(source.get("location") or source.get("area") or "Mumbai")
+        primary_cuisine = _normalize_spaces(source.get("primary_cuisine") or source.get("cuisine") or "Indian")
+        cuisines = _extract_cuisine_tags(source)
+        if _normalize_tag(primary_cuisine) not in cuisines:
+            cuisines.insert(0, _normalize_tag(primary_cuisine))
+
+        record_rng = random.Random(f"{name}:{index}:menu")
+        menu = _build_clean_menu(source, record_rng)
+
+        is_mixed = index in mixed_indices
+        if is_mixed:
+            menu = _inject_non_veg_menu_items(menu, source.get("cost_for_two"), record_rng)
+            veg_only = False
+        else:
+            for menu_item in menu:
+                menu_item["is_veg"] = True
+            veg_only = True
+
+        rating = _parse_float(source.get("rating"), 4.1)
+        rating = max(1.0, min(5.0, round(rating, 2)))
+
+        compiled.append(
+            {
+                "name": name,
+                "area": _infer_area(location, name),
+                "cuisine": primary_cuisine,
+                "primary_cuisine": primary_cuisine,
+                "cuisines": cuisines,
+                "cuisine_types": ";".join(cuisines),
+                "rating": rating,
+                "total_ratings": _parse_int(source.get("total_ratings"), 120),
+                "cost_for_two": _parse_int(source.get("cost_for_two"), 250),
+                "price_range": _to_price_range(source.get("cost_for_two")),
+                "address": _normalize_spaces(source.get("address") or f"{location}, Mumbai"),
+                "hours": _normalize_spaces(source.get("hours") or "10:00 AM - 11:00 PM"),
+                "is_open": bool(source.get("is_open", True)),
+                "veg_only": veg_only,
+                "pure_veg": veg_only,
+                "description": _normalize_spaces(
+                    source.get("description")
+                    or _build_description(primary_cuisine, location, menu, is_mixed)
+                ),
+                "image_url": _normalize_spaces(source.get("image_url")),
+                "menu": menu,
+                "location": location,
+                "city": _normalize_spaces(source.get("city") or "Mumbai"),
+                "delivery_time": _normalize_spaces(source.get("delivery_time") or "30-40 mins"),
+            }
+        )
+
+    return compiled
+
+
+RESTAURANTS = build_seed_restaurants()

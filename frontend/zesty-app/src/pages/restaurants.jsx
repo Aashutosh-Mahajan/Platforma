@@ -26,13 +26,61 @@ const HERO_CAROUSEL_SLIDES = [
   HERO_SECTIONS[0],
 ];
 
-const CUISINE_STRIP_ITEMS = [
+const PRIMARY_CUISINE_STRIP_ITEMS = [
   { id: "all", label: "All", emoji: "🍽️", cuisineKey: "" },
   { id: "desserts", label: "Desserts", emoji: "🍰", cuisineKey: "dessert" },
-  { id: "north-indian", label: "North Indian", emoji: "🍛", cuisineKey: "north" },
+  { id: "north-indian", label: "North Indian", emoji: "🍛", cuisineKey: "north indian" },
+  { id: "ice-cream", label: "Ice Cream", emoji: "🍨", cuisineKey: "ice cream" },
+  { id: "pav-bhaji", label: "Pav Bhaji", emoji: "🥘", cuisineKey: "pav bhaji" },
   { id: "sweets", label: "Sweets", emoji: "🍬", cuisineKey: "sweet" },
-  { id: "fast-food", label: "Fast Food", emoji: "🍔", cuisineKey: "fast" },
-  { id: "biryani", label: "Biryani", emoji: "🍲", cuisineKey: "biryani" },
+  { id: "jain-food", label: "Jain Food", emoji: "🥗", cuisineKey: "jain" },
+  { id: "south-indian", label: "South Indian", emoji: "🥥", cuisineKey: "south indian" },
+  { id: "waffles", label: "Waffles", emoji: "🧇", cuisineKey: "waffle" },
+  { id: "maharashtrian", label: "Maharashtrian", emoji: "🍲", cuisineKey: "maharashtrian" },
+  { id: "paneer", label: "Paneer", emoji: "🧀", cuisineKey: "paneer" },
+  { id: "sandwich", label: "Sandwich", emoji: "🥪", cuisineKey: "sandwich" },
+  { id: "cake", label: "Cake", emoji: "🎂", cuisineKey: "cake" },
+  { id: "dosa", label: "Dosa", emoji: "🥞", cuisineKey: "dosa" },
+  { id: "chinese", label: "Chinese", emoji: "🥡", cuisineKey: "chinese" },
+  { id: "fried-rice", label: "Fried Rice", emoji: "🍚", cuisineKey: "fried rice" },
+  { id: "pizza", label: "Pizza", emoji: "🍕", cuisineKey: "pizza" },
+];
+
+const EXTRA_CUISINE_DROPDOWN_ITEMS = [
+  { id: "kulfi", label: "Kulfi", cuisineKey: "kulfi" },
+  { id: "khichdi", label: "Khichdi", cuisineKey: "khichdi" },
+  { id: "gujarati", label: "Gujarati", cuisineKey: "gujarati" },
+  { id: "pastry", label: "Pastry", cuisineKey: "pastry" },
+  { id: "thali", label: "Thali", cuisineKey: "thali" },
+  { id: "chaap", label: "Chaap", cuisineKey: "chaap" },
+  { id: "rajasthani", label: "Rajasthani", cuisineKey: "rajasthani" },
+  { id: "chaat", label: "Chaat", cuisineKey: "chaat" },
+  { id: "idli", label: "Idli", cuisineKey: "idli" },
+  { id: "dal", label: "Dal", cuisineKey: "dal" },
+  { id: "rolls", label: "Rolls", cuisineKey: "roll" },
+  { id: "dal-khichdi", label: "Dal Khichdi", cuisineKey: "dal khichdi" },
+  { id: "vada", label: "Vada", cuisineKey: "vada" },
+  { id: "kulche", label: "Kulche", cuisineKey: "kulche" },
+  { id: "paratha", label: "Paratha", cuisineKey: "paratha" },
+  { id: "cheesecake", label: "Cheesecake", cuisineKey: "cheesecake" },
+  { id: "doughnut", label: "Doughnut", cuisineKey: "doughnut" },
+  { id: "sundae", label: "Sundae", cuisineKey: "sundae" },
+  { id: "pulao", label: "Pulao", cuisineKey: "pulao" },
+  { id: "chole", label: "Chole", cuisineKey: "chole" },
+  { id: "tiramisu", label: "Tiramisu", cuisineKey: "tiramisu" },
+  { id: "rasgulla-shake", label: "Rasgulla Shake", cuisineKey: "rasgulla shake" },
+  { id: "brownie", label: "Brownie", cuisineKey: "brownie" },
+  { id: "manchurian", label: "Manchurian", cuisineKey: "manchurian" },
+  { id: "soup", label: "Soup", cuisineKey: "soup" },
+  { id: "chole-bhature", label: "Chole Bhature", cuisineKey: "chole bhature" },
+  { id: "vada-pav", label: "Vada Pav", cuisineKey: "vada pav" },
+  { id: "samosa", label: "Samosa", cuisineKey: "samosa" },
+  { id: "aloo-paratha", label: "Aloo Paratha", cuisineKey: "aloo paratha" },
+];
+
+const ALL_CUISINE_ITEMS = [
+  ...PRIMARY_CUISINE_STRIP_ITEMS,
+  ...EXTRA_CUISINE_DROPDOWN_ITEMS,
 ];
 
 function RestaurantSkeletonCard({ index }) {
@@ -66,7 +114,7 @@ export default function RestaurantsPage() {
     foodPreference: "all",
   });
   const [activeCuisineStrip, setActiveCuisineStrip] = useState("all");
-  const [dataSourceFilter, setDataSourceFilter] = useState("all");
+  const [showMoreCuisines, setShowMoreCuisines] = useState(false);
   const [quickFilters, setQuickFilters] = useState({
     nearFast: false,
     under200: false,
@@ -81,22 +129,13 @@ export default function RestaurantsPage() {
   const isImageHero = Boolean(activeHero.imageUrl);
 
   const visibleRestaurants = useMemo(() => {
-    const selectedCuisine = CUISINE_STRIP_ITEMS.find((item) => item.id === activeCuisineStrip);
+    const selectedCuisine = ALL_CUISINE_ITEMS.find((item) => item.id === activeCuisineStrip);
     const cuisineKey = (selectedCuisine?.cuisineKey || "").toLowerCase();
 
     return restaurants.filter((restaurant) => {
-      const cuisineText = `${restaurant.cuisine || ""} ${restaurant.cuisine_types || ""}`.toLowerCase();
+      const cuisineText = `${restaurant.name || ""} ${restaurant.cuisine || ""} ${restaurant.cuisine_types || ""} ${restaurant.description || ""}`.toLowerCase();
       const ratingValue = Number(restaurant.rating || 0);
       const priceRangeValue = Number(restaurant.price_range || 2);
-      const sourceValue = String(restaurant.data_source || "fake").toLowerCase();
-
-      if (dataSourceFilter === "real" && sourceValue !== "real") {
-        return false;
-      }
-
-      if (dataSourceFilter === "fake" && sourceValue !== "fake") {
-        return false;
-      }
 
       if (cuisineKey && !cuisineText.includes(cuisineKey)) {
         return false;
@@ -114,7 +153,6 @@ export default function RestaurantsPage() {
     });
   }, [
     activeCuisineStrip,
-    dataSourceFilter,
     quickFilters.nearFast,
     quickFilters.under200,
     restaurants,
@@ -339,6 +377,8 @@ export default function RestaurantsPage() {
 
       try {
         const params = new URLSearchParams();
+        const selectedCuisine = ALL_CUISINE_ITEMS.find((item) => item.id === activeCuisineStrip);
+        const cuisineKey = (selectedCuisine?.cuisineKey || "").trim().toLowerCase();
 
         if (debouncedSearch.trim()) {
           params.set("search", debouncedSearch.trim());
@@ -348,11 +388,15 @@ export default function RestaurantsPage() {
         }
         if (filters.foodPreference === "veg") {
           params.set("veg_only", "true");
-        } else if (filters.foodPreference === "non-veg") {
-          params.set("veg_only", "false");
         }
-        if (dataSourceFilter === "real" || dataSourceFilter === "fake") {
-          params.set("data_source", dataSourceFilter);
+        if (cuisineKey) {
+          params.set("cuisine_tag", cuisineKey);
+        }
+        if (quickFilters.nearFast) {
+          params.set("min_rating", "4");
+        }
+        if (quickFilters.under200) {
+          params.set("max_price_range", "2");
         }
 
         const query = params.toString();
@@ -388,7 +432,18 @@ export default function RestaurantsPage() {
     fetchRestaurants();
 
     return () => controller.abort();
-  }, [debouncedSearch, filters.area, filters.foodPreference, dataSourceFilter]);
+  }, [
+    activeCuisineStrip,
+    debouncedSearch,
+    filters.area,
+    filters.foodPreference,
+    quickFilters.nearFast,
+    quickFilters.under200,
+  ]);
+
+  const selectedMoreCuisine = EXTRA_CUISINE_DROPDOWN_ITEMS.find(
+    (item) => item.id === activeCuisineStrip,
+  );
 
   return (
     <main className="min-h-screen bg-[#FFFFFF]">
@@ -429,15 +484,18 @@ export default function RestaurantsPage() {
             {HERO_CAROUSEL_SLIDES.map((slide, index) => (
               <div
                 key={`${slide.id}-${index}`}
-                className="h-full bg-[#F6E9CC]"
+                className="relative h-full overflow-hidden bg-[#F6E9CC]"
                 style={{
                   width: `${100 / HERO_CAROUSEL_SLIDES.length}%`,
-                  backgroundImage: `url(${slide.imageUrl})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  backgroundRepeat: "no-repeat",
                 }}
-              />
+              >
+                <img
+                  src={slide.imageUrl}
+                  alt="Zesty hero offer"
+                  className="h-full w-full object-cover object-center"
+                  loading={index <= 1 ? "eager" : "lazy"}
+                />
+              </div>
             ))}
           </div>
         </div>
@@ -545,7 +603,7 @@ export default function RestaurantsPage() {
             <p className="mt-0.5 text-xs font-semibold text-white">Explore</p>
           </button>
 
-          {CUISINE_STRIP_ITEMS.map((item) => (
+          {PRIMARY_CUISINE_STRIP_ITEMS.map((item) => (
             <button
               key={item.id}
               type="button"
@@ -563,26 +621,52 @@ export default function RestaurantsPage() {
               />
             </button>
           ))}
+
+          <button
+            type="button"
+            onClick={() => setShowMoreCuisines((prev) => !prev)}
+            className="min-w-[96px] text-center"
+          >
+            <div className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-full bg-white shadow-[0_8px_18px_rgba(0,0,0,0.12)]">
+              <span className="text-[30px]" aria-hidden="true">➕</span>
+            </div>
+            <p className="mt-2 truncate text-base font-semibold text-[#263238]">
+              {selectedMoreCuisine ? selectedMoreCuisine.label : "See all"}
+            </p>
+            <div
+              className={`mx-auto mt-2 h-1 rounded-full transition-all duration-200 ${
+                showMoreCuisines || selectedMoreCuisine ? "w-12 bg-[#1FA463]" : "w-0 bg-transparent"
+              }`}
+            />
+          </button>
         </div>
 
-        <div className="mt-4 flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="inline-flex overflow-hidden rounded-xl border border-[#D7D7D7] bg-white">
-            {["all", "real", "fake"].map((value) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setDataSourceFilter(value)}
-                className={`px-4 py-2.5 text-sm font-semibold transition-colors duration-200 ${
-                  dataSourceFilter === value
-                    ? "bg-[#1FA463] text-white"
-                    : "text-[#263238] hover:bg-[#F6F6F6]"
-                }`}
-              >
-                {value === "all" ? "All" : value === "real" ? "Real only" : "Fake only"}
-              </button>
-            ))}
+        {showMoreCuisines && (
+          <div className="mt-3 rounded-2xl border border-[#D7D7D7] bg-white p-3 shadow-[0_8px_18px_rgba(0,0,0,0.08)]">
+            <p className="px-1 text-sm font-semibold text-[#3A3F44]">More cuisines</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {EXTRA_CUISINE_DROPDOWN_ITEMS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveCuisineStrip(item.id);
+                    setShowMoreCuisines(false);
+                  }}
+                  className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
+                    activeCuisineStrip === item.id
+                      ? "border-[#17A35C] bg-[#E8F8EF] text-[#0D7C43]"
+                      : "border-[#D7D7D7] bg-white text-[#263238] hover:bg-[#F6F6F6]"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
           </div>
+        )}
 
+        <div className="mt-4 flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button
             type="button"
             onClick={() => setQuickFilters((prev) => ({ ...prev, nearFast: !prev.nearFast }))}

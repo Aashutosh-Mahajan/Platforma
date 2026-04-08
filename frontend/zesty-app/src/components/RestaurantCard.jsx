@@ -6,11 +6,6 @@ export default function RestaurantCard({ restaurant, onSelect }) {
   const hasPhoto = Boolean(restaurant.image_url || restaurant.photo_url);
   const rating = Number(restaurant.rating || 0) || 4;
   const numericRating = rating.toFixed(1);
-  const isRealData = String(restaurant.data_source || "").toLowerCase() === "real";
-  const sourceBadgeLabel = isRealData ? "Real Data" : "Demo Data";
-  const sourceBadgeClass = isRealData
-    ? "border-[#B9E6C8] bg-[#E8F8ED] text-[#157347]"
-    : "border-[#F2DE9B] bg-[#FFF8E1] text-[#8A6D1E]";
 
   return (
     <button
@@ -20,12 +15,6 @@ export default function RestaurantCard({ restaurant, onSelect }) {
     >
       <article className="h-full overflow-hidden rounded-2xl border border-[#ECECEC] bg-white shadow-[0_8px_18px_rgba(0,0,0,0.1)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_14px_28px_rgba(0,0,0,0.14)]">
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#E5E5E5]">
-          <span
-            className={`absolute right-2 top-2 z-10 rounded-full border px-2 py-0.5 text-[11px] font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.12)] ${sourceBadgeClass}`}
-          >
-            {sourceBadgeLabel}
-          </span>
-
           {hasPhoto ? (
             <img
               src={restaurant.image_url || restaurant.photo_url}
