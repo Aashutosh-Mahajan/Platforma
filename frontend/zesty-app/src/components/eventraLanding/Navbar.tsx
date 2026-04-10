@@ -1,6 +1,7 @@
 import { Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts';
 
 const NAV_ITEMS = [
   { label: 'Discover', to: '/eventra', isActive: true },
@@ -11,6 +12,25 @@ const NAV_ITEMS = [
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuth();
+
+  const handleAccountClick = () => {
+    navigate('/profile');
+  };
+
+  const handleDashboardClick = () => {
+    navigate('/dashboard');
+  };
+
+  const handleEventraDashboardClick = () => {
+    navigate('/dashboard/eventra');
+  };
+
+  const handleLogoutClick = async () => {
+    await logout();
+    navigate('/eventra');
+  };
 
   useEffect(() => {
     const onScroll = () => {
@@ -57,12 +77,47 @@ export default function Navbar() {
           >
             <Search className="h-4 w-4" />
           </button>
-          <Link
-            to="/login"
-            className="rounded-full bg-eventra-amber px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-eventra-amberLight"
-          >
-            Sign In
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <button
+                type="button"
+                className="rounded-full border border-[#c9beff]/45 bg-[rgba(109,73,253,0.22)] px-4 py-2 text-sm font-semibold text-[#f4f0ff] backdrop-blur-md transition-colors hover:bg-[rgba(109,73,253,0.34)]"
+                onClick={handleDashboardClick}
+              >
+                Dashboard
+              </button>
+              <button
+                type="button"
+                className="hidden rounded-full border border-[#c9beff]/55 bg-[rgba(109,73,253,0.3)] px-4 py-2 text-sm font-semibold text-[#f7f3ff] transition-colors hover:bg-[rgba(109,73,253,0.4)] xl:inline-flex"
+                onClick={handleEventraDashboardClick}
+              >
+                Eventra Dashboard
+              </button>
+              <button
+                type="button"
+                className="rounded-full border border-white/35 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20"
+                onClick={handleAccountClick}
+              >
+                Hi, {user?.first_name || 'User'}
+              </button>
+              <button
+                type="button"
+                className="rounded-full bg-eventra-amber px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-eventra-amberLight"
+                onClick={() => {
+                  void handleLogoutClick();
+                }}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/login"
+              className="rounded-full bg-eventra-amber px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-eventra-amberLight"
+            >
+              Sign In
+            </Link>
+          )}
         </div>
       </div>
     </header>

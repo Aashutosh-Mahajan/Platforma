@@ -467,7 +467,7 @@ const RestaurantDetailPage: React.FC = () => {
                     className={`px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
                       selectedCategory === category
                         ? 'bg-orange-500 text-white'
-                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700'
                     }`}
                   >
                     {category}
@@ -527,7 +527,7 @@ const RestaurantDetailPage: React.FC = () => {
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => handleQuantityChange(item.id, (quantities[item.id] || 1) - 1)}
-                                className="w-8 h-8 flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                                className="w-8 h-8 flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
                               >
                                 -
                               </button>
@@ -536,7 +536,7 @@ const RestaurantDetailPage: React.FC = () => {
                               </span>
                               <button
                                 onClick={() => handleQuantityChange(item.id, (quantities[item.id] || 1) + 1)}
-                                className="w-8 h-8 flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                                className="w-8 h-8 flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
                               >
                                 +
                               </button>
