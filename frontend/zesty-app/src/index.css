@@ -181,6 +181,37 @@
     color: var(--color-on-surface-variant);
   }
 
+  /* Keep zesty pages readable even if global dark mode is enabled. */
+  .theme-zesty-page .dark\:text-white,
+  .theme-zesty-page .dark\:text-gray-200,
+  .theme-zesty-page .dark\:text-gray-300 {
+    color: var(--color-on-surface);
+  }
+
+  .theme-zesty-page .dark\:text-gray-400,
+  .theme-zesty-page .dark\:text-gray-500,
+  .theme-zesty-page .dark\:text-gray-600 {
+    color: var(--color-on-surface-variant);
+  }
+
+  .theme-zesty-page .dark\:bg-gray-800 {
+    background-color: rgba(255, 255, 255, 0.94);
+  }
+
+  .theme-zesty-page .dark\:bg-gray-700 {
+    background-color: #f2e4e3;
+  }
+
+  .theme-zesty-page .dark\:border-gray-700,
+  .theme-zesty-page .dark\:border-gray-600 {
+    border-color: rgba(228, 190, 188, 0.62);
+  }
+
+  .theme-zesty-page .dark\:hover\:bg-gray-700:hover,
+  .theme-zesty-page .dark\:hover\:bg-gray-600:hover {
+    background-color: #f8eceb;
+  }
+
   .theme-zesty-page .border-gray-300,
   .theme-zesty-page .border-gray-200,
   .theme-zesty-page .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
