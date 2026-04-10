@@ -5,6 +5,13 @@ import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
 import { ErrorMessage } from '../../components/shared/ErrorMessage';
 import type { Order } from '../../types';
 
+const toNumber = (value: unknown, fallback = 0): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const formatCurrency = (value: unknown): string => `₹${toNumber(value, 0).toFixed(2)}`;
+
 const OrderHistoryPage: React.FC = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -136,7 +143,7 @@ const OrderHistoryPage: React.FC = () => {
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                       <p>
-                        {order.items.length} item{order.items.length !== 1 ? 's' : ''} • ₹{order.total.toFixed(2)}
+                        {order.items.length} item{order.items.length !== 1 ? 's' : ''} • {formatCurrency(order.total)}
                       </p>
                       <p>
                         Order #{order.id} • {new Date(order.created_at).toLocaleDateString('en-IN', {
@@ -155,7 +162,7 @@ const OrderHistoryPage: React.FC = () => {
                     <div className="text-sm text-gray-700 dark:text-gray-300">
                       {order.items.slice(0, 2).map((item) => (
                         <div key={item.id}>
-                          {item.quantity}x {item.menu_item.name}
+                          {toNumber(item.quantity, 1)}x {item.menu_item?.name || 'Menu Item'}
                         </div>
                       ))}
                       {order.items.length > 2 && (

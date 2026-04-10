@@ -1,10 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { addressAPI } from '../../api/addresses';
 import { orderAPI } from '../../api/zesty';
 import type { Address } from '../../types';
+
+type NewAddressForm = {
+  label: 'home' | 'work' | 'other';
+  street: string;
+  city: string;
+  state: string;
+  postal_code: string;
+};
+
+type ApiLikeError = {
+  response?: {
+    data?: {
+      detail?: string;
+      message?: string;
+      error?: string;
+    };
+  };
+};
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -18,22 +36,25 @@ const CheckoutPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingAddresses, setLoadingAddresses] = useState(true);
+  const [savingAddress, setSavingAddress] = useState(false);
+  const [newAddress, setNewAddress] = useState<NewAddressForm>({
+    label: 'home',
+    street: '',
+    city: '',
+    state: '',
+    postal_code: '',
+  });
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/auth/login');
-      return;
+  const readApiErrorMessage = (err: unknown, fallbackMessage: string): string => {
+    if (typeof err !== 'object' || err === null) {
+      return fallbackMessage;
     }
 
-    if (items.length === 0) {
-      navigate('/zesty/cart');
-      return;
-    }
+    const apiError = err as ApiLikeError;
+    return apiError.response?.data?.detail || apiError.response?.data?.message || apiError.response?.data?.error || fallbackMessage;
+  };
 
-    fetchAddresses();
-  }, [isAuthenticated, items, navigate]);
-
-  const fetchAddresses = async () => {
+  const fetchAddresses = useCallback(async () => {
     try {
       setLoadingAddresses(true);
       const response = await addressAPI.list();
@@ -46,22 +67,67 @@ const CheckoutPage: React.FC = () => {
       } else if (response.results.length > 0) {
         setSelectedAddressId(response.results[0].id);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to load addresses');
+    } catch (err: unknown) {
+      setError(readApiErrorMessage(err, 'Failed to load addresses'));
     } finally {
       setLoadingAddresses(false);
     }
-  };
+  }, []);
 
-  const handlePlaceOrder = async () => {
-    if (!selectedAddressId) {
-      setError('Please select a delivery address');
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
       return;
     }
 
+    if (items.length === 0) {
+      navigate('/zesty/cart');
+      return;
+    }
+
+    fetchAddresses();
+  }, [isAuthenticated, items, navigate, fetchAddresses]);
+
+  const handlePlaceOrder = async () => {
     if (!restaurant) {
       setError('Restaurant information is missing');
       return;
+    }
+
+    let addressId = selectedAddressId;
+
+    if (!addressId) {
+      const hasAllAddressFields =
+        newAddress.street.trim() &&
+        newAddress.city.trim() &&
+        newAddress.state.trim() &&
+        newAddress.postal_code.trim();
+
+      if (!hasAllAddressFields) {
+        setError('Delivery address is required. Please fill all address fields.');
+        return;
+      }
+
+      try {
+        setSavingAddress(true);
+        const createdAddress = await addressAPI.create({
+          ...newAddress,
+          street: newAddress.street.trim(),
+          city: newAddress.city.trim(),
+          state: newAddress.state.trim(),
+          postal_code: newAddress.postal_code.trim(),
+          is_default: addresses.length === 0,
+        });
+
+        setAddresses((prev) => [...prev, createdAddress]);
+        setSelectedAddressId(createdAddress.id);
+        addressId = createdAddress.id;
+      } catch {
+        setError('Failed to save address. Please check the details and try again.');
+        return;
+      } finally {
+        setSavingAddress(false);
+      }
     }
 
     setLoading(true);
@@ -70,22 +136,22 @@ const CheckoutPage: React.FC = () => {
     try {
       const orderData = {
         restaurant_id: restaurant.id,
-        delivery_address_id: selectedAddressId,
+        delivery_address_id: addressId,
         special_instructions: specialInstructions,
         payment_method: paymentMethod,
         items: items.map(item => ({
           menu_item_id: item.menuItem.id,
           quantity: item.quantity,
+          menu_item_name: item.menuItem.name,
+          unit_price: item.menuItem.price,
         })),
       };
 
       const order = await orderAPI.create(orderData);
       clearCart();
       navigate(`/zesty/orders/${order.id}`);
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || 
-                          err.response?.data?.message ||
-                          'Failed to place order. Please try again.';
+    } catch (err: unknown) {
+      const errorMessage = readApiErrorMessage(err, 'Failed to place order. Please try again.');
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -129,7 +195,7 @@ const CheckoutPage: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Delivery Address
+                  Delivery Address <span className="text-red-500">*</span>
                 </h2>
                 <button
                   onClick={() => navigate('/profile')}
@@ -140,16 +206,78 @@ const CheckoutPage: React.FC = () => {
               </div>
 
               {addresses.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    No addresses found. Please add a delivery address.
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Enter your delivery address to continue. This field is required before placing an order.
                   </p>
-                  <button
-                    onClick={() => navigate('/profile')}
-                    className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
-                  >
-                    Add Address
-                  </button>
+
+                  <div>
+                    <label htmlFor="address-label" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Address Label
+                    </label>
+                    <select
+                      id="address-label"
+                      value={newAddress.label}
+                      onChange={(e) => setNewAddress((prev) => ({ ...prev, label: e.target.value as NewAddressForm['label'] }))}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    >
+                      <option value="home">Home</option>
+                      <option value="work">Work</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="address-street" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Street Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="address-street"
+                      value={newAddress.street}
+                      onChange={(e) => setNewAddress((prev) => ({ ...prev, street: e.target.value }))}
+                      placeholder="Flat / Building / Street"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div>
+                      <label htmlFor="address-city" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        City <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="address-city"
+                        value={newAddress.city}
+                        onChange={(e) => setNewAddress((prev) => ({ ...prev, city: e.target.value }))}
+                        placeholder="City"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="address-state" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        State <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="address-state"
+                        value={newAddress.state}
+                        onChange={(e) => setNewAddress((prev) => ({ ...prev, state: e.target.value }))}
+                        placeholder="State"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="address-postal" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Postal Code <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="address-postal"
+                        value={newAddress.postal_code}
+                        onChange={(e) => setNewAddress((prev) => ({ ...prev, postal_code: e.target.value }))}
+                        placeholder="Postal code"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      />
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -306,10 +434,10 @@ const CheckoutPage: React.FC = () => {
 
               <button
                 onClick={handlePlaceOrder}
-                disabled={loading || !selectedAddressId || addresses.length === 0}
+                disabled={loading || savingAddress}
                 className="w-full px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
               >
-                {loading ? 'Placing Order...' : 'Place Order'}
+                {loading ? 'Placing Order...' : savingAddress ? 'Saving Address...' : 'Place Order'}
               </button>
 
               <button

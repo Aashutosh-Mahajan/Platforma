@@ -1,6 +1,84 @@
 import apiClient from './client';
 import type { Restaurant, MenuItem, Order, Review, DeliveryTracking, PaginatedResponse } from '../types';
 
+const toNumber = (value: unknown, fallback: number): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const normalizeRestaurant = (raw: Restaurant): Restaurant => ({
+  ...raw,
+  id: toNumber(raw.id, 0),
+  price_range: toNumber(raw.price_range, 1),
+  delivery_fee: toNumber(raw.delivery_fee, 0),
+  delivery_time_min: toNumber(raw.delivery_time_min, 20),
+  delivery_time_max: toNumber(raw.delivery_time_max, 40),
+  rating: toNumber(raw.rating, 0),
+  review_count: toNumber(raw.review_count, 0),
+});
+
+const normalizeReview = (raw: Review): Review => ({
+  ...raw,
+  rating: toNumber(raw.rating, 0),
+});
+
+const normalizeMenuItem = (raw: MenuItem): MenuItem => ({
+  ...raw,
+  id: toNumber(raw.id, 0),
+  restaurant: toNumber(raw.restaurant, 0),
+  price: toNumber(raw.price, 0),
+});
+
+const normalizeOrderItem = (raw: Order['items'][number]): Order['items'][number] => ({
+  ...raw,
+  id: typeof raw.id === 'string' ? raw.id : toNumber(raw.id, 0),
+  menu_item: raw.menu_item ? normalizeMenuItem(raw.menu_item) : null,
+  quantity: toNumber(raw.quantity, 1),
+  unit_price: toNumber(raw.unit_price, 0),
+  total: toNumber(raw.total, 0),
+});
+
+const normalizeOrder = (raw: Order): Order => ({
+  ...raw,
+  user: toNumber(raw.user, 0),
+  restaurant: toNumber(raw.restaurant, 0),
+  restaurant_name: raw.restaurant_name || '',
+  items: Array.isArray(raw.items) ? raw.items.map(normalizeOrderItem) : [],
+  subtotal: toNumber(raw.subtotal, 0),
+  delivery_fee: toNumber(raw.delivery_fee, 0),
+  tax: toNumber(raw.tax, 0),
+  total: toNumber(raw.total, 0),
+  delivery_address: raw.delivery_address && typeof raw.delivery_address === 'object'
+    ? raw.delivery_address
+    : null,
+  estimated_delivery: raw.estimated_delivery || null,
+  actual_delivery: raw.actual_delivery || null,
+  special_instructions: raw.special_instructions || '',
+});
+
+const normalizeTrackingTimeline = (timeline: unknown): Array<{ status: string; at: string }> => {
+  if (!Array.isArray(timeline)) {
+    return [];
+  }
+
+  return timeline
+    .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+    .map((item) => ({
+      status: typeof item.status === 'string' ? item.status : 'pending',
+      at: typeof item.at === 'string' ? item.at : '',
+    }))
+    .filter((item) => item.at.length > 0);
+};
+
+const normalizeTracking = (raw: DeliveryTracking): DeliveryTracking => ({
+  ...raw,
+  order_status: raw.order_status || 'pending',
+  delivery_partner_name: raw.delivery_partner_name || 'Delivery Partner',
+  delivery_partner_phone: raw.delivery_partner_phone || '',
+  status_timeline: normalizeTrackingTimeline(raw.status_timeline),
+  eta: raw.eta || null,
+});
+
 export interface RestaurantListParams {
   search?: string;
   area?: string;
@@ -25,6 +103,8 @@ export interface OrderCreateData {
   items: Array<{
     menu_item_id: number;
     quantity: number;
+    menu_item_name?: string;
+    unit_price?: number;
   }>;
 }
 
@@ -60,12 +140,15 @@ export interface MenuItemCreateData {
 export const restaurantAPI = {
   list: async (params?: RestaurantListParams): Promise<PaginatedResponse<Restaurant>> => {
     const response = await apiClient.get('/zesty/restaurants/', { params });
-    return response.data;
+    return {
+      ...response.data,
+      results: (response.data.results || []).map(normalizeRestaurant),
+    };
   },
 
   retrieve: async (id: number): Promise<Restaurant> => {
     const response = await apiClient.get(`/zesty/restaurants/${id}/`);
-    return response.data;
+    return normalizeRestaurant(response.data);
   },
 
   create: async (data: RestaurantCreateData): Promise<Restaurant> => {
@@ -118,12 +201,15 @@ export const restaurantAPI = {
 
   getReviews: async (id: number): Promise<PaginatedResponse<Review>> => {
     const response = await apiClient.get(`/zesty/restaurants/${id}/reviews/`);
-    return response.data;
+    return {
+      ...response.data,
+      results: (response.data.results || []).map(normalizeReview),
+    };
   },
 
   createReview: async (id: number, data: ReviewCreateData): Promise<Review> => {
     const response = await apiClient.post(`/zesty/restaurants/${id}/reviews/`, data);
-    return response.data;
+    return normalizeReview(response.data);
   },
 };
 
@@ -181,31 +267,34 @@ export const orderAPI = {
   list: async (status?: string): Promise<PaginatedResponse<Order>> => {
     const params = status ? { status } : {};
     const response = await apiClient.get('/zesty/orders/', { params });
-    return response.data;
+    return {
+      ...response.data,
+      results: (response.data.results || []).map(normalizeOrder),
+    };
   },
 
   create: async (data: OrderCreateData): Promise<Order> => {
     const response = await apiClient.post('/zesty/orders/', data);
-    return response.data;
+    return normalizeOrder(response.data);
   },
 
-  retrieve: async (id: number): Promise<Order> => {
+  retrieve: async (id: string | number): Promise<Order> => {
     const response = await apiClient.get(`/zesty/orders/${id}/`);
-    return response.data;
+    return normalizeOrder(response.data);
   },
 
-  cancel: async (id: number): Promise<Order> => {
+  cancel: async (id: string | number): Promise<Order> => {
     const response = await apiClient.patch(`/zesty/orders/${id}/cancel/`);
-    return response.data;
+    return normalizeOrder(response.data);
   },
 
-  getTracking: async (id: number): Promise<DeliveryTracking> => {
+  getTracking: async (id: string | number): Promise<DeliveryTracking> => {
     const response = await apiClient.get(`/zesty/orders/${id}/tracking/`);
-    return response.data;
+    return normalizeTracking(response.data);
   },
 
-  updateStatus: async (id: number, status: string): Promise<Order> => {
+  updateStatus: async (id: string | number, status: string): Promise<Order> => {
     const response = await apiClient.patch(`/zesty/orders/${id}/update_status/`, { status });
-    return response.data;
+    return normalizeOrder(response.data);
   },
 };

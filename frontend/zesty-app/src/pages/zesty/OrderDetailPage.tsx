@@ -1,9 +1,43 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { orderAPI } from '../../api/zesty';
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
 import { ErrorMessage } from '../../components/shared/ErrorMessage';
 import type { Order, DeliveryTracking } from '../../types';
+
+type ApiLikeError = {
+  response?: {
+    data?: {
+      detail?: string;
+      message?: string;
+    };
+  };
+};
+
+type TimelineStep = {
+  key: string;
+  label: string;
+  icon: string;
+  minute: number | null;
+};
+
+const toNumber = (value: unknown, fallback = 0): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const formatCurrency = (value: unknown): string => {
+  return `₹${toNumber(value, 0).toFixed(2)}`;
+};
+
+const parseDate = (value?: string | null): Date | null => {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
 
 const OrderDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,51 +49,20 @@ const OrderDetailPage: React.FC = () => {
   const [cancelling, setCancelling] = useState(false);
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    if (id) {
-      fetchOrderDetails(parseInt(id));
+  const readApiErrorMessage = (err: unknown, fallbackMessage: string): string => {
+    if (typeof err !== 'object' || err === null) {
+      return fallbackMessage;
     }
 
-    return () => {
-      // Cleanup polling on unmount
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, [id]);
-
-  const fetchOrderDetails = async (orderId: number) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const orderData = await orderAPI.retrieve(orderId);
-      setOrder(orderData);
-
-      // Fetch tracking if order is active
-      if (isActiveOrder(orderData.status)) {
-        try {
-          const trackingData = await orderAPI.getTracking(orderId);
-          setTracking(trackingData);
-        } catch (trackingErr) {
-          // Tracking might not be available yet, that's okay
-          console.log('Tracking not available yet');
-        }
-
-        // Start polling for active orders
-        startPolling(orderId);
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to load order details');
-    } finally {
-      setLoading(false);
-    }
+    const apiError = err as ApiLikeError;
+    return apiError.response?.data?.detail || apiError.response?.data?.message || fallbackMessage;
   };
 
-  const isActiveOrder = (status: string): boolean => {
+  const isActiveOrder = useCallback((status: string): boolean => {
     return !['delivered', 'cancelled'].includes(status);
-  };
+  }, []);
 
-  const startPolling = (orderId: number) => {
+  const startPolling = useCallback((orderId: string | number) => {
     // Clear any existing interval
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
@@ -71,15 +74,14 @@ const OrderDetailPage: React.FC = () => {
         const orderData = await orderAPI.retrieve(orderId);
         setOrder(orderData);
 
-        // Try to fetch tracking
-        if (isActiveOrder(orderData.status)) {
-          try {
-            const trackingData = await orderAPI.getTracking(orderId);
-            setTracking(trackingData);
-          } catch (trackingErr) {
-            // Tracking might not be available
-          }
-        } else {
+        try {
+          const trackingData = await orderAPI.getTracking(orderId);
+          setTracking(trackingData);
+        } catch {
+          setTracking(null);
+        }
+
+        if (!isActiveOrder(orderData.status)) {
           // Stop polling if order is no longer active
           if (pollingIntervalRef.current) {
             clearInterval(pollingIntervalRef.current);
@@ -89,7 +91,45 @@ const OrderDetailPage: React.FC = () => {
         console.error('Polling error:', err);
       }
     }, 30000); // 30 seconds
-  };
+  }, [isActiveOrder]);
+
+  const fetchOrderDetails = useCallback(async (orderId: string | number) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const orderData = await orderAPI.retrieve(orderId);
+      setOrder(orderData);
+
+      try {
+        const trackingData = await orderAPI.getTracking(orderId);
+        setTracking(trackingData);
+      } catch {
+        setTracking(null);
+      }
+
+      // Keep syncing while order is active to drive simulated status progression.
+      if (isActiveOrder(orderData.status)) {
+        startPolling(orderId);
+      }
+    } catch (err: unknown) {
+      setError(readApiErrorMessage(err, 'Failed to load order details'));
+    } finally {
+      setLoading(false);
+    }
+  }, [isActiveOrder, startPolling]);
+
+  useEffect(() => {
+    if (id) {
+      fetchOrderDetails(id);
+    }
+
+    return () => {
+      // Cleanup polling on unmount
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [id, fetchOrderDetails]);
 
   const handleCancelOrder = async () => {
     if (!order || !id) return;
@@ -100,22 +140,22 @@ const OrderDetailPage: React.FC = () => {
 
     setCancelling(true);
     try {
-      const updatedOrder = await orderAPI.cancel(parseInt(id));
+      const updatedOrder = await orderAPI.cancel(id);
       setOrder(updatedOrder);
       
       // Stop polling after cancellation
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to cancel order');
+    } catch (err: unknown) {
+      setError(readApiErrorMessage(err, 'Failed to cancel order'));
     } finally {
       setCancelling(false);
     }
   };
 
   const canCancelOrder = (status: string): boolean => {
-    return ['pending', 'confirmed'].includes(status);
+    return status === 'pending';
   };
 
   const getStatusColor = (status: string) => {
@@ -136,19 +176,19 @@ const OrderDetailPage: React.FC = () => {
   };
 
   const getStatusTimeline = () => {
-    const statuses = [
-      { key: 'pending', label: 'Order Placed', icon: '📝' },
-      { key: 'confirmed', label: 'Confirmed', icon: '✅' },
-      { key: 'preparing', label: 'Preparing', icon: '👨‍🍳' },
-      { key: 'ready', label: 'Ready', icon: '📦' },
-      { key: 'out_for_delivery', label: 'Out for Delivery', icon: '🚚' },
-      { key: 'delivered', label: 'Delivered', icon: '🎉' },
+    const statuses: TimelineStep[] = [
+      { key: 'pending', label: 'Order Placed', icon: '📝', minute: 0 },
+      { key: 'confirmed', label: 'Order Confirmed', icon: '✅', minute: 2 },
+      { key: 'preparing', label: 'Preparing', icon: '👨‍🍳', minute: 5 },
+      { key: 'ready', label: 'Ready for Dispatch', icon: '📦', minute: 9 },
+      { key: 'out_for_delivery', label: 'Out for Delivery', icon: '🚚', minute: 12 },
+      { key: 'delivered', label: 'Order Arrived', icon: '🎉', minute: 15 },
     ];
 
     if (order?.status === 'cancelled') {
       return [
-        { key: 'pending', label: 'Order Placed', icon: '📝' },
-        { key: 'cancelled', label: 'Cancelled', icon: '❌' },
+        { key: 'pending', label: 'Order Placed', icon: '📝', minute: 0 },
+        { key: 'cancelled', label: 'Cancelled', icon: '❌', minute: null },
       ];
     }
 
@@ -174,7 +214,7 @@ const OrderDetailPage: React.FC = () => {
         <div className="text-center max-w-md">
           <ErrorMessage 
             message={error || 'Order not found'} 
-            onRetry={() => id && fetchOrderDetails(parseInt(id))}
+            onRetry={() => id && fetchOrderDetails(id)}
           />
           <button
             onClick={() => navigate('/zesty/orders')}
@@ -189,6 +229,43 @@ const OrderDetailPage: React.FC = () => {
 
   const currentStatusIndex = getStatusIndex(order.status);
   const timeline = getStatusTimeline();
+  const createdAt = parseDate(order.created_at);
+  const estimatedDeliveryAt = parseDate(order.estimated_delivery);
+  const trackingTimeline = Array.isArray(tracking?.status_timeline) ? tracking.status_timeline : [];
+  const deliveryAddress =
+    order.delivery_address && typeof order.delivery_address === 'object'
+      ? (order.delivery_address as Record<string, unknown>)
+      : null;
+  const orderItems = Array.isArray(order.items) ? order.items : [];
+
+  const getAddressField = (key: string): string => {
+    if (!deliveryAddress) {
+      return '';
+    }
+
+    const value = deliveryAddress[key];
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (typeof value === 'number') {
+      return String(value);
+    }
+
+    return '';
+  };
+
+  const getScheduledTimeLabel = (offsetMinutes: number | null): string | null => {
+    if (offsetMinutes === null || !createdAt) {
+      return null;
+    }
+
+    const scheduled = new Date(createdAt.getTime() + offsetMinutes * 60 * 1000);
+    return scheduled.toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
   return (
     <div className="theme-zesty theme-zesty-page min-h-screen bg-gray-50">
@@ -207,13 +284,15 @@ const OrderDetailPage: React.FC = () => {
                 Order #{order.id}
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                {new Date(order.created_at).toLocaleDateString('en-IN', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
+                {createdAt
+                  ? createdAt.toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  : 'Order time unavailable'}
               </p>
             </div>
             <span className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
@@ -235,6 +314,9 @@ const OrderDetailPage: React.FC = () => {
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
             Order Status
           </h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            Simulated 15-minute tracking flow: Confirmed (2m) → Preparing (5m) → Ready (9m) → Out for delivery (12m) → Delivered (15m).
+          </p>
           <div className="relative">
             {/* Timeline Line */}
             <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700" />
@@ -267,11 +349,16 @@ const OrderDetailPage: React.FC = () => {
                       }`}>
                         {step.label}
                       </h3>
-                      {isCurrent && order.estimated_delivery && (
+                      {getScheduledTimeLabel(step.minute) && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Scheduled: {getScheduledTimeLabel(step.minute)}
+                        </p>
+                      )}
+                      {isCurrent && estimatedDeliveryAt && (
                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          Estimated delivery: {new Date(order.estimated_delivery).toLocaleTimeString('en-IN', {
+                          Standard 15-min delivery. ETA: {estimatedDeliveryAt.toLocaleTimeString('en-IN', {
                             hour: '2-digit',
-                            minute: '2-digit'
+                            minute: '2-digit',
                           })}
                         </p>
                       )}
@@ -284,10 +371,10 @@ const OrderDetailPage: React.FC = () => {
         </div>
 
         {/* Delivery Tracking */}
-        {tracking && order.status === 'out_for_delivery' && (
+        {tracking && order.status !== 'cancelled' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Delivery Tracking
+              Live Tracking
             </h2>
             <div className="space-y-3">
               <div className="flex items-center gap-3">
@@ -301,12 +388,34 @@ const OrderDetailPage: React.FC = () => {
                   </p>
                 </div>
               </div>
-              {tracking.eta && (
+              {estimatedDeliveryAt && (
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  ETA: {new Date(tracking.eta).toLocaleTimeString('en-IN', {
+                  ETA: {estimatedDeliveryAt.toLocaleTimeString('en-IN', {
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
                   })}
+                </p>
+              )}
+              {trackingTimeline.length > 0 ? (
+                <div className="pt-2">
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                    Progress Checkpoints
+                  </p>
+                  <ul className="space-y-1">
+                    {trackingTimeline.map((checkpoint, index) => {
+                      const checkpointTime = parseDate(checkpoint.at);
+                      return (
+                        <li key={`${checkpoint.status}-${checkpoint.at}-${index}`} className="text-sm text-gray-600 dark:text-gray-400">
+                          • {formatStatus(checkpoint.status)}
+                          {checkpointTime ? ` at ${checkpointTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}` : ''}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Progress checkpoints will appear automatically during the simulated 15-minute journey.
                 </p>
               )}
             </div>
@@ -333,21 +442,25 @@ const OrderDetailPage: React.FC = () => {
               Items
             </h3>
             <div className="space-y-3">
-              {order.items.map(item => (
-                <div key={item.id} className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <p className="text-gray-900 dark:text-white">
-                      {item.quantity}x {item.menu_item.name}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      ₹{item.unit_price.toFixed(2)} each
+              {orderItems.length > 0 ? (
+                orderItems.map(item => (
+                  <div key={String(item.id)} className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <p className="text-gray-900 dark:text-white">
+                        {toNumber(item.quantity, 1)}x {item.menu_item?.name || 'Menu Item'}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {formatCurrency(item.unit_price)} each
+                      </p>
+                    </div>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {formatCurrency(item.total)}
                     </p>
                   </div>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    ₹{item.total.toFixed(2)}
-                  </p>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No items available for this order.</p>
+              )}
             </div>
           </div>
 
@@ -357,8 +470,16 @@ const OrderDetailPage: React.FC = () => {
               Delivery Address
             </h3>
             <div className="text-gray-700 dark:text-gray-300">
-              <p>{order.delivery_address.street}</p>
-              <p>{order.delivery_address.city}, {order.delivery_address.state} {order.delivery_address.postal_code}</p>
+              {deliveryAddress ? (
+                <>
+                  <p>{getAddressField('street') || 'Address line unavailable'}</p>
+                  <p>
+                    {[getAddressField('city'), getAddressField('state')].filter(Boolean).join(', ')} {getAddressField('postal_code')}
+                  </p>
+                </>
+              ) : (
+                <p>Address not available</p>
+              )}
             </div>
           </div>
 
@@ -376,19 +497,19 @@ const OrderDetailPage: React.FC = () => {
           <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2">
             <div className="flex justify-between text-gray-700 dark:text-gray-300">
               <span>Subtotal</span>
-              <span>₹{order.subtotal.toFixed(2)}</span>
+              <span>{formatCurrency(order.subtotal)}</span>
             </div>
             <div className="flex justify-between text-gray-700 dark:text-gray-300">
               <span>Delivery Fee</span>
-              <span>₹{order.delivery_fee.toFixed(2)}</span>
+              <span>{formatCurrency(order.delivery_fee)}</span>
             </div>
             <div className="flex justify-between text-gray-700 dark:text-gray-300">
               <span>Tax</span>
-              <span>₹{order.tax.toFixed(2)}</span>
+              <span>{formatCurrency(order.tax)}</span>
             </div>
             <div className="flex justify-between text-xl font-bold text-gray-900 dark:text-white pt-2 border-t border-gray-200 dark:border-gray-700">
               <span>Total</span>
-              <span>₹{order.total.toFixed(2)}</span>
+              <span>{formatCurrency(order.total)}</span>
             </div>
           </div>
         </div>
@@ -404,7 +525,7 @@ const OrderDetailPage: React.FC = () => {
               {cancelling ? 'Cancelling...' : 'Cancel Order'}
             </button>
             <p className="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">
-              You can cancel this order while it's pending or confirmed
+              You can cancel this order only before it gets confirmed
             </p>
           </div>
         )}

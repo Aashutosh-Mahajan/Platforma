@@ -56,7 +56,7 @@ class OrderListSerializer(serializers.ModelSerializer):
         model = Order
         fields = ['id', 'restaurant', 'restaurant_name', 'status', 'items',
                   'subtotal', 'delivery_fee', 'tax', 'total',
-                  'estimated_delivery', 'created_at']
+                  'estimated_delivery', 'payment_status', 'created_at']
         read_only_fields = ['id', 'subtotal', 'delivery_fee', 'tax', 'total',
                             'created_at']
 
@@ -65,13 +65,18 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     """Full detail serializer with items and tracking."""
     items = OrderItemSerializer(many=True, read_only=True)
     restaurant_name = serializers.CharField(source='restaurant.name', read_only=True)
-    delivery_address = AddressSerializer(read_only=True)
+    delivery_address = serializers.JSONField(read_only=True)
+    actual_delivery = serializers.SerializerMethodField()
+
+    def get_actual_delivery(self, obj):
+        return obj.updated_at if obj.status == 'delivered' else None
 
     class Meta:
         model = Order
         fields = ['id', 'restaurant', 'restaurant_name', 'status', 'items',
                   'subtotal', 'delivery_fee', 'tax', 'total',
                   'delivery_address', 'estimated_delivery', 'actual_delivery',
+                  'payment_method', 'payment_status',
                   'special_instructions', 'created_at', 'updated_at']
         read_only_fields = ['id', 'subtotal', 'delivery_fee', 'tax', 'total',
                             'actual_delivery', 'created_at', 'updated_at']
@@ -80,12 +85,18 @@ class OrderDetailSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     restaurant_name = serializers.CharField(source='restaurant.name', read_only=True)
+    delivery_address = serializers.JSONField(read_only=True)
+    actual_delivery = serializers.SerializerMethodField()
+
+    def get_actual_delivery(self, obj):
+        return obj.updated_at if obj.status == 'delivered' else None
 
     class Meta:
         model = Order
         fields = ['id', 'restaurant', 'restaurant_name', 'status', 'items',
                   'subtotal', 'delivery_fee', 'tax', 'total',
                   'delivery_address', 'estimated_delivery', 'actual_delivery',
+                  'payment_method', 'payment_status',
                   'special_instructions', 'created_at', 'updated_at']
         read_only_fields = ['id', 'subtotal', 'delivery_fee', 'tax', 'total',
                             'actual_delivery', 'created_at', 'updated_at']
@@ -94,7 +105,7 @@ class OrderSerializer(serializers.ModelSerializer):
 class OrderCreateSerializer(serializers.Serializer):
     """Serializer for creating orders with items."""
     restaurant_id = serializers.IntegerField()
-    delivery_address_id = serializers.IntegerField(required=False)
+    delivery_address_id = serializers.IntegerField(required=True)
     special_instructions = serializers.CharField(required=False, allow_blank=True, default='')
     payment_method = serializers.CharField(default='credit_card')
     items = serializers.ListField(
@@ -139,8 +150,10 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
 
 class DeliveryTrackingSerializer(serializers.ModelSerializer):
     order_status = serializers.CharField(source='order.status', read_only=True)
+    eta = serializers.DateTimeField(source='order.estimated_delivery', read_only=True)
 
     class Meta:
         model = DeliveryTracking
         fields = ['order_status', 'delivery_partner_name', 'delivery_partner_phone',
-                  'latitude', 'longitude', 'eta', 'updated_at']
+                  'delivery_partner_avatar_url', 'latitude', 'longitude',
+                  'status_timeline', 'eta', 'updated_at']

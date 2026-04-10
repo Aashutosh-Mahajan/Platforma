@@ -38,4 +38,4 @@ class ReviewAdmin(admin.ModelAdmin):
 
 @admin.register(DeliveryTracking)
 class DeliveryTrackingAdmin(admin.ModelAdmin):
-    list_display = ['order', 'delivery_partner_name', 'eta', 'updated_at']
+    list_display = ['order', 'delivery_partner_name', 'delivery_partner_phone', 'updated_at']

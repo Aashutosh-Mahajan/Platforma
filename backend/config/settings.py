@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'zesty',
     'eventra',
     'restaurants',
+    'orders',
 ]
 
 # ====================

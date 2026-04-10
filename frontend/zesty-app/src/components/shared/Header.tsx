@@ -14,7 +14,13 @@ export const Header: React.FC = () => {
 
   const isZestyRoute = location.pathname.startsWith('/zesty');
   const isRestaurantsListRoute =
-    location.pathname === '/zesty/restaurants' || location.pathname === '/restaurants';
+    location.pathname === '/zesty' ||
+    location.pathname === '/zesty/' ||
+    location.pathname === '/zesty/restaurants' ||
+    location.pathname === '/restaurants';
+  const isRestaurantDetailRoute =
+    location.pathname.startsWith('/zesty/restaurants/') ||
+    location.pathname.startsWith('/restaurants/');
   const isEventraStandaloneLandingRoute =
     location.pathname === '/eventra' || location.pathname === '/eventra/discover';
   const isPlatformaLandingRoute = location.pathname === '/';
@@ -82,7 +88,7 @@ export const Header: React.FC = () => {
     setShowMobileMenu(false);
   };
 
-  if (isRestaurantsListRoute || isEventraStandaloneLandingRoute || isPlatformaLandingRoute) {
+  if (isRestaurantsListRoute || isRestaurantDetailRoute || isEventraStandaloneLandingRoute || isPlatformaLandingRoute) {
     return null;
   }
 
