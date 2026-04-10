@@ -18,7 +18,7 @@ const CartPage: React.FC = () => {
             Add some delicious items to get started!
           </p>
           <button
-            onClick={() => navigate('/zesty/restaurants')}
+            onClick={() => navigate('/zesty')}
             className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
           >
             Browse Restaurants
@@ -166,7 +166,7 @@ const CartPage: React.FC = () => {
               </button>
 
               <button
-                onClick={() => navigate('/zesty/restaurants')}
+                onClick={() => navigate('/zesty')}
                 className="w-full mt-3 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 Add More Items

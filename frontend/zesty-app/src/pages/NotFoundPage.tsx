@@ -19,7 +19,7 @@ const NotFoundPage: React.FC = () => {
             Go Home
           </Link>
           <Link
-            to="/zesty/restaurants"
+            to="/zesty"
             className="px-6 py-3 bg-white text-blue-600 border-2 border-blue-600 rounded-lg hover:bg-blue-50 transition font-semibold"
           >
             Browse Restaurants

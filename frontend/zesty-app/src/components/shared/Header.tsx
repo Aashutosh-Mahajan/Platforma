@@ -22,41 +22,102 @@ export const Header: React.FC = () => {
     location.pathname.startsWith('/zesty/restaurants/') ||
     location.pathname.startsWith('/restaurants/');
   const isEventraRoute = location.pathname.startsWith('/eventra');
+  const isDashboardRoute = location.pathname.startsWith('/dashboard');
   const isEventraStandaloneLandingRoute =
     location.pathname === '/eventra' || location.pathname === '/eventra/discover';
   const isPlatformaLandingRoute = location.pathname === '/';
 
   const headerClass = isZestyRoute
     ? 'bg-surface-container-lowest/95 border-b border-outline-variant/70 backdrop-blur-md shadow-[0px_10px_24px_rgba(183,18,42,0.08)]'
+    : isDashboardRoute
+      ? 'bg-[rgba(20,24,30,0.76)] border-b border-white/10 backdrop-blur-md shadow-[0_10px_26px_rgba(0,0,0,0.35)]'
     : 'bg-white shadow';
 
   const logoClass = isZestyRoute
     ? 'text-xl sm:text-2xl font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded'
+    : isDashboardRoute
+      ? 'text-base sm:text-lg font-semibold uppercase tracking-[0.24em] text-white focus:outline-none focus:ring-2 focus:ring-white/60 rounded'
     : 'text-xl sm:text-2xl font-bold text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded';
 
   const mobileMenuButtonClass = isZestyRoute
     ? 'md:hidden p-2 rounded-md text-on-surface-variant hover:text-primary hover:bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary'
+    : isDashboardRoute
+      ? 'md:hidden p-2 rounded-md text-white/80 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/60'
     : 'md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500';
 
   const navLinkClass = isZestyRoute
     ? 'text-sm lg:text-base text-on-surface-variant hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded px-2 py-1'
+    : isDashboardRoute
+      ? 'text-sm lg:text-base text-white/85 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/60 rounded px-2 py-1 transition-colors duration-200'
     : 'text-sm lg:text-base text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1';
 
   const primaryAuthButtonClass = isZestyRoute
     ? 'px-4 py-2 bg-primary text-white text-sm lg:text-base rounded hover:bg-surface-tint focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
+    : isDashboardRoute
+      ? 'px-4 py-2 rounded border border-white/40 bg-transparent text-white text-sm lg:text-base hover:bg-white hover:text-[#111111] focus:outline-none focus:ring-2 focus:ring-white/60'
     : 'px-4 py-2 bg-blue-600 text-white text-sm lg:text-base rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2';
 
   const userMenuToggleClass = isZestyRoute
     ? 'flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary'
+    : isDashboardRoute
+      ? 'flex items-center gap-2 px-3 py-2 rounded-lg text-white/90 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/60'
     : 'flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500';
 
   const mobileNavLinkClass = isZestyRoute
     ? 'block px-4 py-2 text-on-surface-variant hover:bg-surface-container rounded-lg focus:outline-none focus:ring-2 focus:ring-primary'
+    : isDashboardRoute
+      ? 'block px-4 py-2 text-white/85 hover:bg-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/60'
     : 'block px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500';
 
   const mobilePrimaryAuthButtonClass = isZestyRoute
     ? 'block px-4 py-2 bg-primary text-white text-center rounded-lg hover:bg-surface-tint focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2'
+    : isDashboardRoute
+      ? 'block px-4 py-2 rounded-lg border border-white/40 bg-transparent text-center text-white hover:bg-white hover:text-[#111111] focus:outline-none focus:ring-2 focus:ring-white/60'
     : 'block px-4 py-2 bg-blue-600 text-white text-center rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2';
+
+  const userMenuPanelClass = isDashboardRoute
+    ? 'absolute right-0 mt-2 w-48 rounded-lg border border-white/15 bg-[rgba(17,21,27,0.95)] shadow-[0_16px_30px_rgba(0,0,0,0.45)] z-10 backdrop-blur-md'
+    : 'absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-10';
+
+  const userMenuMetaContainerClass = isDashboardRoute
+    ? 'p-4 border-b border-white/15'
+    : 'p-4 border-b';
+
+  const userMenuEmailClass = isDashboardRoute
+    ? 'text-sm font-medium text-white'
+    : 'text-sm font-medium';
+
+  const userMenuRoleClass = isDashboardRoute
+    ? 'text-xs text-white/70 capitalize'
+    : 'text-xs text-gray-600 capitalize';
+
+  const userMenuLogoutClass = isDashboardRoute
+    ? 'w-full text-left px-4 py-2 text-sm text-white/90 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/60 rounded-b-lg'
+    : 'w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 rounded-b-lg';
+
+  const mobileMenuClass = isDashboardRoute
+    ? 'md:hidden mt-4 pb-4 border-t border-white/15 pt-4'
+    : 'md:hidden mt-4 pb-4 border-t pt-4';
+
+  const mobileUserMetaClass = isDashboardRoute
+    ? 'px-4 py-2 border-t border-white/15 mt-2 pt-2'
+    : 'px-4 py-2 border-t mt-2 pt-2';
+
+  const mobileUserNameClass = isDashboardRoute
+    ? 'text-sm font-medium text-white'
+    : 'text-sm font-medium text-gray-900';
+
+  const mobileUserEmailClass = isDashboardRoute
+    ? 'text-xs text-white/70'
+    : 'text-xs text-gray-600';
+
+  const mobileUserRoleClass = isDashboardRoute
+    ? 'text-xs text-white/70 capitalize'
+    : 'text-xs text-gray-600 capitalize';
+
+  const mobileLogoutClass = isDashboardRoute
+    ? 'w-full text-left px-4 py-2 text-white/90 hover:bg-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/60'
+    : 'w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500';
 
   const handleLogout = async () => {
     await logout();
@@ -105,7 +166,7 @@ export const Header: React.FC = () => {
             className={logoClass}
             aria-label="Platforma Home"
           >
-            Platforma
+            {isDashboardRoute ? 'PLATFORMA' : 'Platforma'}
           </Link>
 
           {/* Mobile Menu Button */}
@@ -178,7 +239,7 @@ export const Header: React.FC = () => {
                 )}
 
                 {/* Notifications */}
-                <NotificationDropdown variant={isZestyRoute ? 'zesty' : 'default'} />
+                <NotificationDropdown variant={isZestyRoute ? 'zesty' : isDashboardRoute ? 'platforma' : 'default'} />
 
                 {/* User Menu */}
                 <div className="relative" ref={userMenuRef}>
@@ -197,17 +258,17 @@ export const Header: React.FC = () => {
 
                   {showUserMenu && (
                     <div 
-                      className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-10"
+                      className={userMenuPanelClass}
                       role="menu"
                       aria-orientation="vertical"
                     >
-                      <div className="p-4 border-b">
-                        <p className="text-sm font-medium">{user?.email}</p>
-                        <p className="text-xs text-gray-600 capitalize">{user?.role.replace('_', ' ')}</p>
+                      <div className={userMenuMetaContainerClass}>
+                        <p className={userMenuEmailClass}>{user?.email}</p>
+                        <p className={userMenuRoleClass}>{user?.role.replace('_', ' ')}</p>
                       </div>
                       <button
                         onClick={handleLogout}
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 rounded-b-lg"
+                        className={userMenuLogoutClass}
                         role="menuitem"
                       >
                         Logout
@@ -237,7 +298,7 @@ export const Header: React.FC = () => {
 
         {/* Mobile Navigation */}
         {showMobileMenu && (
-          <div className="md:hidden mt-4 pb-4 border-t pt-4">
+          <div className={mobileMenuClass}>
             {isAuthenticated ? (
               <div className="space-y-2">
                 <Link 
@@ -290,15 +351,15 @@ export const Header: React.FC = () => {
                   </Link>
                 )}
 
-                <div className="px-4 py-2 border-t mt-2 pt-2">
-                  <p className="text-sm font-medium text-gray-900">{user?.first_name}</p>
-                  <p className="text-xs text-gray-600">{user?.email}</p>
-                  <p className="text-xs text-gray-600 capitalize">{user?.role.replace('_', ' ')}</p>
+                <div className={mobileUserMetaClass}>
+                  <p className={mobileUserNameClass}>{user?.first_name}</p>
+                  <p className={mobileUserEmailClass}>{user?.email}</p>
+                  <p className={mobileUserRoleClass}>{user?.role.replace('_', ' ')}</p>
                 </div>
 
                 <button
                   onClick={handleLogout}
-                  className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className={mobileLogoutClass}
                 >
                   Logout
                 </button>

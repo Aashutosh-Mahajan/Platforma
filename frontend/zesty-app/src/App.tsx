@@ -1,5 +1,5 @@
 import { useEffect, lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import {
   AuthProvider,
   CartProvider,
@@ -45,6 +45,9 @@ const PageTitleUpdater = () => {
   const location = useLocation();
 
   useEffect(() => {
+    // Keep SPA navigation behavior consistent with a hard refresh.
+    window.scrollTo(0, 0);
+
     const routeTitles: Record<string, string> = {
       '/': 'Explore The Best Food & Events',
       '/login': 'Login',
@@ -97,6 +100,18 @@ const PageTitleUpdater = () => {
   }, [location]);
 
   return null;
+};
+
+const LegacyRestaurantsRedirect = () => <Navigate to="/zesty" replace />;
+
+const LegacyRestaurantDetailRedirect = () => {
+  const { id } = useParams();
+
+  if (!id) {
+    return <Navigate to="/zesty" replace />;
+  }
+
+  return <Navigate to={`/zesty/restaurants/${id}`} replace />;
 };
 
 function App() {
@@ -153,9 +168,11 @@ function App() {
                     {/* Zesty Routes */}
                     <Route path="/zesty" element={<RestaurantsPage />} />
                     <Route path="/zesty/" element={<RestaurantsPage />} />
-                    <Route path="/restaurants" element={<Navigate to="/zesty/restaurants" replace />} />
-                    <Route path="/restaurants/:id" element={<RestaurantDetailPage />} />
-                    <Route path="/zesty/restaurants" element={<RestaurantsPage />} />
+                    <Route path="/restaurants" element={<LegacyRestaurantsRedirect />} />
+                    <Route path="/restaurants/:id" element={<LegacyRestaurantDetailRedirect />} />
+                    <Route path="/restaurants/*" element={<LegacyRestaurantsRedirect />} />
+                    <Route path="/zesty/restaurants" element={<Navigate to="/zesty" replace />} />
+                    <Route path="/zesty/restaurants/" element={<Navigate to="/zesty" replace />} />
                     <Route path="/zesty/restaurants/:id" element={<RestaurantDetailPage />} />
                     <Route path="/zesty/cart" element={<CartPage />} />
                     <Route

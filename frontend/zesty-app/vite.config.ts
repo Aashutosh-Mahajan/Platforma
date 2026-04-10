@@ -8,10 +8,18 @@ export default defineConfig({
     {
       name: 'zesty-route-redirect',
       configureServer(server) {
-        server.middlewares.use((req, _res, next) => {
+        server.middlewares.use((req, res, next) => {
+          if (req.url === '/restaurants' || req.url === '/restaurants/' || req.url === '/zesty/restaurants' || req.url === '/zesty/restaurants/') {
+            res.statusCode = 302
+            res.setHeader('Location', '/zesty')
+            res.end()
+            return
+          }
+
           if (req.url === '/zesty') {
             req.url = '/zesty/'
           }
+
           next()
         })
       },

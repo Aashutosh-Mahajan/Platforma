@@ -340,7 +340,7 @@ const RestaurantDetailPage: React.FC = () => {
         <div className="text-center">
           <p className="text-red-600 dark:text-red-400 mb-4">{error || 'Restaurant not found'}</p>
           <button
-            onClick={() => navigate('/zesty/restaurants')}
+            onClick={() => navigate('/zesty')}
             className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
           >
             Back to Restaurants
@@ -384,7 +384,7 @@ const RestaurantDetailPage: React.FC = () => {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <button
             type="button"
-            onClick={() => navigate('/zesty/restaurants')}
+            onClick={() => navigate('/zesty')}
             className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100"
           >
             ← Back

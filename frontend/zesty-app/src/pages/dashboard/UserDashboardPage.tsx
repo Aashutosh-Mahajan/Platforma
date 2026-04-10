@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { bookingAPI } from '../../api/eventra';
 import { orderAPI } from '../../api/zesty';
-import { ErrorMessage } from '../../components/shared/ErrorMessage';
 import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
 import type { Booking, Order } from '../../types';
 
@@ -36,63 +35,93 @@ const formatStatus = (value: string): string =>
 
 const getOrderStatusClass = (status: Order['status']): string => {
   const classes: Record<Order['status'], string> = {
-    pending: 'bg-amber-100 text-amber-800',
-    confirmed: 'bg-orange-100 text-orange-800',
-    preparing: 'bg-rose-100 text-rose-800',
-    ready: 'bg-red-100 text-red-700',
-    out_for_delivery: 'bg-purple-100 text-purple-700',
-    delivered: 'bg-emerald-100 text-emerald-800',
-    cancelled: 'bg-red-100 text-red-800',
+    pending: 'border border-amber-400/45 bg-amber-500/20 text-amber-100',
+    confirmed: 'border border-sky-400/45 bg-sky-500/20 text-sky-100',
+    preparing: 'border border-[#8a9a5b]/60 bg-[#8a9a5b]/25 text-[#e4edc6]',
+    ready: 'border border-indigo-400/45 bg-indigo-500/20 text-indigo-100',
+    out_for_delivery: 'border border-violet-400/45 bg-violet-500/20 text-violet-100',
+    delivered: 'border border-emerald-400/45 bg-emerald-500/20 text-emerald-100',
+    cancelled: 'border border-red-400/45 bg-red-500/20 text-red-100',
   };
 
-  return classes[status] || 'bg-gray-100 text-gray-700';
+  return classes[status] || 'border border-white/25 bg-white/10 text-white/85';
 };
 
 const getBookingStatusClass = (status: Booking['status']): string => {
   const classes: Record<Booking['status'], string> = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    confirmed: 'bg-blue-100 text-blue-800',
-    completed: 'bg-green-100 text-green-800',
-    cancelled: 'bg-red-100 text-red-800',
+    pending: 'border border-amber-400/45 bg-amber-500/20 text-amber-100',
+    confirmed: 'border border-sky-400/45 bg-sky-500/20 text-sky-100',
+    completed: 'border border-emerald-400/45 bg-emerald-500/20 text-emerald-100',
+    cancelled: 'border border-red-400/45 bg-red-500/20 text-red-100',
   };
 
-  return classes[status] || 'bg-gray-100 text-gray-700';
+  return classes[status] || 'border border-white/25 bg-white/10 text-white/85';
 };
 
+const DashboardError: React.FC<{ message: string; onRetry: () => void }> = ({ message, onRetry }) => (
+  <div className="mb-4 rounded-xl border border-red-300/45 bg-red-500/10 p-4" role="alert" aria-live="assertive">
+    <p className="text-sm text-red-100">{message}</p>
+    <button
+      type="button"
+      onClick={onRetry}
+      className="mt-3 rounded border border-red-200/45 bg-transparent px-3 py-1 text-xs font-semibold text-red-100 transition-colors duration-200 hover:bg-red-500/20"
+    >
+      Retry
+    </button>
+  </div>
+);
+
 const UserDashboardPage: React.FC = () => {
-  const [loading, setLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [bookingsLoading, setBookingsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
 
-  const fetchDashboardData = async () => {
-    setLoading(true);
+  const fetchOrders = async () => {
+    setOrdersLoading(true);
 
-    const [ordersResult, bookingsResult] = await Promise.allSettled([
-      orderAPI.list(),
-      bookingAPI.list(),
-    ]);
-
-    if (ordersResult.status === 'fulfilled') {
-      setOrders(ordersResult.value.results || []);
+    try {
+      const response = await orderAPI.list();
+      setOrders(response.results || []);
       setOrderError(null);
-    } else {
+    } catch {
       setOrderError('Unable to load Zesty orders right now.');
+    } finally {
+      setOrdersLoading(false);
     }
+  };
 
-    if (bookingsResult.status === 'fulfilled') {
-      setBookings(bookingsResult.value.results || []);
+  const fetchBookings = async () => {
+    setBookingsLoading(true);
+
+    try {
+      const response = await bookingAPI.list();
+      setBookings(response.results || []);
       setBookingError(null);
-    } else {
+    } catch {
       setBookingError('Unable to load Eventra bookings right now.');
+    } finally {
+      setBookingsLoading(false);
+    }
+  };
+
+  const fetchDashboardData = async (showRefreshState = true) => {
+    if (showRefreshState) {
+      setIsRefreshing(true);
     }
 
-    setLoading(false);
+    await Promise.allSettled([fetchOrders(), fetchBookings()]);
+
+    if (showRefreshState) {
+      setIsRefreshing(false);
+    }
   };
 
   useEffect(() => {
-    void fetchDashboardData();
+    void fetchDashboardData(false);
   }, []);
 
   const zestySpend = useMemo(
@@ -107,176 +136,218 @@ const UserDashboardPage: React.FC = () => {
 
   const combinedSpend = zestySpend + eventraSpend;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <LoadingSpinner size="lg" message="Loading your dashboard..." />
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#f7f7f7] via-[#f9f6ff] to-[#fff8f3] py-8">
-      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">My Dashboard</h1>
-            <p className="mt-2 text-gray-600">
-              Unified snapshot of your Zesty orders and Eventra bookings.
-            </p>
-          </div>
+    <div className="relative min-h-screen overflow-hidden bg-[#0d0d0d] text-white">
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage:
+            "url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1600&q=80')",
+        }}
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,13,18,0.76)_0%,rgba(10,13,18,0.9)_42%,rgba(10,13,18,0.95)_100%)]" />
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              to="/dashboard/zesty"
-              className="rounded-lg border border-[#f4d5d8] bg-white px-4 py-2 text-sm font-semibold text-[#b7122a] transition-colors hover:bg-[#fff8f8]"
-            >
-              Zesty Dashboard
-            </Link>
-            <Link
-              to="/dashboard/eventra"
-              className="rounded-lg border border-[#e6ddff] bg-white px-4 py-2 text-sm font-semibold text-[#5e36ee] transition-colors hover:bg-[#f8f6ff]"
-            >
-              Eventra Dashboard
-            </Link>
-            <button
-              type="button"
-              onClick={() => {
-                void fetchDashboardData();
-              }}
-              className="w-fit rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50"
-            >
-              Refresh
-            </button>
-          </div>
-        </div>
+      <div className="relative z-10 py-8">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <section className="rounded-3xl border border-white/20 bg-[rgba(12,16,22,0.62)] p-6 shadow-[0_20px_36px_rgba(0,0,0,0.36)] backdrop-blur-md md:p-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/65">Platforma</p>
+                <h1
+                  className="mt-3 text-4xl font-semibold leading-tight text-white md:text-5xl"
+                  style={{ fontFamily: '"Playfair Display", serif' }}
+                >
+                  My Dashboard
+                </h1>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/75 md:text-base">
+                  Unified snapshot of your Zesty orders and Eventra bookings.
+                </p>
+              </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <article className="rounded-xl border border-[#ffe0e3] bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#b7122a]">Zesty Orders</p>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{orders.length}</p>
-            <p className="mt-2 text-sm text-gray-600">Total spent: {formatCurrency(zestySpend)}</p>
-          </article>
-
-          <article className="rounded-xl border border-[#e6dcff] bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#5e36ee]">Eventra Bookings</p>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{bookings.length}</p>
-            <p className="mt-2 text-sm text-gray-600">Total spent: {formatCurrency(eventraSpend)}</p>
-          </article>
-
-          <article className="rounded-xl border border-[#e4e4e7] bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-700">Combined Activity</p>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{orders.length + bookings.length}</p>
-            <p className="mt-2 text-sm text-gray-600">Total spent: {formatCurrency(combinedSpend)}</p>
-          </article>
-        </div>
-
-        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <section className="rounded-xl border border-[#ffd7db] bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">Zesty Order History</h2>
-              <Link
-                to="/zesty/orders"
-                className="text-sm font-semibold text-[#b7122a] hover:text-[#92001c]"
-              >
-                View All
-              </Link>
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  to="/dashboard/zesty"
+                  className="rounded-lg border border-white/45 bg-transparent px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-white hover:text-[#111111]"
+                >
+                  Zesty Dashboard
+                </Link>
+                <Link
+                  to="/dashboard/eventra"
+                  className="rounded-lg border border-white/45 bg-transparent px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-white hover:text-[#111111]"
+                >
+                  Eventra Dashboard
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void fetchDashboardData();
+                  }}
+                  disabled={isRefreshing}
+                  className="w-fit rounded-lg border border-white/45 bg-transparent px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-white hover:text-[#111111]"
+                >
+                  {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                </button>
+              </div>
             </div>
-
-            {orderError && (
-              <ErrorMessage
-                message={orderError}
-                onRetry={() => {
-                  void fetchDashboardData();
-                }}
-              />
-            )}
-
-            {!orderError && orders.length === 0 && (
-              <div className="rounded-lg bg-[#fff7f8] p-4 text-sm text-gray-700">
-                No Zesty orders yet.
-              </div>
-            )}
-
-            {!orderError && orders.length > 0 && (
-              <div className="space-y-3">
-                {orders.slice(0, 5).map((order) => (
-                  <Link
-                    key={order.id}
-                    to={`/zesty/orders/${order.id}`}
-                    className="block rounded-lg border border-[#f4e4e6] p-4 transition-colors hover:bg-[#fff8f8]"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-gray-900">{order.restaurant_name || 'Restaurant'}</p>
-                        <p className="mt-1 text-sm text-gray-600">Order #{order.id}</p>
-                        <p className="mt-1 text-xs text-gray-500">{formatDateTime(order.created_at)}</p>
-                      </div>
-                      <div className="text-right">
-                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getOrderStatusClass(order.status)}`}>
-                          {formatStatus(order.status)}
-                        </span>
-                        <p className="mt-2 text-sm font-semibold text-gray-900">{formatCurrency(order.total)}</p>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
           </section>
 
-          <section className="rounded-xl border border-[#e2d9ff] bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">Eventra Booking History</h2>
-              <Link
-                to="/eventra/bookings"
-                className="text-sm font-semibold text-[#5e36ee] hover:text-[#4600d7]"
-              >
-                View All
-              </Link>
-            </div>
+          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <article className="rounded-2xl border border-white/15 bg-[rgba(15,19,25,0.72)] p-5 shadow-[0_16px_30px_rgba(0,0,0,0.3)] backdrop-blur-md">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#c7d39f]">Zesty Orders</p>
+              <p className="mt-3 text-4xl font-semibold text-white" style={{ fontFamily: '"Playfair Display", serif' }}>
+                {ordersLoading ? '...' : orders.length}
+              </p>
+              <p className="mt-2 text-sm text-white/75">
+                Total spent: {ordersLoading ? 'Loading...' : formatCurrency(zestySpend)}
+              </p>
+            </article>
 
-            {bookingError && (
-              <ErrorMessage
-                message={bookingError}
-                onRetry={() => {
-                  void fetchDashboardData();
-                }}
-              />
-            )}
+            <article className="rounded-2xl border border-white/15 bg-[rgba(15,19,25,0.72)] p-5 shadow-[0_16px_30px_rgba(0,0,0,0.3)] backdrop-blur-md">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/80">Eventra Bookings</p>
+              <p className="mt-3 text-4xl font-semibold text-white" style={{ fontFamily: '"Playfair Display", serif' }}>
+                {bookingsLoading ? '...' : bookings.length}
+              </p>
+              <p className="mt-2 text-sm text-white/75">
+                Total spent: {bookingsLoading ? 'Loading...' : formatCurrency(eventraSpend)}
+              </p>
+            </article>
 
-            {!bookingError && bookings.length === 0 && (
-              <div className="rounded-lg bg-[#f6f3ff] p-4 text-sm text-gray-700">
-                No Eventra bookings yet.
+            <article className="rounded-2xl border border-white/15 bg-[rgba(15,19,25,0.72)] p-5 shadow-[0_16px_30px_rgba(0,0,0,0.3)] backdrop-blur-md">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/70">Combined Activity</p>
+              <p className="mt-3 text-4xl font-semibold text-white" style={{ fontFamily: '"Playfair Display", serif' }}>
+                {ordersLoading || bookingsLoading ? '...' : orders.length + bookings.length}
+              </p>
+              <p className="mt-2 text-sm text-white/75">
+                Total spent: {ordersLoading || bookingsLoading ? 'Loading...' : formatCurrency(combinedSpend)}
+              </p>
+            </article>
+          </div>
+
+          <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <section className="rounded-2xl border border-white/15 bg-[rgba(15,19,25,0.72)] p-5 shadow-[0_16px_30px_rgba(0,0,0,0.3)] backdrop-blur-md">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-2xl font-semibold text-white" style={{ fontFamily: '"Playfair Display", serif' }}>
+                  Zesty Order History
+                </h2>
+                <Link
+                  to="/zesty/orders"
+                  className="text-sm font-semibold text-[#c7d39f] transition-colors duration-200 hover:text-[#e4edc6]"
+                >
+                  View All
+                </Link>
               </div>
-            )}
 
-            {!bookingError && bookings.length > 0 && (
-              <div className="space-y-3">
-                {bookings.slice(0, 5).map((booking) => (
-                  <Link
-                    key={booking.id}
-                    to={`/eventra/bookings/${booking.id}`}
-                    className="block rounded-lg border border-[#e9e2ff] p-4 transition-colors hover:bg-[#faf8ff]"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-gray-900">{booking.event_name || 'Event'}</p>
-                        <p className="mt-1 text-sm text-gray-600">Booking #{booking.booking_reference}</p>
-                        <p className="mt-1 text-xs text-gray-500">{formatDateTime(booking.booking_date)}</p>
+              {orderError && (
+                <DashboardError
+                  message={orderError}
+                  onRetry={() => {
+                    void fetchOrders();
+                  }}
+                />
+              )}
+
+              {ordersLoading && !orderError && (
+                <div className="rounded-xl border border-white/12 bg-white/5 p-4">
+                  <LoadingSpinner size="sm" />
+                  <p className="mt-3 text-center text-sm text-white/75">Loading Zesty orders...</p>
+                </div>
+              )}
+
+              {!ordersLoading && !orderError && orders.length === 0 && (
+                <div className="rounded-xl border border-white/12 bg-white/5 p-4 text-sm text-white/80">
+                  No Zesty orders yet.
+                </div>
+              )}
+
+              {!ordersLoading && !orderError && orders.length > 0 && (
+                <div className="space-y-3">
+                  {orders.slice(0, 5).map((order) => (
+                    <Link
+                      key={order.id}
+                      to={`/zesty/orders/${order.id}`}
+                      className="block rounded-xl border border-white/12 bg-[rgba(255,255,255,0.04)] p-4 transition-colors duration-200 hover:bg-[rgba(255,255,255,0.08)]"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-white">{order.restaurant_name || 'Restaurant'}</p>
+                          <p className="mt-1 text-sm text-white/70">Order #{order.id}</p>
+                          <p className="mt-1 text-xs text-white/60">{formatDateTime(order.created_at)}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getOrderStatusClass(order.status)}`}>
+                            {formatStatus(order.status)}
+                          </span>
+                          <p className="mt-2 text-sm font-semibold text-white">{formatCurrency(order.total)}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getBookingStatusClass(booking.status)}`}>
-                          {formatStatus(booking.status)}
-                        </span>
-                        <p className="mt-2 text-sm font-semibold text-gray-900">{formatCurrency(booking.total)}</p>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-2xl border border-white/15 bg-[rgba(15,19,25,0.72)] p-5 shadow-[0_16px_30px_rgba(0,0,0,0.3)] backdrop-blur-md">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-2xl font-semibold text-white" style={{ fontFamily: '"Playfair Display", serif' }}>
+                  Eventra Booking History
+                </h2>
+                <Link
+                  to="/eventra/bookings"
+                  className="text-sm font-semibold text-[#c7d39f] transition-colors duration-200 hover:text-[#e4edc6]"
+                >
+                  View All
+                </Link>
               </div>
-            )}
-          </section>
+
+              {bookingError && (
+                <DashboardError
+                  message={bookingError}
+                  onRetry={() => {
+                    void fetchBookings();
+                  }}
+                />
+              )}
+
+              {bookingsLoading && !bookingError && (
+                <div className="rounded-xl border border-white/12 bg-white/5 p-4">
+                  <LoadingSpinner size="sm" />
+                  <p className="mt-3 text-center text-sm text-white/75">Loading Eventra bookings...</p>
+                </div>
+              )}
+
+              {!bookingsLoading && !bookingError && bookings.length === 0 && (
+                <div className="rounded-xl border border-white/12 bg-white/5 p-4 text-sm text-white/80">
+                  No Eventra bookings yet.
+                </div>
+              )}
+
+              {!bookingsLoading && !bookingError && bookings.length > 0 && (
+                <div className="space-y-3">
+                  {bookings.slice(0, 5).map((booking) => (
+                    <Link
+                      key={booking.id}
+                      to={`/eventra/bookings/${booking.id}`}
+                      className="block rounded-xl border border-white/12 bg-[rgba(255,255,255,0.04)] p-4 transition-colors duration-200 hover:bg-[rgba(255,255,255,0.08)]"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-white">{booking.event_name || 'Event'}</p>
+                          <p className="mt-1 text-sm text-white/70">Booking #{booking.booking_reference}</p>
+                          <p className="mt-1 text-xs text-white/60">{formatDateTime(booking.booking_date)}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getBookingStatusClass(booking.status)}`}>
+                            {formatStatus(booking.status)}
+                          </span>
+                          <p className="mt-2 text-sm font-semibold text-white">{formatCurrency(booking.total)}</p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
         </div>
       </div>
     </div>

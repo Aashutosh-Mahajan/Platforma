@@ -116,7 +116,7 @@ const OrderHistoryPage: React.FC = () => {
               {statusFilter ? 'No orders with this status' : 'You haven\'t placed any orders yet'}
             </p>
             <button
-              onClick={() => navigate('/zesty/restaurants')}
+              onClick={() => navigate('/zesty')}
               className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
             >
               Browse Restaurants

@@ -5,7 +5,7 @@ import { useAuth } from '../contexts';
 const navLinks = [
   {
     label: 'Zesty',
-    to: '/zesty/restaurants',
+    to: '/zesty',
     className:
       'rounded-full border border-[#ffb3b1]/45 bg-[rgba(219,49,63,0.18)] px-3 py-1 text-sm font-semibold text-[#ffd7db] backdrop-blur-md shadow-[0_8px_20px_rgba(183,18,42,0.18)] transition-colors duration-200 hover:bg-[rgba(219,49,63,0.3)]',
   },
@@ -30,6 +30,8 @@ const navLinks = [
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
+  const authNavActionClass =
+    'rounded px-1 py-2 text-sm font-medium text-white/90 transition-colors duration-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/60';
 
   const handleAccountClick = () => {
     navigate('/profile');
@@ -63,60 +65,96 @@ const HomePage: React.FC = () => {
             PLATFORMA
           </p>
 
-          <ul className="flex w-full flex-wrap items-center gap-x-6 gap-y-2 text-left sm:w-auto sm:justify-center sm:gap-8">
-            {navLinks.map((link) => (
-              <li key={link.label}>
-                {link.to ? (
-                  <button
-                    type="button"
-                    className={link.className}
-                    onClick={() => navigate(link.to)}
-                  >
-                    {link.label}
-                  </button>
-                ) : (
-                  <a href={link.href} className={link.className}>
-                    {link.label}
-                  </a>
-                )}
-              </li>
-            ))}
-          </ul>
-
           {isAuthenticated ? (
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <button
-                type="button"
-                className="rounded-lg border border-[#c9beff]/55 bg-[rgba(109,73,253,0.22)] px-4 py-2 text-sm font-semibold text-[#f4f0ff] backdrop-blur-md transition-colors duration-200 hover:bg-[rgba(109,73,253,0.35)]"
-                onClick={handleDashboardClick}
-              >
-                Dashboard
-              </button>
-              <button
-                type="button"
-                className="rounded-lg border border-white/70 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-md transition-colors duration-200 hover:bg-white/20"
-                onClick={handleAccountClick}
-              >
-                Hi, {user?.first_name || 'User'}
-              </button>
-              <button
-                type="button"
-                className="rounded-lg border border-[#ffb3b1]/60 bg-[rgba(183,18,42,0.26)] px-3 py-2 text-sm font-medium text-white backdrop-blur-md transition-colors duration-200 hover:bg-[rgba(183,18,42,0.4)]"
-                onClick={() => {
-                  void handleLogoutClick();
-                }}
-              >
-                Logout
-              </button>
-            </div>
+            <ul className="flex w-full flex-wrap items-center gap-x-5 gap-y-2 text-left sm:w-auto sm:justify-end sm:gap-7">
+              <li>
+                <button
+                  type="button"
+                  className={authNavActionClass}
+                  onClick={() => navigate('/zesty')}
+                >
+                  Zesty
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className={authNavActionClass}
+                  onClick={() => navigate('/eventra')}
+                >
+                  Eventra
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className={authNavActionClass}
+                  onClick={handleDashboardClick}
+                >
+                  Dashboard
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className={authNavActionClass}
+                  onClick={handleAccountClick}
+                >
+                  Hi, {user?.first_name || 'User'}
+                </button>
+              </li>
+              <li>
+                <a href="#" className={authNavActionClass}>
+                  About
+                </a>
+              </li>
+              <li>
+                <a href="#" className={authNavActionClass}>
+                  Contact
+                </a>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className={authNavActionClass}
+                  onClick={() => {
+                    void handleLogoutClick();
+                  }}
+                >
+                  Logout
+                </button>
+              </li>
+            </ul>
           ) : (
-            <button
-              type="button"
-              className="rounded-lg border border-white px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-white hover:text-[#111111]"
-              onClick={() => navigate('/login')}
-            >
-              Sign In
-            </button>
+            <>
+              <ul className="flex w-full flex-wrap items-center gap-x-6 gap-y-2 text-left sm:w-auto sm:justify-center sm:gap-8">
+                {navLinks.map((link) => (
+                  <li key={link.label}>
+                    {link.to ? (
+                      <button
+                        type="button"
+                        className={link.className}
+                        onClick={() => navigate(link.to)}
+                      >
+                        {link.label}
+                      </button>
+                    ) : (
+                      <a href={link.href} className={link.className}>
+                        {link.label}
+                      </a>
+                    )}
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                type="button"
+                className="rounded-lg border border-white px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-white hover:text-[#111111]"
+                onClick={() => navigate('/login')}
+              >
+                Sign In
+              </button>
+            </>
           )}
         </nav>
       </header>
@@ -151,14 +189,14 @@ const HomePage: React.FC = () => {
             <div className="mt-8 flex w-full max-w-md flex-col gap-3 sm:flex-row">
               <button
                 type="button"
-                className="w-full rounded-lg border border-[#ffb3b1]/45 bg-[rgba(219,49,63,0.22)] px-5 py-3 text-sm font-semibold text-white backdrop-blur-md shadow-[0_10px_30px_rgba(183,18,42,0.3)] transition-all duration-200 hover:bg-[rgba(219,49,63,0.36)] hover:shadow-[0_14px_36px_rgba(183,18,42,0.42)]"
-                onClick={() => navigate('/zesty/restaurants')}
+                className="w-full rounded-lg border border-white bg-transparent px-5 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-white hover:text-[#111111]"
+                onClick={() => navigate('/zesty')}
               >
                 Order Now
               </button>
               <button
                 type="button"
-                className="w-full rounded-lg border border-[#c9beff]/45 bg-[rgba(109,73,253,0.26)] px-5 py-3 text-sm font-semibold text-[#f4f0ff] backdrop-blur-md shadow-[0_10px_30px_rgba(84,38,228,0.35)] transition-all duration-200 hover:bg-[rgba(109,73,253,0.4)] hover:shadow-[0_14px_36px_rgba(84,38,228,0.48)]"
+                className="w-full rounded-lg border border-white bg-transparent px-5 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-white hover:text-[#111111]"
                 onClick={() => navigate('/eventra')}
               >
                 Plan Now
@@ -204,7 +242,7 @@ const HomePage: React.FC = () => {
                 <button
                   type="button"
                   className="mt-4 inline-block text-sm text-white underline underline-offset-4"
-                  onClick={() => navigate('/zesty/restaurants')}
+                  onClick={() => navigate('/zesty')}
                 >
                   Browse Menus →
                 </button>
@@ -345,7 +383,7 @@ const HomePage: React.FC = () => {
             <button
               type="button"
               className="rounded-lg bg-[#8a9a5b] px-6 py-3 text-sm font-semibold text-[#0f172a]"
-              onClick={() => navigate('/zesty/restaurants')}
+              onClick={() => navigate('/zesty')}
             >
               Get Started
             </button>
