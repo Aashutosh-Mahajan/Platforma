@@ -1,11 +1,32 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { restaurantAPI } from '../../api/zesty';
+import { restaurantAPI, type RestaurantListParams } from '../../api/zesty';
 import type { Restaurant } from '../../types';
 import { useDebounce } from '../../hooks';
 
+type ApiLikeError = {
+  response?: {
+    data?: {
+      detail?: string;
+    };
+  };
+};
+
 const AREA_OPTIONS = ['Bandra', 'Andheri', 'Juhu', 'Colaba', 'Dadar', 'Powai', 'Worli', 'Churchgate', 'Thane', 'Borivali'];
 const CUISINE_OPTIONS = ['Indian', 'Chinese', 'Italian', 'Continental', 'Fast Food', 'Street Food', 'Seafood', 'Mughlai', 'South Indian', 'North Indian'];
+
+const toFiniteNumber = (value: unknown, fallback = 0): number => {
+  const parsed = Number.parseFloat(String(value));
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const toRestaurantId = (value: unknown): number | null => {
+  const parsed = Number.parseInt(String(value), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+  return parsed;
+};
 
 const getRatingStars = (rating: number): string => {
   const safeRating = Number.isFinite(rating) ? rating : 0;
@@ -44,7 +65,7 @@ const RestaurantListPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const params: any = { page: pageNum };
+      const params: RestaurantListParams = { page: pageNum };
       if (debouncedSearch) params.search = debouncedSearch;
       if (areaFilter) params.area = areaFilter;
       if (cuisineFilter) params.cuisine = cuisineFilter;
@@ -62,8 +83,9 @@ const RestaurantListPage: React.FC = () => {
       }
       
       setHasMore(!!response.next);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to load restaurants');
+    } catch (err: unknown) {
+      const apiError = err as ApiLikeError;
+      setError(apiError.response?.data?.detail || 'Failed to load restaurants');
     } finally {
       setLoading(false);
     }
@@ -81,8 +103,14 @@ const RestaurantListPage: React.FC = () => {
     }
   };
 
-  const handleRestaurantClick = (id: number) => {
-    navigate(`/zesty/restaurants/${id}`);
+  const handleRestaurantClick = (id: number | string) => {
+    const normalizedId = toRestaurantId(id);
+    if (normalizedId === null) {
+      setError('Unable to open this restaurant right now. Please refresh and try again.');
+      return;
+    }
+
+    navigate(`/zesty/restaurants/${normalizedId}`);
   };
 
   return (
@@ -256,7 +284,7 @@ const RestaurantListPage: React.FC = () => {
               {restaurants.map((restaurant) => {
                 const imageSrc = restaurant.image_url || restaurant.image;
                 const cuisineLabel = restaurant.cuisine || restaurant.cuisine_types;
-                const ratingValue = Number(restaurant.rating || 0);
+                const ratingValue = toFiniteNumber(restaurant.rating, 0);
                 const priceRangeValue = Number(restaurant.price_range || 1);
                 const isOpen = typeof restaurant.is_open === 'boolean'
                   ? restaurant.is_open

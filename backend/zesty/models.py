@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+import uuid
 
 
 class Restaurant(models.Model):
@@ -99,6 +100,8 @@ class Order(models.Model):
         ('cancelled', 'Cancelled'),
     ]
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders'
     )
@@ -107,26 +110,22 @@ class Order(models.Model):
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
-    # Address
-    delivery_address = models.ForeignKey(
-        'core.Address', on_delete=models.SET_NULL, null=True, blank=True
-    )
+    # Address snapshot JSON at order time.
+    delivery_address = models.JSONField(default=dict, blank=True)
 
     # Amounts
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     delivery_fee = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0, db_column='total_amount')
 
     # Timeline
-    estimated_delivery = models.DateTimeField(null=True, blank=True)
-    actual_delivery = models.DateTimeField(null=True, blank=True)
+    estimated_delivery = models.DateTimeField(null=True, blank=True, db_column='estimated_delivery_time')
 
     # Extra
     special_instructions = models.TextField(blank=True)
-    payment = models.OneToOneField(
-        'core.Payment', on_delete=models.SET_NULL, null=True, blank=True
-    )
+    payment_method = models.CharField(max_length=10, default='cod')
+    payment_status = models.CharField(max_length=10, default='pending')
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -155,7 +154,8 @@ class OrderItem(models.Model):
     menu_item = models.ForeignKey(MenuItem, on_delete=models.PROTECT)
     quantity = models.IntegerField(default=1)
     unit_price = models.DecimalField(max_digits=8, decimal_places=2)
-    total = models.DecimalField(max_digits=10, decimal_places=2)
+    total = models.DecimalField(max_digits=10, decimal_places=2, db_column='total_price')
+    customizations = models.JSONField(default=dict, blank=True)
 
     class Meta:
         db_table = 'order_items'
@@ -202,9 +202,10 @@ class DeliveryTracking(models.Model):
     )
     delivery_partner_name = models.CharField(max_length=100, default='Delivery Partner')
     delivery_partner_phone = models.CharField(max_length=20, default='+910000000000')
-    latitude = models.DecimalField(max_digits=10, decimal_places=8, null=True, blank=True)
-    longitude = models.DecimalField(max_digits=11, decimal_places=8, null=True, blank=True)
-    eta = models.DateTimeField(null=True, blank=True)
+    latitude = models.DecimalField(max_digits=10, decimal_places=8, null=True, blank=True, db_column='current_lat')
+    longitude = models.DecimalField(max_digits=11, decimal_places=8, null=True, blank=True, db_column='current_lng')
+    delivery_partner_avatar_url = models.CharField(max_length=1000, blank=True, default='')
+    status_timeline = models.JSONField(default=list, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

@@ -243,7 +243,7 @@ export const RestaurantOwnerDashboard: React.FC = () => {
     }
   };
 
-  const handleUpdateOrderStatus = async (orderId: number, newStatus: string) => {
+  const handleUpdateOrderStatus = async (orderId: string | number, newStatus: string) => {
     try {
       const updated = await orderAPI.updateStatus(orderId, newStatus);
       setOrders(orders.map((order) => (order.id === updated.id ? updated : order)));
@@ -560,7 +560,7 @@ export const RestaurantOwnerDashboard: React.FC = () => {
                         {order.items.map((item) => (
                           <li key={item.id} className="flex justify-between">
                             <span>
-                              {item.menu_item.name} x {item.quantity}
+                              {item.menu_item?.name || 'Menu Item'} x {item.quantity}
                             </span>
                             <span className="font-medium">₹{item.total}</span>
                           </li>

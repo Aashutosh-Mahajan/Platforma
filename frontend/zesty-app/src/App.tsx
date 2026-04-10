@@ -47,11 +47,15 @@ const PageTitleUpdater = () => {
       '/login': 'Login',
       '/register': 'Register',
       '/profile': 'Profile',
+      '/zesty': 'Restaurants',
+      '/zesty/': 'Restaurants',
       '/zesty/restaurants': 'Restaurants',
       '/restaurants': 'Restaurants',
       '/zesty/cart': 'Cart',
       '/zesty/checkout': 'Checkout',
       '/zesty/orders': 'Order History',
+      '/evetra': 'Eventra | The Digital Curator',
+      '/evetra/': 'Eventra | The Digital Curator',
       '/eventra/events': 'Events',
       '/eventra/checkout': 'Booking Checkout',
       '/eventra/bookings': 'Booking History',
@@ -117,7 +121,8 @@ function App() {
                     />
 
                     {/* Zesty Routes */}
-                    <Route path="/zesty" element={<Navigate to="/zesty/" replace />} />
+                    <Route path="/zesty" element={<RestaurantsPage />} />
+                    <Route path="/zesty/" element={<RestaurantsPage />} />
                     <Route path="/restaurants" element={<Navigate to="/zesty/restaurants" replace />} />
                     <Route path="/restaurants/:id" element={<RestaurantDetailPage />} />
                     <Route path="/zesty/restaurants" element={<RestaurantsPage />} />
@@ -149,6 +154,8 @@ function App() {
                     />
 
                     {/* Eventra Routes */}
+                    <Route path="/evetra" element={<EventraPremiumLandingPage />} />
+                    <Route path="/evetra/" element={<EventraPremiumLandingPage />} />
                     <Route path="/eventra" element={<EventraPremiumLandingPage />} />
                     <Route path="/eventra/discover" element={<EventraLegacyDiscoverPage />} />
                     <Route path="/eventra/events" element={<EventListPage />} />

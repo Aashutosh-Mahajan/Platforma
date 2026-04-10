@@ -83,31 +83,31 @@ export interface CartItem {
 }
 
 export interface Order {
-  id: number;
+  id: string | number;
   user: number;
   restaurant: number;
   restaurant_name: string;
   status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered' | 'cancelled';
   items: OrderItem[];
-  subtotal: number;
-  delivery_fee: number;
-  tax: number;
-  total: number;
-  delivery_address: Address;
-  estimated_delivery?: string;
-  actual_delivery?: string;
-  special_instructions: string;
+  subtotal: number | string;
+  delivery_fee: number | string;
+  tax: number | string;
+  total: number | string;
+  delivery_address?: Partial<Address> | Record<string, unknown> | null;
+  estimated_delivery?: string | null;
+  actual_delivery?: string | null;
+  special_instructions?: string;
   payment?: Payment;
   created_at: string;
   updated_at: string;
 }
 
 export interface OrderItem {
-  id: number;
-  menu_item: MenuItem;
-  quantity: number;
-  unit_price: number;
-  total: number;
+  id: string | number;
+  menu_item?: MenuItem | null;
+  quantity: number | string;
+  unit_price: number | string;
+  total: number | string;
 }
 
 export interface Review {
@@ -122,9 +122,14 @@ export interface DeliveryTracking {
   order_status: string;
   delivery_partner_name: string;
   delivery_partner_phone: string;
-  latitude: string;
-  longitude: string;
-  eta: string;
+  delivery_partner_avatar_url?: string;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
+  status_timeline?: Array<{
+    status: string;
+    at: string;
+  }>;
+  eta?: string | null;
   updated_at: string;
 }
 
@@ -252,7 +257,7 @@ export interface PaginatedResponse<T> {
 
 export interface ErrorResponse {
   detail?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface AuthResponse {
