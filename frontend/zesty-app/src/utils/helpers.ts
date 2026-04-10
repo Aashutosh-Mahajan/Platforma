@@ -66,6 +66,6 @@ export const getDashboardRouteForRole = (role?: string | null): string | null =>
 };
 
 export const getPostAuthRedirectPath = (role?: string | null): string => {
-  return getDashboardRouteForRole(role) || '/';
+  return getDashboardRouteForRole(role) || '/dashboard';
 };
 

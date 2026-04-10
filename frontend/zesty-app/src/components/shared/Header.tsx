@@ -21,6 +21,7 @@ export const Header: React.FC = () => {
   const isRestaurantDetailRoute =
     location.pathname.startsWith('/zesty/restaurants/') ||
     location.pathname.startsWith('/restaurants/');
+  const isEventraRoute = location.pathname.startsWith('/eventra');
   const isEventraStandaloneLandingRoute =
     location.pathname === '/eventra' || location.pathname === '/eventra/discover';
   const isPlatformaLandingRoute = location.pathname === '/';
@@ -65,6 +66,8 @@ export const Header: React.FC = () => {
   const getDashboardLink = () => {
     return getDashboardRouteForRole(user?.role);
   };
+
+  const roleDashboardLink = getDashboardLink();
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -136,6 +139,28 @@ export const Header: React.FC = () => {
                   Home
                 </Link>
                 <Link 
+                  to="/dashboard" 
+                  className={navLinkClass}
+                >
+                  Dashboard
+                </Link>
+                {isZestyRoute && (
+                  <Link 
+                    to="/dashboard/zesty" 
+                    className={navLinkClass}
+                  >
+                    Zesty Dashboard
+                  </Link>
+                )}
+                {isEventraRoute && (
+                  <Link 
+                    to="/dashboard/eventra" 
+                    className={navLinkClass}
+                  >
+                    Eventra Dashboard
+                  </Link>
+                )}
+                <Link 
                   to="/profile" 
                   className={navLinkClass}
                 >
@@ -143,12 +168,12 @@ export const Header: React.FC = () => {
                 </Link>
 
                 {/* Dashboard Link for Owners/Organizers */}
-                {getDashboardLink() && (
+                {roleDashboardLink && (
                   <Link 
-                    to={getDashboardLink()!} 
+                    to={roleDashboardLink} 
                     className={navLinkClass}
                   >
-                    Dashboard
+                    Business Dashboard
                   </Link>
                 )}
 
@@ -223,6 +248,31 @@ export const Header: React.FC = () => {
                   Home
                 </Link>
                 <Link 
+                  to="/dashboard" 
+                  onClick={handleMobileNavClick}
+                  className={mobileNavLinkClass}
+                >
+                  Dashboard
+                </Link>
+                {isZestyRoute && (
+                  <Link 
+                    to="/dashboard/zesty" 
+                    onClick={handleMobileNavClick}
+                    className={mobileNavLinkClass}
+                  >
+                    Zesty Dashboard
+                  </Link>
+                )}
+                {isEventraRoute && (
+                  <Link 
+                    to="/dashboard/eventra" 
+                    onClick={handleMobileNavClick}
+                    className={mobileNavLinkClass}
+                  >
+                    Eventra Dashboard
+                  </Link>
+                )}
+                <Link 
                   to="/profile" 
                   onClick={handleMobileNavClick}
                   className={mobileNavLinkClass}
@@ -230,13 +280,13 @@ export const Header: React.FC = () => {
                   Profile
                 </Link>
 
-                {getDashboardLink() && (
+                {roleDashboardLink && (
                   <Link 
-                    to={getDashboardLink()!} 
+                    to={roleDashboardLink} 
                     onClick={handleMobileNavClick}
                     className={mobileNavLinkClass}
                   >
-                    Dashboard
+                    Business Dashboard
                   </Link>
                 )}
 

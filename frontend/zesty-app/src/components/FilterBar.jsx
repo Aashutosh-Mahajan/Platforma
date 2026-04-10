@@ -163,12 +163,21 @@ export default function FilterBar({
               Eventra
             </Link>
 
-            <button
-              type="button"
-              className="rounded-full bg-[#FEECEF] px-4 py-2 text-sm font-semibold text-[#8F1F2E] shadow-[0_8px_16px_rgba(0,0,0,0.16)]"
-            >
-              Zesty Money
-            </button>
+            {isAuthenticated ? (
+              <Link
+                to="/dashboard/zesty"
+                className="inline-flex items-center rounded-full bg-[#FEECEF] px-4 py-2 text-sm font-semibold text-[#8F1F2E] shadow-[0_8px_16px_rgba(0,0,0,0.16)] transition-transform duration-200 hover:-translate-y-0.5"
+              >
+                Zesty Dashboard
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className="rounded-full bg-[#FEECEF] px-4 py-2 text-sm font-semibold text-[#8F1F2E] shadow-[0_8px_16px_rgba(0,0,0,0.16)]"
+              >
+                Zesty Money
+              </button>
+            )}
 
             <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-2 py-1.5">
               <span className="text-sm font-black tracking-[0.08em] text-white">{foodPreferenceLabel}</span>

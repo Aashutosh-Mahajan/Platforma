@@ -14,6 +14,9 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
 const ProfilePage = lazy(() => import('./pages/auth/ProfilePage'));
+const UserDashboardPage = lazy(() => import('./pages/dashboard/UserDashboardPage'));
+const ZestyDashboardPage = lazy(() => import('./pages/dashboard/ZestyDashboardPage'));
+const EventraDashboardPage = lazy(() => import('./pages/dashboard/EventraDashboardPage'));
 const RestaurantsPage = lazy(() => import('./pages/restaurants.jsx'));
 
 // Zesty pages
@@ -47,6 +50,9 @@ const PageTitleUpdater = () => {
       '/login': 'Login',
       '/register': 'Register',
       '/profile': 'Profile',
+      '/dashboard': 'Dashboard',
+      '/dashboard/zesty': 'Zesty Dashboard',
+      '/dashboard/eventra': 'Eventra Dashboard',
       '/zesty': 'Restaurants',
       '/zesty/': 'Restaurants',
       '/zesty/restaurants': 'Restaurants',
@@ -116,6 +122,30 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <ProfilePage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/dashboard"
+                      element={
+                        <ProtectedRoute>
+                          <UserDashboardPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/dashboard/zesty"
+                      element={
+                        <ProtectedRoute>
+                          <ZestyDashboardPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/dashboard/eventra"
+                      element={
+                        <ProtectedRoute>
+                          <EventraDashboardPage />
                         </ProtectedRoute>
                       }
                     />

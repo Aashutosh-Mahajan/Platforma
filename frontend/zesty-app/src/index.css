@@ -171,13 +171,13 @@
     box-shadow: 0px 20px 42px rgba(183, 18, 42, 0.14);
   }
 
-  .theme-zesty-page .text-gray-900 {
+  .theme-zesty-page .text-gray-900:not(.dark\:text-white) {
     color: var(--color-on-surface);
   }
 
-  .theme-zesty-page .text-gray-700,
-  .theme-zesty-page .text-gray-600,
-  .theme-zesty-page .text-gray-500 {
+  .theme-zesty-page .text-gray-700:not(.dark\:text-gray-300):not(.dark\:text-white),
+  .theme-zesty-page .text-gray-600:not(.dark\:text-gray-400):not(.dark\:text-white),
+  .theme-zesty-page .text-gray-500:not(.dark\:text-gray-400):not(.dark\:text-gray-300) {
     color: var(--color-on-surface-variant);
   }
 
