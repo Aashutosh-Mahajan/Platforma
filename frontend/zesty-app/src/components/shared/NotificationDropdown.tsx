@@ -4,7 +4,7 @@ import { useNotification } from '../../contexts';
 import type { Notification } from '../../types';
 
 interface NotificationDropdownProps {
-  variant?: 'default' | 'zesty';
+  variant?: 'default' | 'zesty' | 'platforma';
 }
 
 export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ variant = 'default' }) => {
@@ -13,21 +13,68 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ vari
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const bellButtonClass = variant === 'zesty'
+  const isZestyVariant = variant === 'zesty';
+  const isPlatformaVariant = variant === 'platforma';
+
+  const bellButtonClass = isZestyVariant
     ? 'relative p-2 text-on-surface-variant hover:text-primary transition-colors'
+    : isPlatformaVariant
+      ? 'relative p-2 text-white/80 hover:text-white transition-colors'
     : 'relative p-2 text-gray-600 hover:text-gray-900 transition-colors';
 
-  const markAllClass = variant === 'zesty'
+  const markAllClass = isZestyVariant
     ? 'text-sm text-primary hover:text-surface-tint font-medium transition-colors'
+    : isPlatformaVariant
+      ? 'text-sm text-[#c7d39f] hover:text-[#e4edc6] font-medium transition-colors'
     : 'text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors';
 
-  const unreadItemClass = variant === 'zesty'
+  const unreadItemClass = isZestyVariant
     ? 'bg-primary-fixed/45 hover:bg-primary-fixed/70'
+    : isPlatformaVariant
+      ? 'bg-white/10 hover:bg-white/15'
     : 'bg-blue-50 hover:bg-blue-100';
 
-  const unreadDotClass = variant === 'zesty'
+  const unreadDotClass = isZestyVariant
     ? 'w-2 h-2 bg-primary rounded-full mt-1 ml-2 flex-shrink-0'
+    : isPlatformaVariant
+      ? 'w-2 h-2 bg-[#c7d39f] rounded-full mt-1 ml-2 flex-shrink-0'
     : 'w-2 h-2 bg-blue-600 rounded-full mt-1 ml-2 flex-shrink-0';
+
+  const dropdownClass = isPlatformaVariant
+    ? 'absolute right-0 mt-2 w-80 rounded-lg border border-white/15 bg-[rgba(17,21,27,0.96)] shadow-[0_18px_32px_rgba(0,0,0,0.45)] z-50 backdrop-blur-md'
+    : 'absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 border border-gray-200';
+
+  const dropdownHeaderClass = isPlatformaVariant
+    ? 'p-4 border-b border-white/15 flex justify-between items-center'
+    : 'p-4 border-b flex justify-between items-center';
+
+  const dropdownTitleClass = isPlatformaVariant
+    ? 'font-semibold text-white'
+    : 'font-semibold text-gray-900';
+
+  const emptyStateClass = isPlatformaVariant
+    ? 'p-8 text-center text-white/70'
+    : 'p-8 text-center text-gray-500';
+
+  const emptyIconClass = isPlatformaVariant
+    ? 'w-12 h-12 mx-auto mb-3 text-white/40'
+    : 'w-12 h-12 mx-auto mb-3 text-gray-400';
+
+  const readItemClass = isPlatformaVariant
+    ? 'bg-transparent hover:bg-white/8'
+    : 'bg-white hover:bg-gray-50';
+
+  const itemTitleClass = isPlatformaVariant
+    ? 'font-medium text-sm text-white'
+    : 'font-medium text-sm text-gray-900';
+
+  const itemMessageClass = isPlatformaVariant
+    ? 'text-sm text-white/70 mt-1'
+    : 'text-sm text-gray-600 mt-1';
+
+  const itemDateClass = isPlatformaVariant
+    ? 'text-xs text-white/50 mt-2'
+    : 'text-xs text-gray-500 mt-2';
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -87,9 +134,9 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ vari
       </button>
 
       {showDropdown && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 border border-gray-200">
-          <div className="p-4 border-b flex justify-between items-center">
-            <h3 className="font-semibold text-gray-900">Notifications</h3>
+        <div className={dropdownClass}>
+          <div className={dropdownHeaderClass}>
+            <h3 className={dropdownTitleClass}>Notifications</h3>
             {unreadCount > 0 && (
               <button
                 onClick={() => markAllAsRead()}
@@ -102,9 +149,9 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ vari
 
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
+              <div className={emptyStateClass}>
                 <svg
-                  className="w-12 h-12 mx-auto mb-3 text-gray-400"
+                  className={emptyIconClass}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -124,14 +171,14 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ vari
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification)}
                   className={`p-4 border-b cursor-pointer transition ${
-                    notification.is_read ? 'bg-white hover:bg-gray-50' : unreadItemClass
+                    notification.is_read ? readItemClass : unreadItemClass
                   }`}
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <h4 className="font-medium text-sm text-gray-900">{notification.title}</h4>
-                      <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-                      <p className="text-xs text-gray-500 mt-2">
+                      <h4 className={itemTitleClass}>{notification.title}</h4>
+                      <p className={itemMessageClass}>{notification.message}</p>
+                      <p className={itemDateClass}>
                         {new Date(notification.created_at).toLocaleString()}
                       </p>
                     </div>
