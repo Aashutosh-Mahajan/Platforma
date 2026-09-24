@@ -1,45 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Star, Clock, Truck, Leaf, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { restaurantAPI, orderAPI } from '../../api/zesty';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { fallbackFoodImage } from '../../utils/foodImagery';
 import type { Restaurant, MenuItem, Review } from '../../types';
-
-const PUBLIC_API_BASE = 'http://localhost:8000/api';
-
-const FALLBACK_MENU_TEMPLATE = [
-  { name: 'House Special Thali', description: 'Balanced meal with signature curry, bread, and sides.', category: 'Recommended', price: 229, veg: true },
-  { name: 'Tandoori Platter', description: 'Char-grilled favorites with chutney and salad.', category: 'Recommended', price: 279, veg: false },
-  { name: 'Paneer Butter Masala', description: 'Creamy tomato gravy with soft paneer cubes.', category: 'Main Course', price: 239, veg: true },
-  { name: 'Veg Biryani', description: 'Fragrant rice layered with spices and vegetables.', category: 'Main Course', price: 199, veg: true },
-  { name: 'Butter Chicken', description: 'Classic makhani gravy with tender chicken.', category: 'Main Course', price: 289, veg: false },
-  { name: 'Masala Dosa', description: 'Crispy dosa served with chutney and sambhar.', category: 'Breakfast', price: 149, veg: true },
-  { name: 'Gulab Jamun', description: 'Warm and soft milk-solid dumplings in syrup.', category: 'Desserts', price: 99, veg: true },
-];
 
 const toNumber = (value: unknown, fallback: number): number => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
-};
-
-const buildFallbackMenuItems = (restaurantId: number, vegOnly: boolean): MenuItem[] => {
-  const items = vegOnly
-    ? FALLBACK_MENU_TEMPLATE.filter((item) => item.veg)
-    : FALLBACK_MENU_TEMPLATE;
-
-  return items.map((item, index) => ({
-    id: restaurantId * 1000 + index + 1,
-    restaurant: restaurantId,
-    name: item.name,
-    description: item.description,
-    price: item.price,
-    category: item.category,
-    image: undefined,
-    is_vegetarian: item.veg,
-    is_vegan: item.veg,
-    is_available: true,
-    created_at: new Date().toISOString(),
-  }));
 };
 
 type ApiLikeError = {
@@ -89,97 +59,16 @@ const RestaurantDetailPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      try {
-        const restaurantData = await restaurantAPI.retrieve(restaurantId);
-        setRestaurant(restaurantData);
+      const restaurantData = await restaurantAPI.retrieve(restaurantId);
+      setRestaurant(restaurantData);
 
-        const [menuResult, reviewsResult] = await Promise.allSettled([
-          restaurantAPI.getMenu(restaurantId),
-          restaurantAPI.getReviews(restaurantId),
-        ]);
+      const [menuResult, reviewsResult] = await Promise.allSettled([
+        restaurantAPI.getMenu(restaurantId),
+        restaurantAPI.getReviews(restaurantId),
+      ]);
 
-        if (menuResult.status === 'fulfilled') {
-          setMenuItems(menuResult.value.results);
-        } else {
-          setMenuItems(buildFallbackMenuItems(restaurantId, Boolean(restaurantData.veg_only)));
-        }
-
-        if (reviewsResult.status === 'fulfilled') {
-          setReviews(reviewsResult.value.results);
-        } else {
-          setReviews([]);
-        }
-        return;
-      } catch {
-        // Fallback to public restaurants API when zesty endpoint is unavailable.
-      }
-
-      const publicResponse = await fetch(`${PUBLIC_API_BASE}/restaurants/${restaurantId}/`);
-      if (!publicResponse.ok) {
-        throw new Error('Restaurant not found');
-      }
-
-      const rawData = (await publicResponse.json()) as Record<string, unknown>;
-      const mappedRestaurant: Restaurant = {
-        id: toNumber(rawData.id, restaurantId),
-        slug: typeof rawData.slug === 'string' ? rawData.slug : `restaurant-${restaurantId}`,
-        area: typeof rawData.area === 'string' ? rawData.area : '',
-        cuisine: typeof rawData.cuisine === 'string' ? rawData.cuisine : '',
-        price_range: toNumber(rawData.price_range, 2),
-        image_url: typeof rawData.image_url === 'string' ? rawData.image_url : '',
-        hours: typeof rawData.hours === 'string' ? rawData.hours : '',
-        is_open: typeof rawData.is_open === 'boolean' ? rawData.is_open : true,
-        veg_only: typeof rawData.veg_only === 'boolean' ? rawData.veg_only : false,
-        owner: toNumber(rawData.owner, 0),
-        name: typeof rawData.name === 'string' ? rawData.name : 'Restaurant',
-        description: typeof rawData.description === 'string' ? rawData.description : '',
-        cuisine_types: typeof rawData.cuisine_types === 'string' ? rawData.cuisine_types : '',
-        address: typeof rawData.address === 'string' ? rawData.address : '',
-        latitude: toNumber(rawData.latitude, 0),
-        longitude: toNumber(rawData.longitude, 0),
-        delivery_fee: toNumber(rawData.delivery_fee, 0),
-        delivery_time_min: toNumber(rawData.delivery_time_min, 25),
-        delivery_time_max: toNumber(rawData.delivery_time_max, 40),
-        image: typeof rawData.image === 'string' ? rawData.image : undefined,
-        banner: typeof rawData.banner === 'string' ? rawData.banner : undefined,
-        phone: typeof rawData.phone === 'string' ? rawData.phone : '',
-        rating: toNumber(rawData.rating, 4),
-        review_count: toNumber(rawData.review_count, 0),
-        is_active: typeof rawData.is_active === 'boolean' ? rawData.is_active : true,
-        is_verified: typeof rawData.is_verified === 'boolean' ? rawData.is_verified : true,
-        created_at: typeof rawData.created_at === 'string' ? rawData.created_at : new Date().toISOString(),
-        updated_at: typeof rawData.updated_at === 'string' ? rawData.updated_at : new Date().toISOString(),
-      };
-
-      setRestaurant(mappedRestaurant);
-
-      const rawMenuItems = Array.isArray(rawData.menu_items)
-        ? rawData.menu_items
-        : [];
-
-      if (rawMenuItems.length > 0) {
-        const normalizedMenu = rawMenuItems.map((menuItem, index) => {
-          const item = (menuItem || {}) as Record<string, unknown>;
-          return {
-            id: toNumber(item.id, restaurantId * 1000 + index + 1),
-            restaurant: restaurantId,
-            name: typeof item.name === 'string' ? item.name : `Item ${index + 1}`,
-            description: typeof item.description === 'string' ? item.description : '',
-            price: toNumber(item.price, 149),
-            category: typeof item.category === 'string' ? item.category : 'Recommended',
-            image: typeof item.image === 'string' ? item.image : undefined,
-            is_vegetarian: Boolean(item.is_vegetarian),
-            is_vegan: Boolean(item.is_vegan),
-            is_available: item.is_available !== false,
-            created_at: typeof item.created_at === 'string' ? item.created_at : new Date().toISOString(),
-          } as MenuItem;
-        });
-
-        setMenuItems(normalizedMenu);
-      } else {
-        setMenuItems(buildFallbackMenuItems(restaurantId, mappedRestaurant.veg_only));
-      }
-      setReviews([]);
+      setMenuItems(menuResult.status === 'fulfilled' ? menuResult.value.results : []);
+      setReviews(reviewsResult.status === 'fulfilled' ? reviewsResult.value.results : []);
     } catch (err: unknown) {
       setError(readApiErrorMessage(err, 'Failed to load restaurant details'));
     } finally {
@@ -328,20 +217,20 @@ const RestaurantDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="theme-zesty theme-zesty-page min-h-screen bg-gray-50 flex justify-center items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      <div className="theme-zesty theme-zesty-page min-h-screen bg-[#FFF9F5] flex justify-center items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-zesty-red"></div>
       </div>
     );
   }
 
   if (error || !restaurant) {
     return (
-      <div className="theme-zesty theme-zesty-page min-h-screen bg-gray-50 flex justify-center items-center">
+      <div className="theme-zesty theme-zesty-page min-h-screen bg-[#FFF9F5] flex justify-center items-center">
         <div className="text-center">
-          <p className="text-red-600 dark:text-red-400 mb-4">{error || 'Restaurant not found'}</p>
+          <p className="text-red-600 mb-4">{error || 'Restaurant not found'}</p>
           <button
             onClick={() => navigate('/zesty')}
-            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+            className="px-5 py-2.5 bg-zesty-red text-white rounded-full font-semibold hover:bg-zesty-redDark"
           >
             Back to Restaurants
           </button>
@@ -351,27 +240,27 @@ const RestaurantDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="theme-zesty theme-zesty-page min-h-screen bg-gray-50 pb-24 lg:pb-0">
+    <div className="theme-zesty theme-zesty-page min-h-screen bg-[#FFF9F5] pb-24 lg:pb-0">
       {/* Cart Warning Modal */}
       {showCartWarning && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
+            <h3 className="font-zesty-display text-lg font-bold text-[#1C1C1C] mb-2">
               Replace cart items?
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-[#696969] mb-4">
               Your cart contains items from {cartRestaurant?.name}. Do you want to clear the cart and add items from {restaurant.name}?
             </p>
             <div className="flex gap-3">
               <button
                 onClick={handleCancelCartChange}
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmCartChange}
-                className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+                className="flex-1 px-4 py-2.5 bg-zesty-red text-white rounded-xl font-semibold hover:bg-zesty-redDark"
               >
                 Replace Cart
               </button>
@@ -380,12 +269,12 @@ const RestaurantDetailPage: React.FC = () => {
         </div>
       )}
 
-      <div className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur-sm">
+      <div className="sticky top-0 z-40 border-b border-[#F0E0E0] bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <button
             type="button"
             onClick={() => navigate('/zesty')}
-            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+            className="rounded-full border border-gray-300 px-4 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
           >
             ← Back
           </button>
@@ -394,15 +283,16 @@ const RestaurantDetailPage: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate('/zesty/cart')}
-              className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-1.5 text-sm font-semibold text-orange-700 hover:bg-orange-100"
+              className="inline-flex items-center gap-1.5 rounded-full border border-zesty-red/25 bg-zesty-red/5 px-4 py-1.5 text-sm font-semibold text-zesty-red hover:bg-zesty-red/10 transition-colors"
             >
+              <ShoppingBag className="h-4 w-4" aria-hidden="true" />
               Cart ({cartItemsCount})
             </button>
             <button
               type="button"
               onClick={() => navigate('/zesty/checkout')}
               disabled={items.length === 0}
-              className="rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-gray-300"
+              className="rounded-full bg-zesty-red px-4 py-1.5 text-sm font-semibold text-white hover:bg-zesty-redDark disabled:cursor-not-allowed disabled:bg-gray-300 transition-colors"
             >
               Order Now
             </button>
@@ -411,18 +301,39 @@ const RestaurantDetailPage: React.FC = () => {
       </div>
 
       {/* Restaurant Banner */}
-      <div className="h-64 bg-gray-200 dark:bg-gray-700 overflow-hidden">
-        {restaurant.banner || restaurant.image ? (
-          <img
-            src={restaurant.banner || restaurant.image}
-            alt={restaurant.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="text-gray-400 text-6xl">🍽️</span>
+      <div className="relative h-72 md:h-80 w-full overflow-hidden bg-[#F5E9DD]">
+        <img
+          src={restaurant.banner || restaurant.image || restaurant.image_url || fallbackFoodImage(restaurant.id)}
+          alt={restaurant.name}
+          className="h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/10" />
+
+        <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-7xl px-4 pb-6 sm:px-6 lg:px-8">
+          {restaurant.is_verified && (
+            <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-white backdrop-blur-sm">
+              ✓ Verified Partner
+            </span>
+          )}
+          <h1 className="font-zesty-display text-3xl font-extrabold text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.5)] md:text-5xl">
+            {restaurant.name}
+          </h1>
+          <div className="mt-3 flex flex-wrap items-center gap-4 text-sm font-semibold text-white/90">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[#1C1C1C]">
+              <Star className="h-3.5 w-3.5 fill-[#1FA463] text-[#1FA463]" aria-hidden="true" />
+              {toNumber(restaurant.rating, 0).toFixed(1)}
+              <span className="font-normal text-[#696969]">({toNumber(restaurant.review_count, 0)})</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Clock className="h-4 w-4 text-zesty-gold" aria-hidden="true" />
+              {restaurant.delivery_time_min}-{restaurant.delivery_time_max} min
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Truck className="h-4 w-4 text-zesty-gold" aria-hidden="true" />
+              ₹{restaurant.delivery_fee} delivery
+            </span>
           </div>
-        )}
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -430,44 +341,26 @@ const RestaurantDetailPage: React.FC = () => {
           {/* Main Content */}
           <div className="lg:col-span-2">
             {/* Restaurant Info */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                {restaurant.name}
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <div className="bg-white rounded-2xl border border-[#F0E0E0] shadow-sm p-6 mb-6">
+              <p className="text-[#696969]">
                 {restaurant.description}
               </p>
-              <div className="flex flex-wrap gap-4 text-sm">
-                <div className="flex items-center text-gray-600 dark:text-gray-400">
-                  <span className="mr-1">🍴</span>
-                  <span>{restaurant.cuisine_types}</span>
-                </div>
-                <div className="flex items-center text-gray-600 dark:text-gray-400">
-                  <span className="mr-1">⭐</span>
-                  <span>{toNumber(restaurant.rating, 0).toFixed(1)} ({toNumber(restaurant.review_count, 0)} reviews)</span>
-                </div>
-                <div className="flex items-center text-gray-600 dark:text-gray-400">
-                  <span className="mr-1">🕒</span>
-                  <span>{restaurant.delivery_time_min}-{restaurant.delivery_time_max} min</span>
-                </div>
-                <div className="flex items-center text-gray-600 dark:text-gray-400">
-                  <span className="mr-1">🚚</span>
-                  <span>₹{restaurant.delivery_fee} delivery</span>
-                </div>
-              </div>
+              <p className="mt-3 text-sm font-semibold text-zesty-red">
+                {restaurant.cuisine_types}
+              </p>
             </div>
 
             {/* Category Filter */}
-            <div className="mb-6 overflow-x-auto">
+            <div className="mb-6 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <div className="flex gap-2">
                 {categories.map(category => (
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
-                    className={`px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
+                    className={`px-4 py-2 rounded-full whitespace-nowrap font-semibold text-sm transition-colors ${
                       selectedCategory === category
-                        ? 'bg-orange-500 text-white'
-                        : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700'
+                        ? 'bg-zesty-red text-white shadow-[0_6px_16px_rgba(226,55,68,0.3)]'
+                        : 'bg-white text-gray-700 border border-[#F0E0E0] hover:bg-gray-50'
                     }`}
                   >
                     {category}
@@ -479,82 +372,81 @@ const RestaurantDetailPage: React.FC = () => {
             {/* Menu Items */}
             {Object.entries(groupedMenuItems).map(([category, items], groupIndex) => (
               <div key={category} className="mb-8" id={groupIndex === 0 ? 'restaurant-menu' : undefined}>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                <h2 className="font-zesty-display text-2xl font-bold text-[#1C1C1C] mb-4">
                   {category}
                 </h2>
                 <div className="space-y-4">
                   {items.map(item => (
                     <div
                       key={item.id}
-                      className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 flex gap-4"
+                      className="group bg-white rounded-2xl border border-[#F0E0E0] shadow-sm p-4 flex gap-4 transition-shadow hover:shadow-[0_10px_24px_rgba(0,0,0,0.08)]"
                     >
                       {/* Item Image */}
-                      <div className="w-24 h-24 flex-shrink-0 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
-                        {item.image ? (
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <span className="text-gray-400 text-2xl">🍽️</span>
-                          </div>
+                      <div className="relative w-24 h-24 flex-shrink-0 overflow-hidden rounded-xl bg-[#F5E9DD]">
+                        <img
+                          src={item.image || fallbackFoodImage(item.id)}
+                          alt={item.name}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                        />
+                        {item.is_vegetarian && (
+                          <span className="absolute left-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded border-[1.5px] border-[#1FA463] bg-white">
+                            <Leaf className="h-2.5 w-2.5 text-[#1FA463]" strokeWidth={3} aria-hidden="true" />
+                          </span>
                         )}
                       </div>
 
                       {/* Item Info */}
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <div className="min-w-0">
+                            <h3 className="text-lg font-bold text-[#1C1C1C]">
                               {item.name}
-                              {item.is_vegetarian && <span className="ml-2 text-green-600">🌱</span>}
-                              {item.is_vegan && <span className="ml-2 text-green-600">🌿</span>}
                             </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            <p className="text-sm text-[#696969] mt-1 line-clamp-2">
                               {item.description}
                             </p>
                           </div>
-                          <p className="text-lg font-bold text-gray-900 dark:text-white">
+                          <p className="whitespace-nowrap text-lg font-bold text-zesty-red">
                             ₹{item.price}
                           </p>
                         </div>
 
                         {/* Add to Cart Controls */}
                         {item.is_available ? (
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <div className="flex items-center gap-1 rounded-full border border-[#F0E0E0] bg-[#FFF9F5] p-1">
                               <button
                                 onClick={() => handleQuantityChange(item.id, (quantities[item.id] || 1) - 1)}
-                                className="w-8 h-8 flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                                className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#1C1C1C] shadow-sm hover:bg-gray-100"
+                                aria-label="Decrease quantity"
                               >
-                                -
+                                <Minus className="h-3.5 w-3.5" aria-hidden="true" />
                               </button>
-                              <span className="w-8 text-center text-gray-900 dark:text-white font-medium">
+                              <span className="w-7 text-center text-sm font-bold text-[#1C1C1C]">
                                 {quantities[item.id] || 1}
                               </span>
                               <button
                                 onClick={() => handleQuantityChange(item.id, (quantities[item.id] || 1) + 1)}
-                                className="w-8 h-8 flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                                className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#1C1C1C] shadow-sm hover:bg-gray-100"
+                                aria-label="Increase quantity"
                               >
-                                +
+                                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                               </button>
                             </div>
                             <button
                               onClick={() => handleAddToCart(item)}
-                              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                              className="rounded-full bg-zesty-red px-4 py-1.5 text-sm font-bold text-white shadow-[0_6px_14px_rgba(226,55,68,0.3)] transition-transform hover:-translate-y-0.5 hover:bg-zesty-redDark"
                             >
                               Add to Cart
                             </button>
                             {getItemQuantityInCart(item.id) > 0 && (
-                              <span className="text-sm text-green-600 dark:text-green-400">
+                              <span className="text-sm font-semibold text-[#1FA463]">
                                 {getItemQuantityInCart(item.id)} in cart
                               </span>
                             )}
                           </div>
                         ) : (
-                          <p className="text-red-600 dark:text-red-400 text-sm">
+                          <p className="text-red-600 text-sm font-semibold">
                             Currently unavailable
                           </p>
                         )}
@@ -566,30 +458,30 @@ const RestaurantDetailPage: React.FC = () => {
             ))}
 
             {/* Reviews Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            <div className="bg-white rounded-2xl border border-[#F0E0E0] shadow-sm p-6">
+              <h2 className="font-zesty-display text-2xl font-bold text-[#1C1C1C] mb-4">
                 Customer Reviews
               </h2>
 
               {/* Review Form */}
               {isAuthenticated && hasDeliveredOrder && (
-                <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="mb-6 pb-6 border-b border-[#F0E0E0]">
                   {!showReviewForm ? (
                     <button
                       onClick={() => setShowReviewForm(true)}
-                      className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                      className="rounded-full bg-zesty-red px-5 py-2 text-sm font-bold text-white shadow-[0_6px_14px_rgba(226,55,68,0.3)] transition-transform hover:-translate-y-0.5 hover:bg-zesty-redDark"
                     >
                       Write a Review
                     </button>
                   ) : (
                     <div className="space-y-4">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                      <h3 className="font-semibold text-[#1C1C1C]">
                         Share your experience
                       </h3>
 
                       {/* Rating */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           Rating
                         </label>
                         <div className="flex gap-2">
@@ -597,14 +489,13 @@ const RestaurantDetailPage: React.FC = () => {
                             <button
                               key={star}
                               onClick={() => setReviewRating(star)}
-                              className={`text-3xl transition-colors ${
-                                star <= reviewRating
-                                  ? 'text-yellow-500'
-                                  : 'text-gray-300 dark:text-gray-600'
-                              }`}
+                              className="transition-colors"
                               aria-label={`Rate ${star} stars`}
                             >
-                              ★
+                              <Star
+                                className={`h-8 w-8 ${star <= reviewRating ? 'fill-zesty-gold text-zesty-gold' : 'text-gray-300'}`}
+                                aria-hidden="true"
+                              />
                             </button>
                           ))}
                         </div>
@@ -612,7 +503,7 @@ const RestaurantDetailPage: React.FC = () => {
 
                       {/* Comment */}
                       <div>
-                        <label htmlFor="review-comment" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label htmlFor="review-comment" className="block text-sm font-medium text-gray-700 mb-2">
                           Comment (optional)
                         </label>
                         <textarea
@@ -621,14 +512,14 @@ const RestaurantDetailPage: React.FC = () => {
                           onChange={(e) => setReviewComment(e.target.value)}
                           placeholder="Tell us about your experience..."
                           rows={4}
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-zesty-red focus:border-transparent resize-none"
                         />
                       </div>
 
                       {/* Error Message */}
                       {reviewError && (
-                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                          <p className="text-sm text-red-800 dark:text-red-200">{reviewError}</p>
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+                          <p className="text-sm text-red-800">{reviewError}</p>
                         </div>
                       )}
 
@@ -637,7 +528,7 @@ const RestaurantDetailPage: React.FC = () => {
                         <button
                           onClick={handleSubmitReview}
                           disabled={submittingReview}
-                          className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                          className="rounded-full bg-zesty-red px-5 py-2 text-sm font-bold text-white hover:bg-zesty-redDark disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                         >
                           {submittingReview ? 'Submitting...' : 'Submit Review'}
                         </button>
@@ -649,7 +540,7 @@ const RestaurantDetailPage: React.FC = () => {
                             setReviewComment('');
                           }}
                           disabled={submittingReview}
-                          className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                          className="rounded-full border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
                         >
                           Cancel
                         </button>
@@ -663,31 +554,31 @@ const RestaurantDetailPage: React.FC = () => {
               {reviews.length > 0 ? (
                 <div className="space-y-4">
                   {reviews.slice(0, 5).map(review => (
-                    <div key={review.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0">
+                    <div key={review.id} className="border-b border-[#F0E0E0] pb-4 last:border-0">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-gray-900 dark:text-white">
+                        <span className="font-semibold text-[#1C1C1C]">
                           {review.user_name}
                         </span>
-                        <div className="flex items-center">
-                          <span className="text-yellow-500 mr-1">⭐</span>
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center gap-1 rounded-full bg-[#FFF7F7] px-2 py-0.5">
+                          <Star className="h-3.5 w-3.5 fill-zesty-gold text-zesty-gold" aria-hidden="true" />
+                          <span className="text-sm font-semibold text-[#1C1C1C]">
                             {toNumber(review.rating, 0).toFixed(1)}
                           </span>
                         </div>
                       </div>
                       {review.comment && (
-                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                        <p className="text-[#696969] text-sm mb-1">
                           {review.comment}
                         </p>
                       )}
-                      <p className="text-xs text-gray-500 dark:text-gray-500">
+                      <p className="text-xs text-gray-400">
                         {new Date(review.created_at).toLocaleDateString()}
                       </p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+                <p className="text-[#696969] text-center py-4">
                   No reviews yet. Be the first to review!
                 </p>
               )}
@@ -696,12 +587,13 @@ const RestaurantDetailPage: React.FC = () => {
 
           {/* Cart Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 sticky top-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+            <div className="bg-white rounded-2xl border border-[#F0E0E0] shadow-sm p-6 sticky top-20">
+              <h2 className="font-zesty-display text-xl font-bold text-[#1C1C1C] mb-4 flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5 text-zesty-red" aria-hidden="true" />
                 Your Cart
               </h2>
               {items.length === 0 ? (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                <p className="text-[#696969] text-center py-8">
                   Your cart is empty
                 </p>
               ) : (
@@ -709,30 +601,30 @@ const RestaurantDetailPage: React.FC = () => {
                   <div className="space-y-3 mb-4">
                     {items.map(item => (
                       <div key={item.menuItem.id} className="flex justify-between text-sm">
-                        <span className="text-gray-700 dark:text-gray-300">
+                        <span className="text-[#3A3F44]">
                           {item.quantity}x {item.menuItem.name}
                         </span>
-                        <span className="text-gray-900 dark:text-white font-medium">
+                        <span className="text-[#1C1C1C] font-semibold">
                           ₹{(item.menuItem.price * item.quantity).toFixed(2)}
                         </span>
                       </div>
                     ))}
                   </div>
-                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4">
-                    <div className="flex justify-between text-lg font-bold text-gray-900 dark:text-white">
+                  <div className="border-t border-dashed border-[#E0C9B8] pt-4 mb-4">
+                    <div className="flex justify-between text-lg font-bold text-[#1C1C1C]">
                       <span>Total</span>
-                      <span>₹{total.toFixed(2)}</span>
+                      <span className="text-zesty-red">₹{total.toFixed(2)}</span>
                     </div>
                   </div>
                   <button
                     onClick={() => navigate('/zesty/cart')}
-                    className="w-full px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
+                    className="w-full px-4 py-3 bg-zesty-red text-white rounded-full hover:bg-zesty-redDark transition-colors font-bold shadow-[0_8px_18px_rgba(226,55,68,0.3)]"
                   >
                     View Cart
                   </button>
                   <button
                     onClick={() => navigate('/zesty/checkout')}
-                    className="mt-3 w-full px-4 py-3 border border-orange-500 text-orange-600 rounded-lg hover:bg-orange-50 transition-colors font-semibold"
+                    className="mt-3 w-full px-4 py-3 border border-zesty-red text-zesty-red rounded-full hover:bg-zesty-red/5 transition-colors font-bold"
                   >
                     Place Order
                   </button>
@@ -745,18 +637,18 @@ const RestaurantDetailPage: React.FC = () => {
 
       {items.length > 0 && (
         <div className="fixed bottom-4 left-4 right-4 z-40 lg:hidden">
-          <div className="grid grid-cols-2 gap-2 rounded-xl bg-white p-2 shadow-[0_16px_30px_rgba(0,0,0,0.2)]">
+          <div className="grid grid-cols-2 gap-2 rounded-2xl bg-white p-2 shadow-[0_16px_30px_rgba(0,0,0,0.2)]">
             <button
               type="button"
               onClick={() => navigate('/zesty/cart')}
-              className="rounded-lg bg-orange-50 px-3 py-3 text-sm font-semibold text-orange-700"
+              className="rounded-xl bg-zesty-red/10 px-3 py-3 text-sm font-bold text-zesty-red"
             >
               {cartItemsCount} items · ₹{total.toFixed(2)}
             </button>
             <button
               type="button"
               onClick={() => navigate('/zesty/checkout')}
-              className="rounded-lg bg-orange-500 px-3 py-3 text-sm font-semibold text-white"
+              className="rounded-xl bg-zesty-red px-3 py-3 text-sm font-bold text-white"
             >
               Order Now
             </button>
