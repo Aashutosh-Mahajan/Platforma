@@ -102,10 +102,11 @@ export interface EventCreateData {
   name: string;
   description: string;
   category: string;
+  event_type?: string;
   venue_name: string;
   address: string;
   event_date: string;
-  event_end_date?: string;
+  event_end_date?: string | null;
 }
 
 export interface TicketTypeCreateData {
@@ -135,7 +136,18 @@ export interface BulkSeatCreateData {
   }>;
 }
 
+export interface EventTypeGroup {
+  category: Event['category'];
+  label: string;
+  types: Array<{ value: string; label: string }>;
+}
+
 export const eventAPI = {
+  getEventTypes: async (): Promise<EventTypeGroup[]> => {
+    const response = await apiClient.get('/eventra/event-types');
+    return Array.isArray(response.data) ? response.data : [];
+  },
+
   list: async (params?: EventListParams): Promise<PaginatedResponse<Event>> => {
     const response = await apiClient.get('/eventra/events/', { params });
     return normalizePaginated(response.data, normalizeEvent);
