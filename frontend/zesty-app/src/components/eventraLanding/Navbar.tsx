@@ -7,7 +7,7 @@ const NAV_ITEMS = [
   { label: 'Discover', to: '/eventra', isActive: true },
   { label: 'Live Music', to: '/eventra/events?category=concert', isActive: false },
   { label: 'Theater', to: '/eventra/events?category=theater', isActive: false },
-  { label: 'Experience', to: '/eventra/discover', isActive: false },
+  { label: 'All events', to: '/eventra/events', isActive: false },
 ];
 
 export default function Navbar() {
@@ -28,8 +28,7 @@ export default function Navbar() {
   };
 
   const handleLogoutClick = async () => {
-    await logout();
-    navigate('/eventra');
+    await logout('/eventra');
   };
 
   useEffect(() => {
