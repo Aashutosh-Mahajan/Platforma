@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import {
+  Bike, ChefHat, CircleCheck, ClipboardList, MapPin, PackageCheck, PartyPopper, Phone, RotateCcw, Tag, XCircle,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { orderAPI } from '../../api/zesty';
-import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
-import { ErrorMessage } from '../../components/shared/ErrorMessage';
+import { ErrorBanner } from '../../components/dashboard/primitives';
+import { BillRows, FlowCard, FlowHeader, FlowPage, VegMark } from '../../components/zesty/OrderFlow';
+import { fallbackFoodImage } from '../../utils/foodImagery';
 import type { Order, DeliveryTracking } from '../../types';
 
 type ApiLikeError = {
@@ -17,7 +22,7 @@ type ApiLikeError = {
 type TimelineStep = {
   key: string;
   label: string;
-  icon: string;
+  icon: LucideIcon;
   minute: number | null;
 };
 
@@ -41,7 +46,6 @@ const parseDate = (value?: string | null): Date | null => {
 
 const OrderDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [order, setOrder] = useState<Order | null>(null);
   const [tracking, setTracking] = useState<DeliveryTracking | null>(null);
   const [loading, setLoading] = useState(true);
@@ -158,37 +162,20 @@ const OrderDetailPage: React.FC = () => {
     return status === 'pending';
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      pending: 'bg-amber-100 text-amber-800',
-      confirmed: 'bg-orange-100 text-orange-800',
-      preparing: 'bg-rose-100 text-rose-800',
-      ready: 'bg-red-100 text-red-700',
-      out_for_delivery: 'bg-primary-fixed text-on-primary-fixed-variant',
-      delivered: 'bg-emerald-100 text-emerald-800',
-      cancelled: 'bg-red-100 text-red-800',
-    };
-    return colors[status] || 'bg-surface-container text-on-surface-variant';
-  };
-
-  const formatStatus = (status: string) => {
-    return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-  };
-
   const getStatusTimeline = () => {
     const statuses: TimelineStep[] = [
-      { key: 'pending', label: 'Order Placed', icon: '📝', minute: 0 },
-      { key: 'confirmed', label: 'Order Confirmed', icon: '✅', minute: 2 },
-      { key: 'preparing', label: 'Preparing', icon: '👨‍🍳', minute: 5 },
-      { key: 'ready', label: 'Ready for Dispatch', icon: '📦', minute: 9 },
-      { key: 'out_for_delivery', label: 'Out for Delivery', icon: '🚚', minute: 12 },
-      { key: 'delivered', label: 'Order Arrived', icon: '🎉', minute: 15 },
+      { key: 'pending', label: 'Order placed', icon: ClipboardList, minute: 0 },
+      { key: 'confirmed', label: 'Restaurant confirmed', icon: CircleCheck, minute: 2 },
+      { key: 'preparing', label: 'Being prepared', icon: ChefHat, minute: 5 },
+      { key: 'ready', label: 'Packed and ready', icon: PackageCheck, minute: 9 },
+      { key: 'out_for_delivery', label: 'Out for delivery', icon: Bike, minute: 12 },
+      { key: 'delivered', label: 'Delivered', icon: PartyPopper, minute: 15 },
     ];
 
     if (order?.status === 'cancelled') {
       return [
-        { key: 'pending', label: 'Order Placed', icon: '📝', minute: 0 },
-        { key: 'cancelled', label: 'Cancelled', icon: '❌', minute: null },
+        { key: 'pending', label: 'Order placed', icon: ClipboardList, minute: 0 },
+        { key: 'cancelled', label: 'Cancelled', icon: XCircle, minute: null },
       ];
     }
 
@@ -200,337 +187,224 @@ const OrderDetailPage: React.FC = () => {
     return timeline.findIndex(s => s.key === status);
   };
 
+  const restaurantImage = fallbackFoodImage(order?.restaurant ?? 0);
+
   if (loading) {
     return (
-      <div className="theme-zesty theme-zesty-page min-h-screen bg-gray-50 flex justify-center items-center">
-        <LoadingSpinner size="lg" message="Loading order details..." />
-      </div>
+      <FlowPage>
+        <FlowHeader step={2} title="Your order" image={restaurantImage} back={{ to: '/zesty/orders', label: 'All orders' }} />
+        <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-6 px-5 py-8 sm:px-8 lg:grid-cols-3" aria-busy="true" aria-label="Loading order">
+          <div className="h-80 animate-pulse rounded-2xl bg-[#f1e6da] lg:col-span-2" />
+          <div className="h-80 animate-pulse rounded-2xl bg-[#f1e6da]" />
+        </div>
+      </FlowPage>
     );
   }
 
-  if (error || !order) {
+  if (error && !order) {
     return (
-      <div className="theme-zesty theme-zesty-page min-h-screen bg-gray-50 flex justify-center items-center">
-        <div className="text-center max-w-md">
-          <ErrorMessage 
-            message={error || 'Order not found'} 
-            onRetry={() => id && fetchOrderDetails(id)}
-          />
-          <button
-            onClick={() => navigate('/zesty/orders')}
-            className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
-          >
-            Back to Orders
-          </button>
+      <FlowPage>
+        <FlowHeader title="We couldn't load this order" back={{ to: '/zesty/orders', label: 'All orders' }} />
+        <div className="mx-auto max-w-xl px-5 py-12 sm:px-8">
+          <ErrorBanner world="zesty" message={error} onRetry={() => id && fetchOrderDetails(id)} />
         </div>
-      </div>
+      </FlowPage>
     );
   }
+
+  if (!order) return null;
 
   const currentStatusIndex = getStatusIndex(order.status);
   const timeline = getStatusTimeline();
   const createdAt = parseDate(order.created_at);
   const estimatedDeliveryAt = parseDate(order.estimated_delivery);
   const trackingTimeline = Array.isArray(tracking?.status_timeline) ? tracking.status_timeline : [];
+  const reachedAt = (key: string) => {
+    const hit = trackingTimeline.find((c) => c.status === key);
+    return parseDate(hit?.at ?? null);
+  };
   const deliveryAddress =
-    order.delivery_address && typeof order.delivery_address === 'object'
-      ? (order.delivery_address as Record<string, unknown>)
-      : null;
+    order.delivery_address && typeof order.delivery_address === 'object' ? (order.delivery_address as Record<string, unknown>) : null;
   const orderItems = Array.isArray(order.items) ? order.items : [];
-
-  const getAddressField = (key: string): string => {
-    if (!deliveryAddress) {
-      return '';
-    }
-
-    const value = deliveryAddress[key];
-    if (typeof value === 'string') {
-      return value;
-    }
-
-    if (typeof value === 'number') {
-      return String(value);
-    }
-
-    return '';
+  const field = (key: string): string => {
+    const value = deliveryAddress?.[key];
+    return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
   };
-
-  const getScheduledTimeLabel = (offsetMinutes: number | null): string | null => {
-    if (offsetMinutes === null || !createdAt) {
-      return null;
-    }
-
-    const scheduled = new Date(createdAt.getTime() + offsetMinutes * 60 * 1000);
-    return scheduled.toLocaleTimeString('en-IN', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  const time = (d: Date | null) => (d ? d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }) : '');
+  const isLive = isActiveOrder(order.status);
+  const isCancelled = order.status === 'cancelled';
+  // The backend seeds a placeholder rider phone until a real rider is assigned; never show it.
+  const riderPhone = tracking?.delivery_partner_phone && !/^\+?91?0{6,}$/.test(tracking.delivery_partner_phone.replace(/\s/g, '')) ? tracking.delivery_partner_phone : null;
+  const heroTitle = isCancelled
+    ? 'Order cancelled'
+    : order.status === 'delivered'
+      ? 'Delivered. Enjoy!'
+      : order.status === 'out_for_delivery'
+        ? 'On its way to you'
+        : order.status === 'pending'
+          ? 'Waiting for the restaurant'
+          : 'Being prepared';
 
   return (
-    <div className="theme-zesty theme-zesty-page min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <button
-            onClick={() => navigate('/zesty/orders')}
-            className="text-orange-500 hover:text-orange-600 mb-4 flex items-center gap-2"
-          >
-            ← Back to Orders
-          </button>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Order #{order.id}
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                {createdAt
-                  ? createdAt.toLocaleDateString('en-IN', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
-                  : 'Order time unavailable'}
-              </p>
+    <FlowPage>
+      <FlowHeader
+        step={2}
+        image={restaurantImage}
+        back={{ to: '/zesty/orders', label: 'All orders' }}
+        title={heroTitle}
+        subtitle={
+          <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="font-semibold text-white">{order.restaurant_name}</span>
+            <span>#{String(order.id).slice(0, 8).toUpperCase()}</span>
+            {createdAt && <span>{createdAt.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</span>}
+          </span>
+        }
+        aside={
+          isLive && estimatedDeliveryAt ? (
+            <div className="rounded-2xl bg-white/10 px-5 py-3 text-right ring-1 ring-white/20 backdrop-blur">
+              <p className="text-xs text-white/70">Arriving by</p>
+              <p className="font-zesty-display text-2xl font-bold">{time(estimatedDeliveryAt)}</p>
             </div>
-            <span className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-              {formatStatus(order.status)}
-            </span>
-          </div>
-        </div>
+          ) : undefined
+        }
+      />
 
-        {/* Error Message */}
-        {error && (
-          <ErrorMessage 
-            message={error} 
-            onDismiss={() => setError(null)}
-          />
-        )}
+      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] items-start gap-6 px-5 py-8 sm:px-8 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          {error && <ErrorBanner world="zesty" message={error} onDismiss={() => setError(null)} />}
 
-        {/* Status Timeline */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-            Order Status
-          </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-            Simulated 15-minute tracking flow: Confirmed (2m) → Preparing (5m) → Ready (9m) → Out for delivery (12m) → Delivered (15m).
-          </p>
-          <div className="relative">
-            {/* Timeline Line */}
-            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700" />
-            
-            {/* Timeline Steps */}
-            <div className="space-y-6">
+          <FlowCard
+            title="Order status"
+            action={isLive ? <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#15784a]"><span className="h-2 w-2 animate-pulse rounded-full bg-[#1fa463]" /> Live · updates every 30s</span> : undefined}
+          >
+            <ol className="relative">
               {timeline.map((step, index) => {
-                const isCompleted = index <= currentStatusIndex;
-                const isCurrent = index === currentStatusIndex;
-                
+                const done = index <= currentStatusIndex;
+                const current = index === currentStatusIndex;
+                const Icon = step.icon;
+                const at = reachedAt(step.key) ?? (index === 0 ? createdAt : null);
                 return (
-                  <div key={step.key} className="relative flex items-start gap-4">
-                    {/* Icon */}
-                    <div className={`relative z-10 flex items-center justify-center w-12 h-12 rounded-full text-xl ${
-                      isCompleted 
-                        ? 'bg-orange-500 text-white' 
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-400'
-                    }`}>
-                      {step.icon}
-                    </div>
-                    
-                    {/* Content */}
-                    <div className="flex-1 pt-2">
-                      <h3 className={`font-semibold ${
-                        isCurrent 
-                          ? 'text-orange-500' 
-                          : isCompleted 
-                            ? 'text-gray-900 dark:text-white' 
-                            : 'text-gray-400 dark:text-gray-600'
-                      }`}>
+                  <li key={step.key} className="relative flex gap-4 pb-6 last:pb-0">
+                    {index < timeline.length - 1 && (
+                      <span className={`absolute left-[19px] top-10 h-[calc(100%-2.5rem)] w-0.5 ${index < currentStatusIndex ? 'bg-zesty-red' : 'bg-[#efe2d4]'}`} aria-hidden="true" />
+                    )}
+                    <span
+                      className={`relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-full ${
+                        step.key === 'cancelled'
+                          ? 'bg-rose-100 text-rose-700'
+                          : current && isLive
+                            ? 'bg-zesty-red text-white ring-4 ring-zesty-red/20'
+                            : done
+                              ? 'bg-zesty-red text-white'
+                              : 'bg-[#f5ebe0] text-[#c9b6a4]'
+                      }`}
+                    >
+                      <Icon className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden="true" />
+                    </span>
+                    <div className="pt-2">
+                      <p className={`font-semibold ${done ? 'text-[#1c1c1c]' : 'text-[#b3a597]'}`}>
                         {step.label}
-                      </h3>
-                      {getScheduledTimeLabel(step.minute) && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          Scheduled: {getScheduledTimeLabel(step.minute)}
-                        </p>
-                      )}
-                      {isCurrent && estimatedDeliveryAt && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          Standard 15-min delivery. ETA: {estimatedDeliveryAt.toLocaleTimeString('en-IN', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
-                      )}
+                        {current && isLive && <span className="ml-2 text-xs font-semibold text-zesty-redDark">Now</span>}
+                      </p>
+                      {done && at && <p className="text-xs text-[#a89a8e]">{time(at)}</p>}
                     </div>
-                  </div>
+                  </li>
                 );
               })}
-            </div>
-          </div>
+            </ol>
+          </FlowCard>
+
+          <FlowCard title="Items">
+            <ul className="-my-3 divide-y divide-[#f3e9de]">
+              {orderItems.length === 0 && <li className="py-3 text-sm text-[#7a6d63]">No items recorded for this order.</li>}
+              {orderItems.map((item) => (
+                <li key={String(item.id)} className="flex items-center justify-between gap-4 py-3 text-sm">
+                  <span className="flex min-w-0 items-center gap-2">
+                    {item.menu_item && <VegMark veg={!!item.menu_item.is_vegetarian} />}
+                    <span className="truncate font-medium">{item.menu_item?.name || 'Menu item'}</span>
+                    <span className="text-[#a89a8e]">× {toNumber(item.quantity, 1)}</span>
+                  </span>
+                  <span className="shrink-0 tabular-nums">{formatCurrency(item.total)}</span>
+                </li>
+              ))}
+            </ul>
+            {order.special_instructions && (
+              <p className="mt-5 rounded-xl bg-zesty-gold/15 px-4 py-3 text-sm text-[#6b4a00]">
+                <span className="font-semibold">Your note: </span>
+                {order.special_instructions}
+              </p>
+            )}
+          </FlowCard>
         </div>
 
-        {/* Delivery Tracking */}
-        {tracking && order.status !== 'cancelled' && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Live Tracking
-            </h2>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🚴</span>
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {tracking.delivery_partner_name}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {tracking.delivery_partner_phone}
-                  </p>
-                </div>
-              </div>
-              {estimatedDeliveryAt && (
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  ETA: {estimatedDeliveryAt.toLocaleTimeString('en-IN', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
+        <div className="space-y-6 lg:sticky lg:top-20">
+          <FlowCard title="Bill">
+            <BillRows subtotal={order.subtotal} discount={order.discount} deliveryFee={order.delivery_fee} tax={order.tax} total={order.total} promoCode={order.promo_code} />
+            <p className="mt-4 flex items-center justify-between text-xs text-[#a89a8e]">
+              <span>Paid by {order.payment_method === 'cod' || order.payment_method === 'cash_on_delivery' ? 'cash on delivery' : 'card / online'}</span>
+              {order.promo_code && (
+                <span className="inline-flex items-center gap-1 text-[#15784a]">
+                  <Tag className="h-3 w-3" aria-hidden="true" /> {order.promo_code}
+                </span>
               )}
-              {trackingTimeline.length > 0 ? (
-                <div className="pt-2">
-                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                    Progress Checkpoints
-                  </p>
-                  <ul className="space-y-1">
-                    {trackingTimeline.map((checkpoint, index) => {
-                      const checkpointTime = parseDate(checkpoint.at);
-                      return (
-                        <li key={`${checkpoint.status}-${checkpoint.at}-${index}`} className="text-sm text-gray-600 dark:text-gray-400">
-                          • {formatStatus(checkpoint.status)}
-                          {checkpointTime ? ` at ${checkpointTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}` : ''}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Progress checkpoints will appear automatically during the simulated 15-minute journey.
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Order Details */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            Order Details
-          </h2>
-          
-          {/* Restaurant */}
-          <div className="mb-6">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-              Restaurant
-            </h3>
-            <p className="text-gray-700 dark:text-gray-300">{order.restaurant_name}</p>
-          </div>
-
-          {/* Items */}
-          <div className="mb-6">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
-              Items
-            </h3>
-            <div className="space-y-3">
-              {orderItems.length > 0 ? (
-                orderItems.map(item => (
-                  <div key={String(item.id)} className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <p className="text-gray-900 dark:text-white">
-                        {toNumber(item.quantity, 1)}x {item.menu_item?.name || 'Menu Item'}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {formatCurrency(item.unit_price)} each
-                      </p>
-                    </div>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {formatCurrency(item.total)}
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No items available for this order.</p>
-              )}
-            </div>
-          </div>
-
-          {/* Delivery Address */}
-          <div className="mb-6">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-              Delivery Address
-            </h3>
-            <div className="text-gray-700 dark:text-gray-300">
-              {deliveryAddress ? (
-                <>
-                  <p>{getAddressField('street') || 'Address line unavailable'}</p>
-                  <p>
-                    {[getAddressField('city'), getAddressField('state')].filter(Boolean).join(', ')} {getAddressField('postal_code')}
-                  </p>
-                </>
-              ) : (
-                <p>Address not available</p>
-              )}
-            </div>
-          </div>
-
-          {/* Special Instructions */}
-          {order.special_instructions && (
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                Special Instructions
-              </h3>
-              <p className="text-gray-700 dark:text-gray-300">{order.special_instructions}</p>
-            </div>
-          )}
-
-          {/* Totals */}
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2">
-            <div className="flex justify-between text-gray-700 dark:text-gray-300">
-              <span>Subtotal</span>
-              <span>{formatCurrency(order.subtotal)}</span>
-            </div>
-            <div className="flex justify-between text-gray-700 dark:text-gray-300">
-              <span>Delivery Fee</span>
-              <span>{formatCurrency(order.delivery_fee)}</span>
-            </div>
-            <div className="flex justify-between text-gray-700 dark:text-gray-300">
-              <span>Tax</span>
-              <span>{formatCurrency(order.tax)}</span>
-            </div>
-            <div className="flex justify-between text-xl font-bold text-gray-900 dark:text-white pt-2 border-t border-gray-200 dark:border-gray-700">
-              <span>Total</span>
-              <span>{formatCurrency(order.total)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        {canCancelOrder(order.status) && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-            <button
-              onClick={handleCancelOrder}
-              disabled={cancelling}
-              className="w-full px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
-            >
-              {cancelling ? 'Cancelling...' : 'Cancel Order'}
-            </button>
-            <p className="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">
-              You can cancel this order only before it gets confirmed
             </p>
-          </div>
-        )}
+          </FlowCard>
+
+          <FlowCard title="Delivery">
+            <div className="flex gap-3 text-sm">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-zesty-red" aria-hidden="true" />
+              <div>
+                {deliveryAddress ? (
+                  <>
+                    <p className="font-medium">{field('street') || 'Address'}</p>
+                    <p className="text-[#7a6d63]">{[field('city'), field('state')].filter(Boolean).join(', ')} {field('postal_code')}</p>
+                  </>
+                ) : (
+                  <p className="text-[#7a6d63]">Address not recorded</p>
+                )}
+              </div>
+            </div>
+            {tracking && !isCancelled && (
+              <div className="mt-4 flex items-center gap-3 border-t border-[#efe2d4] pt-4 text-sm">
+                <span className="grid h-10 w-10 place-items-center rounded-full bg-zesty-red/10 text-zesty-redDark">
+                  <Bike className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">{tracking.delivery_partner_name || 'Delivery partner'}</p>
+                  <p className="text-xs text-[#a89a8e]">{riderPhone ?? (order.status === 'delivered' ? 'Delivered your order' : 'Contact details appear once a rider is assigned')}</p>
+                </div>
+                {riderPhone && (
+                  <a href={`tel:${riderPhone}`} className="grid h-9 w-9 place-items-center rounded-full border border-[#e7d9cb] hover:bg-[#fbf5ee]" aria-label="Call delivery partner">
+                    <Phone className="h-4 w-4" aria-hidden="true" />
+                  </a>
+                )}
+              </div>
+            )}
+          </FlowCard>
+
+          {canCancelOrder(order.status) ? (
+            <div className="rounded-2xl border border-[#efe2d4] bg-white p-5">
+              <button
+                type="button"
+                onClick={handleCancelOrder}
+                disabled={cancelling}
+                className="w-full rounded-full border border-rose-300 px-4 py-3 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {cancelling ? 'Cancelling…' : 'Cancel order'}
+              </button>
+              <p className="mt-2 text-center text-xs text-[#a89a8e]">You can cancel until the restaurant confirms it.</p>
+            </div>
+          ) : (
+            <Link
+              to={`/zesty/restaurants/${order.restaurant}`}
+              className="flex items-center justify-center gap-2 rounded-full bg-zesty-red px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-zesty-redDark"
+            >
+              <RotateCcw className="h-4 w-4" aria-hidden="true" /> Order from {order.restaurant_name} again
+            </Link>
+          )}
+        </div>
       </div>
-    </div>
+    </FlowPage>
   );
 };
 
