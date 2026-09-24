@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { User } from '../types';
-import { authAPI, type RegisterData, type LoginData } from '../api/auth';
+import { authAPI, type RegisterData, type LoginData, type RegisterResult } from '../api/auth';
 import { getAccessToken, clearTokens } from '../api/client';
 
 interface AuthContextType {
@@ -9,8 +9,11 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   login: (data: LoginData) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
-  logout: () => Promise<void>;
+  register: (data: RegisterData) => Promise<RegisterResult>;
+  /** Finish sign-in with a verification code (tokens are stored by the API call). */
+  verifyEmailCode: (email: string, code: string) => Promise<void>;
+  /** Signs out and hard-reloads to `redirectTo` (default home). */
+  logout: (redirectTo?: string) => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
   clearError: () => void;
 }
@@ -42,7 +45,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = async (data: LoginData) => {
-    setLoading(true);
     setError(null);
     try {
       await authAPI.login(data);
@@ -52,36 +54,36 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const errorMessage = err.response?.data?.detail || 'Login failed';
       setError(errorMessage);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
+  // Registration and code verification don't toggle the global `loading`
+  // flag: the auth pages show their own pending state, and flipping it would
+  // blank protected routes mid-flow.
   const register = async (data: RegisterData) => {
-    setLoading(true);
     setError(null);
-    try {
-      const response = await authAPI.register(data);
-      setUser(response.user);
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || 'Registration failed';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
+    return authAPI.register(data);
   };
 
-  const logout = async () => {
-    setLoading(true);
+  const verifyEmailCode = async (email: string, code: string) => {
+    setError(null);
+    await authAPI.verifyCode(email, code);
+    const profile = await authAPI.getProfile();
+    setUser(profile);
+  };
+
+  const logout = async (redirectTo = '/') => {
     try {
       await authAPI.logout();
-      setUser(null);
     } catch (err) {
       console.error('Logout error:', err);
-    } finally {
-      setLoading(false);
     }
+    // A full reload, not setUser(null): clearing the user while a protected
+    // page is still mounted makes ProtectedRoute remember that page as the
+    // "return to" target, so the next person to sign in (say, a customer
+    // after an admin) was sent to the previous user's dashboard. Reloading
+    // also drops every per-user cache (cart, notifications, bookings).
+    window.location.replace(redirectTo);
   };
 
   const updateProfile = async (data: Partial<User>) => {
@@ -108,6 +110,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     error,
     login,
     register,
+    verifyEmailCode,
     logout,
     updateProfile,
     clearError,
