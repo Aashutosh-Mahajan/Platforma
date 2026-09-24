@@ -12,6 +12,7 @@
   --color-surface: #fcf9f8;
   --color-on-surface: #1b1b1b;
   --color-primary: #b7122a;
+  --color-surface-tint: #8f0f22;
   --color-surface-container: #f0eded;
   --color-surface-container-low: #f6f3f2;
   --color-surface-container-lowest: #ffffff;
@@ -28,6 +29,24 @@
   --font-eventra-body: "Inter", sans-serif;
   --font-eventra-headline: "Inter", sans-serif;
   --font-eventra-label: "Be Vietnam Pro", sans-serif;
+  --font-zesty-display: "Poppins", sans-serif;
+  --font-zesty-body: "DM Sans", sans-serif;
+
+  --color-zesty-red: #e23744;
+  --color-zesty-redDark: #b7122a;
+  --color-zesty-redLight: #ff6b6b;
+  --color-zesty-cream: #fff7ee;
+  --color-zesty-ink: #1c1c1c;
+  --color-zesty-gold: #ffb302;
+  --color-zesty-green: #1fa463;
+
+  --color-eventra-bg: #0a0a0a;
+  --color-eventra-surface: #141414;
+  --color-eventra-amber: #c4621a;
+  --color-eventra-amberLight: #e8824a;
+  --color-eventra-text: #f5f0e8;
+  --color-eventra-muted: #9a9a9a;
+  --color-zesty-tickerBg: #b7122a;
 }
 
 @layer base {
@@ -328,6 +347,16 @@
     background: transparent;
   }
 
+  /* Progress bar on the "You're verified" screen. */
+  @keyframes grow {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+
   @keyframes fadeIn {
     from {
       opacity: 0;
@@ -432,5 +461,12 @@
   .focus-within-ring:focus-within {
     outline: 2px solid var(--focus-ring, #b7122a);
     outline-offset: 2px;
+  }
+}
+
+/* Smooth in-page anchor jumps (e.g. home "About" / "Contact"), unless the user prefers reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
   }
 }
