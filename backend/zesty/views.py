@@ -8,21 +8,24 @@ from rest_framework.views import APIView
 from rest_framework.exceptions import PermissionDenied
 from django.http import Http404
 from django.utils import timezone
-from django.db import transaction, connection
+from django.db import transaction, models
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 import zlib
 
+from rest_framework.exceptions import NotFound, ValidationError as DRFValidationError
+
 from zesty.landing_content import build_landing_page_content
-from zesty.models import Restaurant, MenuItem, Order, OrderItem, Review, DeliveryTracking
-from restaurants.models import Restaurant as PublicRestaurant
+from zesty.models import Restaurant, MenuItem, Order, OrderItem, Review, DeliveryTracking, Cart, CartItem, Promotion, Payout
 from zesty.serializers import (
     RestaurantListSerializer, RestaurantDetailSerializer,
     MenuItemSerializer, OrderSerializer, OrderListSerializer, OrderDetailSerializer,
-    OrderCreateSerializer, ReviewSerializer, ReviewCreateSerializer, DeliveryTrackingSerializer
+    OrderCreateSerializer, ReviewSerializer, ReviewCreateSerializer, DeliveryTrackingSerializer,
+    CartSerializer, AddCartItemSerializer, UpdateCartItemSerializer, PromotionSerializer, PayoutSerializer
 )
 from core.models import Payment, Notification
 from utils.pagination import StandardPagination
+from utils.permissions import ensure_verified
 
 
 class LandingPageView(APIView):
@@ -36,7 +39,6 @@ class LandingPageView(APIView):
 
 class RestaurantViewSet(viewsets.ModelViewSet):
     """List, retrieve, and manage restaurants."""
-    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     search_fields = ['name', 'cuisine_types']
     ordering_fields = ['rating', 'delivery_fee', 'delivery_time_max', 'review_count']
@@ -44,6 +46,21 @@ class RestaurantViewSet(viewsets.ModelViewSet):
     lookup_field = 'pk'
     lookup_url_kwarg = 'pk'
     pagination_class = StandardPagination
+
+    def get_permissions(self):
+        # Browsing (list/retrieve/menu/combos/reviews-GET/areas) is public,
+        # like any food-delivery catalog — only mutating actions and the
+        # POST branch of `reviews` (checked internally) need a login.
+        if self.action in ('list', 'retrieve', 'menu', 'combos', 'reviews', 'areas'):
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    @action(detail=False, methods=['get'])
+    def areas(self, request):
+        """Distinct cities/areas across the public catalog, for the filter dropdown."""
+        base = Restaurant.objects.filter(is_active=True, is_verified=True)
+        cities = base.exclude(city='').values_list('city', flat=True).distinct().order_by('city')
+        return Response({'areas': [c for c in cities if c]})
 
     def _can_manage_restaurants(self):
         user = self.request.user
@@ -60,137 +77,68 @@ class RestaurantViewSet(viewsets.ModelViewSet):
                 return Restaurant.objects.filter(owner=user)
             return Restaurant.objects.none()
 
-        # Owner dashboard should see owned restaurants regardless of active state.
-        if user.role == 'restaurant_owner':
+        # Owner dashboard: a logged-in restaurant owner always sees their
+        # own restaurants here (including unverified/inactive ones), same
+        # as before catalog browsing was opened up to guests — the owner
+        # dashboard's plain `restaurantAPI.list()` call relies on this.
+        if user.is_authenticated and user.role == 'restaurant_owner':
             return Restaurant.objects.filter(owner=user)
 
-        # Admins can browse all restaurants.
-        if user.is_staff or user.role == 'admin':
-            return Restaurant.objects.all()
+        # Guests/customers browsing the public catalog (list/retrieve/menu/
+        # combos are AllowAny now) have no `.role` to check.
+        if user.is_authenticated and (user.is_staff or user.role == 'admin'):
+            queryset = Restaurant.objects.all()
+        else:
+            # FR-A4: a partner listing isn't public until an admin has
+            # verified it, regardless of whether the owner switched it active.
+            queryset = Restaurant.objects.filter(is_active=True, is_verified=True)
 
-        # Customer browsing only sees active restaurants.
-        return Restaurant.objects.filter(is_active=True)
+        if self.action != 'list':
+            return queryset
 
-    def _resolve_restaurant_from_source(self, source_id):
-        """Resolve a zesty restaurant from legacy source mapping or public catalog."""
-        try:
-            source_id_int = int(source_id)
-        except (TypeError, ValueError):
-            return None
+        return self._apply_catalog_filters(queryset)
 
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "SELECT id FROM restaurants WHERE source_record_id = %s AND is_active = TRUE LIMIT 1",
-                [source_id_int],
+    def _apply_catalog_filters(self, queryset):
+        params = self.request.query_params
+
+        area = params.get('area')
+        if area:
+            queryset = queryset.filter(
+                models.Q(city__iexact=area) | models.Q(area__iexact=area)
             )
-            matched_row = cursor.fetchone()
 
-        if matched_row:
-            return Restaurant.objects.filter(id=matched_row[0], is_active=True).first()
+        if params.get('veg_only') in ('true', '1'):
+            queryset = queryset.filter(veg_only=True)
 
-        try:
-            public_restaurant = PublicRestaurant.objects.get(id=source_id_int, is_active=True)
-        except PublicRestaurant.DoesNotExist:
-            return None
-
-        restaurant = Restaurant.objects.filter(
-            name__iexact=public_restaurant.name,
-            is_active=True,
-        ).first()
-        if restaurant is not None:
-            return restaurant
-
-        now = timezone.now()
-        synced_slug = f"synced-{public_restaurant.id}-{now.strftime('%Y%m%d%H%M%S%f')}"
-
-        with connection.cursor() as cursor:
-            cursor.execute(
-                """
-                INSERT INTO restaurants (
-                    name,
-                    description,
-                    cuisine_types,
-                    address,
-                    latitude,
-                    longitude,
-                    delivery_fee,
-                    delivery_time_min,
-                    delivery_time_max,
-                    image,
-                    banner,
-                    rating,
-                    review_count,
-                    phone,
-                    is_active,
-                    is_verified,
-                    created_at,
-                    updated_at,
-                    owner_id,
-                    area,
-                    city,
-                    cuisine,
-                    data_source,
-                    hours,
-                    image_url,
-                    is_open,
-                    price_range,
-                    slug,
-                    source_record_id,
-                    veg_only
-                )
-                VALUES (
-                    %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s, %s
-                )
-                RETURNING id
-                """,
-                [
-                    public_restaurant.name,
-                    public_restaurant.description or '',
-                    public_restaurant.cuisine_types or public_restaurant.cuisine or 'Mixed',
-                    public_restaurant.address or public_restaurant.area or 'Address unavailable',
-                    public_restaurant.latitude,
-                    public_restaurant.longitude,
-                    Decimal('30.00'),
-                    10,
-                    15,
-                    None,
-                    None,
-                    public_restaurant.rating or Decimal('4.00'),
-                    0,
-                    public_restaurant.phone or '',
-                    bool(public_restaurant.is_active),
-                    True,
-                    now,
-                    now,
-                    self.request.user.id,
-                    public_restaurant.area or 'Bandra',
-                    public_restaurant.city or 'Mumbai',
-                    public_restaurant.cuisine or 'Indian',
-                    public_restaurant.data_source or 'real',
-                    public_restaurant.hours or '',
-                    public_restaurant.image_url or public_restaurant.photo_url or '',
-                    bool(public_restaurant.is_open),
-                    public_restaurant.price_range or 2,
-                    synced_slug,
-                    public_restaurant.id,
-                    bool(public_restaurant.veg_only),
-                ],
+        cuisine_tag = params.get('cuisine_tag')
+        if cuisine_tag:
+            queryset = queryset.filter(
+                models.Q(cuisine_types__icontains=cuisine_tag)
+                | models.Q(cuisine__icontains=cuisine_tag)
+                | models.Q(name__icontains=cuisine_tag)
+                | models.Q(description__icontains=cuisine_tag)
             )
-            created_row = cursor.fetchone()
 
-        if not created_row:
-            return None
+        min_rating = params.get('min_rating')
+        if min_rating:
+            try:
+                queryset = queryset.filter(rating__gte=Decimal(min_rating))
+            except InvalidOperation:
+                pass
 
-        return Restaurant.objects.filter(id=created_row[0], is_active=True).first()
+        max_price_range = params.get('max_price_range')
+        if max_price_range:
+            try:
+                queryset = queryset.filter(price_range__lte=int(max_price_range))
+            except ValueError:
+                pass
+
+        return queryset
 
     def get_object(self):
         # Override to avoid filter_queryset() which applies search/ordering filters
         queryset = self.get_queryset()
-        
+
         # Perform the lookup
         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
         assert lookup_url_kwarg in self.kwargs, (
@@ -199,23 +147,17 @@ class RestaurantViewSet(viewsets.ModelViewSet):
             'attribute on the view correctly.' %
             (self.__class__.__name__, lookup_url_kwarg)
         )
-        
+
         filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
 
         try:
             obj = queryset.get(**filter_kwargs)
         except Restaurant.DoesNotExist:
-            can_bridge_missing = self.request.method == 'GET' and self.action in {'retrieve', 'menu', 'reviews'}
-            if not can_bridge_missing:
-                raise Http404('Restaurant matching query does not exist.')
+            raise Http404('Restaurant matching query does not exist.')
 
-            obj = self._resolve_restaurant_from_source(self.kwargs[lookup_url_kwarg])
-            if obj is None or not queryset.filter(pk=obj.pk).exists():
-                raise Http404('Restaurant matching query does not exist.')
-        
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
-        
+
         return obj
 
     def get_serializer_class(self):
@@ -233,7 +175,10 @@ class RestaurantViewSet(viewsets.ModelViewSet):
         """Get menu items for a restaurant."""
         restaurant = self.get_object()
 
-        if restaurant.owner == request.user or request.user.is_staff or request.user.role == 'admin':
+        can_see_unavailable = request.user.is_authenticated and (
+            restaurant.owner == request.user or request.user.is_staff or request.user.role == 'admin'
+        )
+        if can_see_unavailable:
             items = restaurant.menu_items.all()
         else:
             items = restaurant.menu_items.filter(is_available=True)
@@ -248,6 +193,69 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 
         serializer = MenuItemSerializer(items, many=True)
         return Response({'count': items.count(), 'results': serializer.data})
+
+    @action(detail=True, methods=['get'])
+    def combos(self, request, pk=None):
+        """GET /restaurants/{id}/combos — mined item-pair suggestions
+        (FR-Z8). Reads only the latest successful basket-mining run, so a
+        stale run's rules are never served as current (FR-I8).
+        """
+        from mining.models import MiningBasketRule
+        from mining.registry import latest_successful_run
+
+        restaurant = self.get_object()
+        run = latest_successful_run('basket')
+        if run is None:
+            return Response({'combos': [], 'model_version': None})
+
+        rules = MiningBasketRule.objects.filter(
+            run=run, restaurant_id=restaurant.id, level='item'
+        ).order_by('-lift')[:20]
+        combos = [
+            {
+                'antecedent': r.antecedent, 'consequent': r.consequent,
+                'support': round(r.support, 4), 'confidence': round(r.confidence, 4),
+                'lift': round(r.lift, 3),
+            }
+            for r in rules
+        ]
+        return Response({'combos': combos, 'model_version': run.model_version, 'as_of': run.finished_at})
+
+    @action(detail=True, methods=['get'])
+    def earnings(self, request, pk=None):
+        """GET /restaurants/{id}/earnings — settled payout history plus a
+        live-computed summary of delivered orders not yet in any payout
+        (i.e. since the last payout's period_end, or the last 90 days if
+        there isn't one yet)."""
+        restaurant = self.get_object()
+        user = request.user
+        is_owner = user.is_authenticated and user.role == 'restaurant_owner' and restaurant.owner_id == user.id
+        if not (user.is_staff or user.role == 'admin' or is_owner):
+            raise PermissionDenied("You don't have access to this restaurant's earnings.")
+
+        payouts = Payout.objects.filter(restaurant=restaurant).order_by('-period_end')
+        last_payout = payouts.first()
+        unsettled_since = last_payout.period_end if last_payout else (timezone.now() - timedelta(days=90))
+
+        unsettled_orders = Order.objects.filter(
+            restaurant=restaurant, status='delivered', created_at__gte=unsettled_since,
+        )
+        gross = unsettled_orders.aggregate(total=models.Sum('total'))['total'] or Decimal('0')
+        commission = (gross * restaurant.commission_rate / Decimal('100')).quantize(Decimal('0.01'))
+        net = gross - commission
+
+        return Response({
+            'commission_rate': restaurant.commission_rate,
+            'unsettled': {
+                'period_start': unsettled_since,
+                'period_end': timezone.now(),
+                'order_count': unsettled_orders.count(),
+                'gross_revenue': gross,
+                'commission_amount': commission,
+                'net_amount': net,
+            },
+            'payouts': PayoutSerializer(payouts, many=True).data,
+        })
 
     @action(detail=True, methods=['get', 'post'])
     def reviews(self, request, pk=None):
@@ -503,7 +511,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         else:
             qs = Order.objects.filter(user=user)
 
-        qs = qs.select_related('restaurant').prefetch_related('items__menu_item')
+        qs = qs.select_related('restaurant').prefetch_related('items__menu_item', 'status_history')
 
         order_status = self.request.query_params.get('status')
         if order_status:
@@ -547,128 +555,13 @@ class OrderViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         """Create a new order with items and process payment."""
+        ensure_verified(request.user)
         serializer = OrderCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
         # Get restaurant
         restaurant = Restaurant.objects.filter(id=data['restaurant_id'], is_active=True).first()
-
-        # Try matching previously synced rows by source_record_id in legacy schema.
-        if restaurant is None:
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    "SELECT id FROM restaurants WHERE source_record_id = %s AND is_active = TRUE LIMIT 1",
-                    [data['restaurant_id']],
-                )
-                matched_row = cursor.fetchone()
-
-            if matched_row:
-                restaurant = Restaurant.objects.filter(id=matched_row[0], is_active=True).first()
-
-        # Bridge public restaurant listing data into zesty ordering if needed.
-        if restaurant is None:
-            try:
-                public_restaurant = PublicRestaurant.objects.get(
-                    id=data['restaurant_id'],
-                    is_active=True,
-                )
-            except PublicRestaurant.DoesNotExist:
-                return Response({'error': 'Restaurant not found.'}, status=404)
-
-            restaurant = Restaurant.objects.filter(
-                name__iexact=public_restaurant.name,
-                is_active=True,
-            ).first()
-
-            if restaurant is None:
-                now = timezone.now()
-                synced_slug = f"synced-{public_restaurant.id}-{now.strftime('%Y%m%d%H%M%S%f')}"
-
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        """
-                        INSERT INTO restaurants (
-                            name,
-                            description,
-                            cuisine_types,
-                            address,
-                            latitude,
-                            longitude,
-                            delivery_fee,
-                            delivery_time_min,
-                            delivery_time_max,
-                            image,
-                            banner,
-                            rating,
-                            review_count,
-                            phone,
-                            is_active,
-                            is_verified,
-                            created_at,
-                            updated_at,
-                            owner_id,
-                            area,
-                            city,
-                            cuisine,
-                            data_source,
-                            hours,
-                            image_url,
-                            is_open,
-                            price_range,
-                            slug,
-                            source_record_id,
-                            veg_only
-                        )
-                        VALUES (
-                            %s, %s, %s, %s, %s, %s,
-                            %s, %s, %s, %s, %s, %s,
-                            %s, %s, %s, %s, %s, %s,
-                            %s, %s, %s, %s, %s, %s,
-                            %s, %s, %s, %s, %s, %s
-                        )
-                        RETURNING id
-                        """,
-                        [
-                            public_restaurant.name,
-                            public_restaurant.description or '',
-                            public_restaurant.cuisine_types or public_restaurant.cuisine or 'Mixed',
-                            public_restaurant.address or public_restaurant.area or 'Address unavailable',
-                            public_restaurant.latitude,
-                            public_restaurant.longitude,
-                            Decimal('30.00'),
-                            10,
-                            self.STANDARD_DELIVERY_MINUTES,
-                            None,
-                            None,
-                            public_restaurant.rating or Decimal('4.00'),
-                            0,
-                            public_restaurant.phone or '',
-                            bool(public_restaurant.is_active),
-                            True,
-                            now,
-                            now,
-                            request.user.id,
-                            public_restaurant.area or 'Bandra',
-                            public_restaurant.city or 'Mumbai',
-                            public_restaurant.cuisine or 'Indian',
-                            public_restaurant.data_source or 'real',
-                            public_restaurant.hours or '',
-                            public_restaurant.image_url or public_restaurant.photo_url or '',
-                            bool(public_restaurant.is_open),
-                            public_restaurant.price_range or 2,
-                            synced_slug,
-                            public_restaurant.id,
-                            bool(public_restaurant.veg_only),
-                        ],
-                    )
-                    created_row = cursor.fetchone()
-
-                if not created_row:
-                    return Response({'error': 'Unable to map restaurant for ordering.'}, status=500)
-
-                restaurant = Restaurant.objects.filter(id=created_row[0], is_active=True).first()
-
         if restaurant is None:
             return Response({'error': 'Restaurant not found for ordering.'}, status=404)
 
@@ -776,8 +669,30 @@ class OrderViewSet(viewsets.ModelViewSet):
                 total=menu_item.price * item_data['quantity'],
             )
 
+        # Resolve and validate a promo code, if one was supplied — validity
+        # depends on the order subtotal, so this can only happen after
+        # items exist.
+        promo_code = (data.get('promo_code') or '').strip().upper()
+        promotion = None
+        if promo_code:
+            promotion = Promotion.objects.filter(code=promo_code).first()
+            if promotion is None:
+                order.delete()
+                return Response({'error': f"Promo code '{promo_code}' not found."}, status=404)
+
+            provisional_subtotal = sum(item.total for item in order.items.all())
+            is_valid, error_message = promotion.check_valid(provisional_subtotal, restaurant.id)
+            if not is_valid:
+                order.delete()
+                return Response({'error': error_message}, status=400)
+
         # Calculate totals
-        order.calculate_totals()
+        order.calculate_totals(promotion=promotion)
+
+        if promotion:
+            order.promo_code = promotion.code
+            order.save(update_fields=['promo_code'])
+            Promotion.objects.filter(pk=promotion.pk).update(times_used=models.F('times_used') + 1)
 
         # Handle payment for non-COD orders
         if payment_method != 'cash_on_delivery':
@@ -941,5 +856,237 @@ class OrderViewSet(viewsets.ModelViewSet):
             related_id=None,
             related_type='order',
         )
-        
+
         return Response(OrderDetailSerializer(order).data)
+
+
+class PromotionViewSet(viewsets.ModelViewSet):
+    """CRUD for promo codes. Owners manage codes scoped to their own
+    restaurant; admins can also create platform-wide codes (restaurant=null)."""
+    serializer_class = PromotionSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardPagination
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff or user.role == 'admin':
+            return Promotion.objects.all().order_by('-created_at')
+        if user.role == 'restaurant_owner':
+            return Promotion.objects.filter(restaurant__owner=user).order_by('-created_at')
+        return Promotion.objects.none()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        if not (user.is_staff or user.role in ('restaurant_owner', 'admin')):
+            raise PermissionDenied('Only restaurant owners or admins can create promo codes.')
+
+        restaurant = serializer.validated_data.get('restaurant')
+        if restaurant is not None and not (user.is_staff or user.role == 'admin'):
+            if restaurant.owner_id != user.id:
+                raise PermissionDenied("You can only create promo codes for your own restaurant.")
+        serializer.save()
+
+
+class PromoValidateView(APIView):
+    """POST /promotions/validate — dry-run a code against a restaurant +
+    subtotal so the checkout page can show the discount before the order
+    is actually placed, without duplicating Promotion's validity rules."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        code = str(request.data.get('code', '')).strip().upper()
+        restaurant_id = request.data.get('restaurant_id')
+        try:
+            subtotal = Decimal(str(request.data.get('subtotal', '0')))
+        except (InvalidOperation, TypeError, ValueError):
+            return Response({'error': 'Invalid subtotal.'}, status=400)
+
+        if not code or not restaurant_id:
+            return Response({'error': 'code and restaurant_id are required.'}, status=400)
+
+        promotion = Promotion.objects.filter(code=code).first()
+        if promotion is None:
+            return Response({'error': f"Promo code '{code}' not found."}, status=404)
+
+        is_valid, error_message = promotion.check_valid(subtotal, int(restaurant_id))
+        if not is_valid:
+            return Response({'error': error_message}, status=400)
+
+        discount = promotion.compute_discount(subtotal)
+        return Response({
+            'code': promotion.code,
+            'discount': discount,
+            'description': promotion.description,
+        })
+
+
+class PayoutViewSet(viewsets.ModelViewSet):
+    """Admin-only payout settlement. Owners read their own restaurant's
+    payouts through RestaurantViewSet.earnings instead — this viewset is
+    where a payout actually gets created and marked paid."""
+    serializer_class = PayoutSerializer
+    permission_classes = [IsAuthenticated]
+
+    def _is_admin(self, user):
+        return user.is_staff or user.role == 'admin'
+
+    def get_queryset(self):
+        if not self._is_admin(self.request.user):
+            return Payout.objects.none()
+        qs = Payout.objects.select_related('restaurant').all()
+        restaurant_id = self.request.query_params.get('restaurant')
+        if restaurant_id:
+            qs = qs.filter(restaurant_id=restaurant_id)
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        if not self._is_admin(request.user):
+            raise PermissionDenied('Only admins can create payouts.')
+
+        restaurant_id = request.data.get('restaurant')
+        period_start = request.data.get('period_start')
+        period_end = request.data.get('period_end')
+        if not (restaurant_id and period_start and period_end):
+            return Response({'error': 'restaurant, period_start and period_end are required.'}, status=400)
+
+        restaurant = Restaurant.objects.filter(id=restaurant_id).first()
+        if restaurant is None:
+            return Response({'error': 'Restaurant not found.'}, status=404)
+
+        # A period can't overlap one already settled for this restaurant —
+        # that would double-pay (or double-skip) the same orders.
+        overlapping = Payout.objects.filter(
+            restaurant=restaurant, period_start__lt=period_end, period_end__gt=period_start,
+        ).exists()
+        if overlapping:
+            return Response({'error': 'This period overlaps an existing payout for this restaurant.'}, status=400)
+
+        orders = Order.objects.filter(
+            restaurant=restaurant, status='delivered',
+            created_at__gte=period_start, created_at__lt=period_end,
+        )
+        gross = orders.aggregate(total=models.Sum('total'))['total'] or Decimal('0')
+        commission = (gross * restaurant.commission_rate / Decimal('100')).quantize(Decimal('0.01'))
+        net = gross - commission
+
+        payout = Payout.objects.create(
+            restaurant=restaurant,
+            period_start=period_start,
+            period_end=period_end,
+            order_count=orders.count(),
+            gross_revenue=gross,
+            commission_rate=restaurant.commission_rate,
+            commission_amount=commission,
+            net_amount=net,
+            notes=request.data.get('notes', ''),
+        )
+        return Response(PayoutSerializer(payout).data, status=201)
+
+    @action(detail=True, methods=['patch'])
+    def mark_paid(self, request, pk=None):
+        if not self._is_admin(request.user):
+            raise PermissionDenied('Only admins can mark payouts paid.')
+
+        payout = self.get_queryset().filter(pk=pk).first()
+        if payout is None:
+            raise NotFound('Payout not found.')
+        if payout.status == 'paid':
+            return Response({'error': 'This payout is already marked paid.'}, status=400)
+
+        payout.status = 'paid'
+        payout.paid_at = timezone.now()
+        payout.save(update_fields=['status', 'paid_at'])
+        return Response(PayoutSerializer(payout).data)
+
+
+class CartView(APIView):
+    """GET /cart — the current customer's active cart (auto-created empty)."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        cart, _ = Cart.objects.get_or_create(customer=request.user)
+        return Response(CartSerializer(cart).data)
+
+
+class CartItemListCreateView(APIView):
+    """POST /cart/items — add an item, restricting the cart to one restaurant (FR-Z3/FR-Z4)."""
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        serializer = AddCartItemSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        menu_item_id = serializer.validated_data['menu_item_id']
+        quantity = serializer.validated_data['quantity']
+
+        try:
+            menu_item = MenuItem.objects.select_related('restaurant').get(
+                id=menu_item_id, is_available=True
+            )
+        except MenuItem.DoesNotExist:
+            raise NotFound('Menu item not found or unavailable.')
+
+        cart, _ = Cart.objects.select_for_update().get_or_create(customer=request.user)
+
+        switched_restaurant = False
+        if cart.restaurant_id is not None and cart.restaurant_id != menu_item.restaurant_id:
+            # Cart is restricted to one restaurant. Callers that want to
+            # confirm with the customer first should check `restaurant` on
+            # GET /cart before calling this with `confirm_switch`.
+            if not request.data.get('confirm_switch'):
+                raise DRFValidationError({
+                    'error': 'Cart contains items from another restaurant.',
+                    'current_restaurant': cart.restaurant_id,
+                    'requested_restaurant': menu_item.restaurant_id,
+                    'resolution': 'Retry with confirm_switch=true to clear the cart and add this item.',
+                })
+            cart.clear()
+            switched_restaurant = True
+
+        if cart.restaurant_id is None:
+            cart.restaurant = menu_item.restaurant
+            cart.save(update_fields=['restaurant', 'updated_at'])
+
+        item, created = CartItem.objects.get_or_create(
+            cart=cart, menu_item=menu_item, defaults={'quantity': quantity}
+        )
+        if not created:
+            item.quantity += quantity
+            item.save(update_fields=['quantity', 'updated_at'])
+
+        cart.refresh_from_db()
+        return Response(
+            {**CartSerializer(cart).data, 'cart_was_cleared': switched_restaurant},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class CartItemDetailView(APIView):
+    """PATCH/DELETE /cart/items/{id}."""
+    permission_classes = [IsAuthenticated]
+
+    def _get_item(self, request, item_id):
+        try:
+            return CartItem.objects.select_related('cart').get(id=item_id, cart__customer=request.user)
+        except CartItem.DoesNotExist:
+            raise NotFound('Cart item not found.')
+
+    def patch(self, request, item_id):
+        item = self._get_item(request, item_id)
+        serializer = UpdateCartItemSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        item.quantity = serializer.validated_data['quantity']
+        item.save(update_fields=['quantity', 'updated_at'])
+        return Response(CartSerializer(item.cart).data)
+
+    def delete(self, request, item_id):
+        item = self._get_item(request, item_id)
+        cart = item.cart
+        item.delete()
+        if not cart.items.exists():
+            cart.restaurant = None
+            cart.save(update_fields=['restaurant', 'updated_at'])
+        return Response(status=status.HTTP_204_NO_CONTENT)
