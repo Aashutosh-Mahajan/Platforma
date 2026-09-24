@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { validateRequired } from '../../utils/validation';
 import AddressManager from '../../components/AddressManager';
+import { BadgeCheck, CalendarDays, Mail, Pencil, Phone, ShieldCheck } from 'lucide-react';
+import { DashboardShell } from '../../components/dashboard/DashboardShell';
+import { ErrorBanner, Field, KpiLedger, Panel, SkeletonRows } from '../../components/dashboard/primitives';
+import { navForRole } from '../../components/dashboard/roleNav';
+import { formatDate, humanize, themes } from '../../components/dashboard/theme';
+
+const W = 'platforma' as const;
+const t = themes[W];
 
 interface FormErrors {
   first_name?: string;
@@ -116,218 +124,122 @@ const ProfilePage: React.FC = () => {
     clearError();
   };
 
-  if (authLoading && !user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading profile...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">Unable to load profile</p>
-        </div>
-      </div>
-    );
-  }
+  const verified = (ok?: boolean) => (ok ? 'Verified' : 'Not verified');
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto space-y-8">
-        <div className="bg-white shadow sm:rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">Profile Information</h3>
-              {!editing && (
-                <button
-                  onClick={() => setEditing(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-                >
-                  Edit Profile
-                </button>
-              )}
+    <DashboardShell
+      world={W}
+      context="Your account"
+      nav={navForRole(user?.role)}
+      activeKey="profile"
+      image="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1800&q=80"
+      imagePosition="center 55%"
+      title={
+        user ? (
+          <>
+            {user.first_name || user.username} <span className={t.titleAccent}>{user.last_name}</span>
+          </>
+        ) : (
+          'Your profile'
+        )
+      }
+      subtitle={user ? `${humanize(user.role)} · ${user.email}` : undefined}
+      actions={
+        user && !editing ? (
+          <button type="button" onClick={() => setEditing(true)} className={t.btnOnImagePrimary}>
+            <Pencil className="h-4 w-4" aria-hidden="true" /> Edit profile
+          </button>
+        ) : undefined
+      }
+      ledger={
+        <KpiLedger
+          world={W}
+          loading={authLoading && !user}
+          items={[
+            { label: 'Member since', icon: CalendarDays, value: <span className="text-2xl sm:text-[26px]">{formatDate(user?.created_at)}</span> },
+            { label: 'Role', icon: ShieldCheck, value: <span className="text-2xl sm:text-[26px]">{humanize(user?.role ?? '')}</span> },
+            { label: 'Email', icon: Mail, value: <span className="text-2xl sm:text-[26px]">{verified(user?.is_email_verified)}</span> },
+            { label: 'Phone', icon: Phone, value: <span className="text-2xl sm:text-[26px]">{user?.phone ? verified(user?.is_phone_verified) : 'Not added'}</span> },
+          ]}
+        />
+      }
+    >
+      {!user ? (
+        authLoading ? (
+          <Panel world={W}>
+            <SkeletonRows world={W} rows={4} />
+          </Panel>
+        ) : (
+          <ErrorBanner world={W} message="Unable to load your profile. Try signing in again." />
+        )
+      ) : (
+        <div className="space-y-6">
+          {successMessage && (
+            <div role="status" className={`flex items-center gap-2 rounded-2xl px-4 py-3 text-sm ring-1 ring-inset ${t.tones.success}`}>
+              <BadgeCheck className="h-4 w-4" aria-hidden="true" /> {successMessage}
             </div>
+          )}
+          {errors.general && <ErrorBanner world={W} message={errors.general} />}
 
-            {successMessage && (
-              <div className="mb-4 rounded-md bg-green-50 p-4">
-                <div className="text-sm text-green-800">{successMessage}</div>
-              </div>
-            )}
-
-            {errors.general && (
-              <div className="mb-4 rounded-md bg-red-50 p-4">
-                <div className="text-sm text-red-800">{errors.general}</div>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      value={user.email}
-                      disabled
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-500 sm:text-sm cursor-not-allowed"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">Email cannot be changed</p>
-                  </div>
+          <div className="grid gap-6 xl:grid-cols-3">
+            <Panel
+              world={W}
+              className="xl:col-span-2"
+              title="Personal details"
+              description={editing ? 'Update your name and phone number.' : 'How restaurants and organizers see you.'}
+              action={
+                !editing ? (
+                  <button type="button" onClick={() => setEditing(true)} className={t.btnSecondary}>
+                    <Pencil className="h-4 w-4" aria-hidden="true" /> Edit
+                  </button>
+                ) : undefined
+              }
+            >
+              <form onSubmit={handleSubmit} noValidate>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <Field world={W} label="First name" htmlFor="first_name" error={errors.first_name}>
+                    <input id="first_name" name="first_name" type="text" value={formData.first_name} onChange={handleChange} disabled={!editing} aria-invalid={!!errors.first_name} className={`${t.input} ${errors.first_name ? '!border-rose-400' : ''}`} />
+                  </Field>
+                  <Field world={W} label="Last name" htmlFor="last_name" error={errors.last_name}>
+                    <input id="last_name" name="last_name" type="text" value={formData.last_name} onChange={handleChange} disabled={!editing} aria-invalid={!!errors.last_name} className={`${t.input} ${errors.last_name ? '!border-rose-400' : ''}`} />
+                  </Field>
+                  <Field world={W} label="Phone number" htmlFor="phone" error={errors.phone} hint="Include the country code, e.g. +91" className="sm:col-span-2">
+                    <input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} disabled={!editing} placeholder="+919876543210" aria-invalid={!!errors.phone} className={`${t.input} ${errors.phone ? '!border-rose-400' : ''}`} />
+                  </Field>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Username</label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      value={user.username}
-                      disabled
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-500 sm:text-sm cursor-not-allowed"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">Username cannot be changed</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
-                      First name
-                    </label>
-                    <div className="mt-1">
-                      <input
-                        id="first_name"
-                        name="first_name"
-                        type="text"
-                        value={formData.first_name}
-                        onChange={handleChange}
-                        disabled={!editing}
-                        className={`appearance-none block w-full px-3 py-2 border ${
-                          errors.first_name ? 'border-red-300' : 'border-gray-300'
-                        } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm ${
-                          !editing ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''
-                        }`}
-                      />
-                      {errors.first_name && (
-                        <p className="mt-2 text-sm text-red-600">{errors.first_name}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="last_name" className="block text-sm font-medium text-gray-700">
-                      Last name
-                    </label>
-                    <div className="mt-1">
-                      <input
-                        id="last_name"
-                        name="last_name"
-                        type="text"
-                        value={formData.last_name}
-                        onChange={handleChange}
-                        disabled={!editing}
-                        className={`appearance-none block w-full px-3 py-2 border ${
-                          errors.last_name ? 'border-red-300' : 'border-gray-300'
-                        } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm ${
-                          !editing ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''
-                        }`}
-                      />
-                      {errors.last_name && (
-                        <p className="mt-2 text-sm text-red-600">{errors.last_name}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                    Phone number
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      disabled={!editing}
-                      placeholder="+919876543210"
-                      className={`appearance-none block w-full px-3 py-2 border ${
-                        errors.phone ? 'border-red-300' : 'border-gray-300'
-                      } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm ${
-                        !editing ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''
-                      }`}
-                    />
-                    {errors.phone && (
-                      <p className="mt-2 text-sm text-red-600">{errors.phone}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Role</label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      value={user.role.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-                      disabled
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-500 sm:text-sm cursor-not-allowed"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Member since</label>
-                  <div className="mt-1">
-                    <input
-                      type="text"
-                      value={new Date(user.created_at).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                      disabled
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-500 sm:text-sm cursor-not-allowed"
-                    />
-                  </div>
-                </div>
-
                 {editing && (
-                  <div className="flex justify-end space-x-3">
-                    <button
-                      type="button"
-                      onClick={handleCancel}
-                      className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loading ? 'Saving...' : 'Save Changes'}
+                  <div className={`mt-6 flex justify-end gap-2 border-t pt-5 ${t.hairline}`}>
+                    <button type="button" onClick={handleCancel} className={t.btnGhost}>Cancel</button>
+                    <button type="submit" disabled={loading} aria-busy={loading} className={t.btnPrimary}>
+                      {loading ? 'Saving…' : 'Save changes'}
                     </button>
                   </div>
                 )}
-              </div>
-            </form>
-          </div>
-        </div>
+              </form>
+            </Panel>
 
-        {/* Address Management Section */}
-        <div className="bg-white shadow sm:rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <AddressManager />
+            <Panel world={W} title="Sign-in" description="These can't be changed here.">
+              <dl className="space-y-4 text-sm">
+                <div>
+                  <dt className={t.muted}>Email</dt>
+                  <dd className="mt-0.5 break-all font-medium">{user.email}</dd>
+                </div>
+                <div>
+                  <dt className={t.muted}>Username</dt>
+                  <dd className="mt-0.5 font-medium">{user.username}</dd>
+                </div>
+                <div>
+                  <dt className={t.muted}>Account type</dt>
+                  <dd className="mt-0.5 font-medium">{humanize(user.role)}</dd>
+                </div>
+              </dl>
+            </Panel>
           </div>
+
+          <AddressManager />
         </div>
-      </div>
-    </div>
+      )}
+    </DashboardShell>
   );
 };
 
