@@ -18,6 +18,16 @@ export default {
           "white": "#FFFFFF",
           "tickerBg": "#A0521A"
         },
+        "zesty": {
+          "red": "#E23744",
+          "redDark": "#B7122A",
+          "redLight": "#FF6B6B",
+          "cream": "#FFF7EE",
+          "ink": "#1C1C1C",
+          "gold": "#FFB302",
+          "green": "#1FA463",
+          "tickerBg": "#B7122A"
+        },
             "eventra-on-primary-container": "#f3ecff",
             "eventra-inverse-on-surface": "#f2f0f6",
             "eventra-secondary-fixed": "#e4e2e4",
@@ -126,6 +136,8 @@ export default {
           "eventra-display": ["Playfair Display", "serif"],
           "eventra-premium-body": ["Inter", "sans-serif"],
             "eventra-label": ["Be Vietnam Pro", "sans-serif"],
+            "zesty-display": ["Poppins", "sans-serif"],
+            "zesty-body": ["DM Sans", "sans-serif"],
             "headline": ["Lexend", "sans-serif"],
             "body": ["Lexend", "sans-serif"],
             "label": ["Lexend", "sans-serif"],
