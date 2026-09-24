@@ -1,5 +1,14 @@
 from django.contrib import admin
-from eventra.models import Event, TicketType, Seat, Booking, BookingSeat, EventReview, EventAnalytics
+from eventra.models import (
+    Event, Venue, TicketType, Seat, SeatHold, Booking, BookingSeat, Ticket,
+    TicketScanAttempt, BookingStatusHistory, EventReview, EventAnalytics
+)
+
+
+@admin.register(Venue)
+class VenueAdmin(admin.ModelAdmin):
+    list_display = ['name', 'city', 'area', 'capacity', 'is_indoor']
+    search_fields = ['name', 'address', 'city']
 
 
 class TicketTypeInline(admin.TabularInline):
@@ -9,9 +18,9 @@ class TicketTypeInline(admin.TabularInline):
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
-    list_display = ['name', 'category', 'venue_name', 'event_date', 'available_seats',
+    list_display = ['name', 'category', 'event_type', 'venue_name', 'event_date', 'available_seats',
                     'rating', 'is_published']
-    list_filter = ['category', 'is_published', 'is_cancelled']
+    list_filter = ['category', 'event_type', 'is_published', 'is_cancelled']
     search_fields = ['name', 'venue_name', 'address']
     inlines = [TicketTypeInline]
 
@@ -46,3 +55,27 @@ class EventReviewAdmin(admin.ModelAdmin):
 @admin.register(EventAnalytics)
 class EventAnalyticsAdmin(admin.ModelAdmin):
     list_display = ['event', 'views', 'bookings_count', 'revenue']
+
+
+@admin.register(SeatHold)
+class SeatHoldAdmin(admin.ModelAdmin):
+    list_display = ['seat', 'customer', 'expires_at', 'created_at']
+    list_filter = ['expires_at']
+
+
+@admin.register(Ticket)
+class TicketAdmin(admin.ModelAdmin):
+    list_display = ['qr_token', 'booking', 'seat', 'is_scanned', 'scanned_at', 'scanned_gate']
+    list_filter = ['is_scanned']
+    search_fields = ['qr_token', 'booking__booking_reference']
+
+
+@admin.register(TicketScanAttempt)
+class TicketScanAttemptAdmin(admin.ModelAdmin):
+    list_display = ['ticket', 'was_accepted', 'gate', 'attempted_at']
+    list_filter = ['was_accepted']
+
+
+@admin.register(BookingStatusHistory)
+class BookingStatusHistoryAdmin(admin.ModelAdmin):
+    list_display = ['booking', 'old_status', 'new_status', 'changed_at']
