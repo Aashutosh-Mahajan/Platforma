@@ -153,7 +153,7 @@ const AddressManager: React.FC = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6f7f42]"></div>
       </div>
     );
   }
@@ -161,11 +161,11 @@ const AddressManager: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium text-gray-900">Delivery Addresses</h3>
+        <h3 className="font-eventra-display text-xl text-[#141414]">Delivery addresses</h3>
         {!showForm && (
           <button
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white bg-[#141414] hover:bg-[#2c2c2c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#6f7f42]"
           >
             Add New Address
           </button>
@@ -173,7 +173,7 @@ const AddressManager: React.FC = () => {
       </div>
 
       {showForm && (
-        <div className="bg-white shadow sm:rounded-lg">
+        <div className="bg-white rounded-2xl border border-[#e6e2d8]">
           <div className="px-4 py-5 sm:p-6">
             <h4 className="text-base font-medium text-gray-900 mb-4">
               {editingId ? 'Edit Address' : 'Add New Address'}
@@ -181,7 +181,7 @@ const AddressManager: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {errors.general && (
-                <div className="rounded-md bg-red-50 p-4">
+                <div className="rounded-xl bg-red-50 p-4">
                   <div className="text-sm text-red-800">{errors.general}</div>
                 </div>
               )}
@@ -198,7 +198,7 @@ const AddressManager: React.FC = () => {
                   name="label"
                   value={formData.label}
                   onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-[#6f7f42] focus:border-[#6f7f42] sm:text-sm"
                 >
                   <option value="home">Home</option>
                   <option value="work">Work</option>
@@ -221,7 +221,7 @@ const AddressManager: React.FC = () => {
                   onChange={handleChange}
                   className={`mt-1 appearance-none block w-full px-3 py-2 border ${
                     errors.street ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm`}
+                  } rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#6f7f42] focus:border-[#6f7f42] sm:text-sm`}
                 />
                 {errors.street && (
                   <p className="mt-2 text-sm text-red-600">{errors.street}</p>
@@ -244,7 +244,7 @@ const AddressManager: React.FC = () => {
                     onChange={handleChange}
                     className={`mt-1 appearance-none block w-full px-3 py-2 border ${
                       errors.city ? 'border-red-300' : 'border-gray-300'
-                    } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm`}
+                    } rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#6f7f42] focus:border-[#6f7f42] sm:text-sm`}
                   />
                   {errors.city && (
                     <p className="mt-2 text-sm text-red-600">{errors.city}</p>
@@ -266,7 +266,7 @@ const AddressManager: React.FC = () => {
                     onChange={handleChange}
                     className={`mt-1 appearance-none block w-full px-3 py-2 border ${
                       errors.state ? 'border-red-300' : 'border-gray-300'
-                    } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm`}
+                    } rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#6f7f42] focus:border-[#6f7f42] sm:text-sm`}
                   />
                   {errors.state && (
                     <p className="mt-2 text-sm text-red-600">{errors.state}</p>
@@ -289,7 +289,7 @@ const AddressManager: React.FC = () => {
                   onChange={handleChange}
                   className={`mt-1 appearance-none block w-full px-3 py-2 border ${
                     errors.postal_code ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm`}
+                  } rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#6f7f42] focus:border-[#6f7f42] sm:text-sm`}
                 />
                 {errors.postal_code && (
                   <p className="mt-2 text-sm text-red-600">{errors.postal_code}</p>
@@ -300,13 +300,13 @@ const AddressManager: React.FC = () => {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                  className="px-4 py-2 border border-gray-300 rounded-xl shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#6f7f42]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                  className="px-4 py-2 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-[#141414] hover:bg-[#2c2c2c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#6f7f42]"
                 >
                   {editingId ? 'Update Address' : 'Add Address'}
                 </button>
@@ -325,12 +325,12 @@ const AddressManager: React.FC = () => {
           {addresses.map((address) => (
             <div
               key={address.id}
-              className="bg-white shadow sm:rounded-lg overflow-hidden"
+              className="bg-white rounded-2xl border border-[#e6e2d8] overflow-hidden"
             >
               <div className="px-4 py-5 sm:p-6">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center space-x-2">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 capitalize">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#8a9a5b]/15 text-[#46542a] capitalize">
                       {address.label}
                     </span>
                     {address.is_default && (
@@ -351,7 +351,7 @@ const AddressManager: React.FC = () => {
                 <div className="mt-4 flex space-x-3">
                   <button
                     onClick={() => handleEdit(address)}
-                    className="text-sm font-medium text-orange-600 hover:text-orange-500"
+                    className="text-sm font-medium text-[#56652f] hover:text-[#141414]"
                   >
                     Edit
                   </button>
