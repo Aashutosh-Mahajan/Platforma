@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { AlertCircle, ArrowRight, Check, CheckCircle2, CreditCard, Landmark, Lock, MapPin, Smartphone, Wallet } from 'lucide-react';
+import { EventraBill, EventraCard, EventraFlowHeader, EventraFlowPage, eventImage, inr, primaryButton } from '../../components/eventra/BookingFlow';
 import { useBooking } from '../../contexts/BookingContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { bookingAPI } from '../../api/eventra';
 import type { Booking } from '../../types';
+import { seatCode } from '../../utils';
 
 const BookingCheckoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -33,7 +36,10 @@ const BookingCheckoutPage: React.FC = () => {
     }
 
     if (!isAuthenticated) {
-      navigate('/login');
+      // Defense-in-depth only — ProtectedRoute already gates this route
+      // and carries its own `from` state, so this should be unreachable
+      // in normal operation. Kept consistent with it regardless.
+      navigate('/login', { state: { from: '/eventra/checkout' } });
       return;
     }
 
@@ -85,285 +91,186 @@ const BookingCheckoutPage: React.FC = () => {
     return null;
   }
 
+  const heroImage = eventImage(event);
+  const when = new Date(event.event_date);
+  const whenText = Number.isNaN(when.getTime())
+    ? 'Date to be announced'
+    : when.toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const venue = event.venue_name || (event as typeof event & { venue_detail?: { name?: string } }).venue_detail?.name || '';
+  const seatsUrl = `/eventra/events/${event.id}/seats?ticketType=${ticketType.id}&quantity=${selectedSeats.length || 1}`;
+
   if (confirmedBooking) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-            <h1 className="text-2xl font-bold text-green-800 dark:text-green-300 mb-1">Booking Confirmed</h1>
-            <p className="text-green-700 dark:text-green-200">
-              Your tickets are generated and ready to use.
-            </p>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Booking Reference</h2>
-            <p className="text-2xl font-extrabold text-purple-600 dark:text-purple-400 tracking-wide">
-              {confirmedBooking.booking_reference}
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              Event: {confirmedBooking.event_name}
-            </p>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Your Tickets</h2>
-            {confirmedBooking.booked_seats.length === 0 ? (
-              <p className="text-gray-600 dark:text-gray-400">Tickets are being prepared. Please open booking details.</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {confirmedBooking.booked_seats.map((bookedSeat, index) => (
-                  <div
-                    key={bookedSeat.id}
-                    className="border border-purple-200 dark:border-purple-800 rounded-lg p-4 bg-purple-50 dark:bg-purple-900/20"
-                  >
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
-                      Ticket {index + 1}
-                    </p>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">
-                      {bookedSeat.seat.section} - Row {bookedSeat.seat.row}, Seat {bookedSeat.seat.seat_number}
-                    </p>
-                    <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
-                      ₹{bookedSeat.seat.price}
-                    </p>
-                  </div>
-                ))}
+      <EventraFlowPage>
+        <EventraFlowHeader
+          step={2}
+          image={heroImage}
+          title={<>You're going<span className="text-[#e8824a]">.</span></>}
+          subtitle={<>Booking confirmed for <span className="font-semibold text-white">{confirmedBooking.event_name}</span>. Your tickets are ready.</>}
+        />
+        <div className="mx-auto max-w-3xl px-5 py-8 sm:px-8">
+          <div className="overflow-hidden rounded-3xl border border-white/[0.08] bg-[linear-gradient(150deg,#221812_0%,#141414_60%)]">
+            <div className="flex flex-wrap items-start justify-between gap-4 px-7 py-6">
+              <div>
+                <p className="text-xs text-[#9a9a9a]">Booking reference</p>
+                <p className="mt-1 font-mono text-2xl font-semibold tracking-[0.12em] text-[#f0a070]">{confirmedBooking.booking_reference}</p>
               </div>
-            )}
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-300 ring-1 ring-inset ring-emerald-400/20">
+                <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> Confirmed
+              </span>
+            </div>
+            <div className="relative border-t border-dashed border-white/15 px-7 py-6">
+              <span className="absolute -left-3 -top-3 h-6 w-6 rounded-full bg-[#0a0a0a]" aria-hidden="true" />
+              <span className="absolute -right-3 -top-3 h-6 w-6 rounded-full bg-[#0a0a0a]" aria-hidden="true" />
+              <p className="font-eventra-display text-2xl">{confirmedBooking.event_name}</p>
+              <p className="mt-1 text-sm text-[#9a9a9a]">
+                {whenText}
+                {venue ? ` · ${venue}` : ''}
+              </p>
+              {confirmedBooking.booked_seats.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {confirmedBooking.booked_seats.map((bs) => (
+                    <span key={bs.id} className="rounded-lg bg-white/[0.05] px-2.5 py-1.5 font-mono text-sm text-[#f0a070] ring-1 ring-inset ring-white/[0.08]">
+                      {bs.seat.section} · {seatCode(bs.seat.row, bs.seat.seat_number)}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="mt-6 flex items-baseline justify-between border-t border-white/[0.07] pt-4">
+                <span className="text-sm text-[#9a9a9a]">
+                  {confirmedBooking.total_tickets} {confirmedBooking.total_tickets === 1 ? 'ticket' : 'tickets'} · incl. taxes
+                </span>
+                <span className="font-eventra-display text-2xl tabular-nums">{inr(confirmedBooking.total)}</span>
+              </div>
+            </div>
           </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-            <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300 mb-2">
-              <span>Subtotal</span>
-              <span>₹{confirmedBooking.subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300 mb-2">
-              <span>Tax</span>
-              <span>₹{confirmedBooking.tax.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-lg font-bold text-gray-900 dark:text-white border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
-              <span>Total</span>
-              <span>₹{confirmedBooking.total.toFixed(2)}</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
-              <button
-                onClick={() => {
-                  clearBooking();
-                  navigate(`/eventra/bookings/${confirmedBooking.id}`);
-                }}
-                className="w-full px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-medium"
-              >
-                Open Booking Details
-              </button>
-              <button
-                onClick={() => {
-                  clearBooking();
-                  navigate('/eventra/events');
-                }}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                Book Another Event
-              </button>
-            </div>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => {
+                clearBooking();
+                navigate(`/eventra/bookings/${confirmedBooking.id}`);
+              }}
+              className={primaryButton}
+            >
+              <span>View tickets & QR codes</span>
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                clearBooking();
+                navigate('/eventra/events');
+              }}
+              className="rounded-full border border-white/15 px-6 py-3.5 text-[15px] font-semibold transition-colors hover:bg-white/[0.06]"
+            >
+              Find another event
+            </button>
           </div>
         </div>
-      </div>
+      </EventraFlowPage>
     );
   }
 
+  const PAYMENT_METHODS = [
+    { value: 'credit_card', label: 'Credit card', icon: CreditCard },
+    { value: 'debit_card', label: 'Debit card', icon: CreditCard },
+    { value: 'upi', label: 'UPI', icon: Smartphone },
+    { value: 'wallet', label: 'Wallet', icon: Wallet },
+    { value: 'net_banking', label: 'Net banking', icon: Landmark },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="text-purple-500 hover:text-purple-600 mb-4 flex items-center gap-2"
-          >
-            ← Back
-          </button>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Confirm Booking
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Review your booking details
-          </p>
-        </div>
+    <EventraFlowPage>
+      <EventraFlowHeader
+        step={1}
+        image={heroImage}
+        back={{ to: seatsUrl, label: 'Change seats' }}
+        title="Review & pay"
+        subtitle={<><span className="font-semibold text-white">{event.name}</span> · {whenText}</>}
+      />
 
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
-            <p className="text-red-800 dark:text-red-200">{error}</p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Booking Details */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Event Info */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                Event Details
-              </h2>
-              <div className="space-y-3">
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
-                    {event.name}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {event.venue_name}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {new Date(event.event_date).toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Selected Seats / Zones */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                {isZoneBasedEvent ? 'Selected Zones' : 'Selected Seats'}
-              </h2>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {ticketType.name}
-                  </span>
-                  <span className="text-gray-600 dark:text-gray-400">
-                    ₹{ticketType.price} each
-                  </span>
-                </div>
-                {isZoneBasedEvent ? (
-                  <div className="flex flex-wrap gap-2">
-                    {Object.entries(zoneSummary)
-                      .sort(([left], [right]) => left.localeCompare(right))
-                      .map(([zoneName, count]) => (
-                        <div
-                          key={zoneName}
-                          className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded-full text-sm"
-                        >
-                          {zoneName} x {count}
-                        </div>
-                      ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {selectedSeats.map(seat => (
-                      <div
-                        key={seat.id}
-                        className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded-full text-sm"
-                      >
-                        {seat.section} - {seat.row}{seat.seat_number}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                  Total: {selectedSeats.length} ticket{selectedSeats.length !== 1 ? 's' : ''}
+      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] items-start gap-6 px-5 py-8 sm:px-8 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <EventraCard title="Your tickets">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="font-semibold">{ticketType.name}</p>
+                <p className="text-sm text-[#9a9a9a]">
+                  {inr(ticketType.price, false)} each · {selectedSeats.length} {selectedSeats.length === 1 ? 'ticket' : 'tickets'}
                 </p>
               </div>
+              <Link to={seatsUrl} className="text-sm font-semibold text-[#e8824a] hover:text-[#f0a070]">
+                Change
+              </Link>
             </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {isZoneBasedEvent
+                ? Object.entries(zoneSummary)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([zoneName, count]) => (
+                      <span key={zoneName} className="rounded-lg bg-white/[0.05] px-2.5 py-1.5 text-sm ring-1 ring-inset ring-white/[0.08]">
+                        {zoneName} <span className="text-[#9a9a9a]">× {count}</span>
+                      </span>
+                    ))
+                : selectedSeats.map((seat) => (
+                    <span key={seat.id} className="rounded-lg bg-white/[0.05] px-2.5 py-1.5 font-mono text-sm text-[#f0a070] ring-1 ring-inset ring-white/[0.08]">
+                      {seat.section} · {seatCode(seat.row, seat.seat_number)}
+                    </span>
+                  ))}
+            </div>
+            <div className="mt-5 flex items-center gap-2 border-t border-white/[0.07] pt-4 text-sm text-[#9a9a9a]">
+              <MapPin className="h-4 w-4 shrink-0 text-[#e8824a]" aria-hidden="true" />
+              {venue || 'Venue to be announced'}
+              {event.address ? ` · ${event.address}` : ''}
+            </div>
+          </EventraCard>
 
-            {/* Payment Method */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                Payment Method
-              </h2>
-              <div className="space-y-3">
-                {[
-                  { value: 'credit_card', label: 'Credit Card', icon: '💳' },
-                  { value: 'debit_card', label: 'Debit Card', icon: '💳' },
-                  { value: 'upi', label: 'UPI', icon: '📱' },
-                  { value: 'wallet', label: 'Wallet', icon: '👛' },
-                  { value: 'net_banking', label: 'Net Banking', icon: '🏦' },
-                ].map(method => (
+          <EventraCard title="Payment">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" role="radiogroup" aria-label="Payment method">
+              {PAYMENT_METHODS.map((method) => {
+                const selected = paymentMethod === method.value;
+                const Icon = method.icon;
+                return (
                   <label
                     key={method.value}
-                    className={`block p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                      paymentMethod === method.value
-                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    className={`flex cursor-pointer items-center gap-3 rounded-xl px-4 py-3.5 ring-1 transition-colors focus-within:ring-2 focus-within:ring-[#e8824a] ${
+                      selected ? 'bg-[#c4621a]/12 ring-[#c4621a]' : 'ring-white/10 hover:ring-white/25'
                     }`}
                   >
-                    <input
-                      type="radio"
-                      name="payment"
-                      value={method.value}
-                      checked={paymentMethod === method.value}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="sr-only"
-                    />
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{method.icon}</span>
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {method.label}
-                        </span>
-                      </div>
-                      {paymentMethod === method.value && (
-                        <span className="text-purple-500">✓</span>
-                      )}
-                    </div>
+                    <input type="radio" name="payment" value={method.value} checked={selected} onChange={(e) => setPaymentMethod(e.target.value)} className="sr-only" />
+                    <Icon className={`h-5 w-5 ${selected ? 'text-[#e8824a]' : 'text-[#6b6b6b]'}`} aria-hidden="true" />
+                    <span className="text-sm font-semibold">{method.label}</span>
+                    {selected && <Check className="ml-auto h-4 w-4 text-[#e8824a]" aria-hidden="true" />}
                   </label>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          </div>
+            <p className="mt-4 flex items-center gap-2 text-xs text-[#6b6b6b]">
+              <Lock className="h-3.5 w-3.5" aria-hidden="true" /> Payments are simulated in this environment; no money moves.
+            </p>
+          </EventraCard>
+        </div>
 
-          {/* Booking Summary */}
-          <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 sticky top-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                Booking Summary
-              </h2>
-
-              {/* Totals */}
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
-                  <span>Subtotal ({selectedSeats.length} tickets)</span>
-                  <span>₹{subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
-                  <span>Tax (18%)</span>
-                  <span>₹{tax.toFixed(2)}</span>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mb-6">
-                <div className="flex justify-between text-xl font-bold text-gray-900 dark:text-white">
-                  <span>Total</span>
-                  <span>₹{total.toFixed(2)}</span>
-                </div>
-              </div>
-
-              <button
-                onClick={handleConfirmBooking}
-                disabled={loading}
-                className="w-full px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
-              >
-                {loading ? 'Processing...' : 'Confirm Booking'}
-              </button>
-
-              <button
-                onClick={() => navigate(-1)}
-                className="w-full mt-3 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                Back to Seat Selection
-              </button>
-            </div>
-          </div>
+        <div className="lg:sticky lg:top-20">
+          <EventraCard title="Summary">
+            <EventraBill subtotal={subtotal} tax={tax} total={total} />
+            {error && (
+              <p role="alert" className="mt-5 flex items-start gap-2 rounded-xl bg-rose-400/10 px-3.5 py-3 text-sm text-rose-200 ring-1 ring-inset ring-rose-400/20">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> {error}
+              </p>
+            )}
+            <button type="button" onClick={handleConfirmBooking} disabled={loading} aria-busy={loading} className={`${primaryButton} mt-6`}>
+              <span>{loading ? 'Confirming…' : 'Pay & confirm'}</span>
+              <span className="inline-flex items-center gap-2 tabular-nums">
+                {inr(total)} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </span>
+            </button>
+            <p className="mt-3 text-center text-xs text-[#6b6b6b]">Seats are held for you while you check out.</p>
+          </EventraCard>
         </div>
       </div>
-    </div>
+    </EventraFlowPage>
   );
 };
 
