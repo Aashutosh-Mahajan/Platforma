@@ -16,9 +16,16 @@ export default defineConfig({
             return
           }
 
-          if (req.url === '/zesty') {
-            req.url = '/zesty/'
-          }
+          // NOTE: this used to rewrite '/zesty' -> '/zesty/'. Don't — there's
+          // a literal static directory at zesty-app/zesty/ (an orphaned,
+          // unrelated mini-site with its own index.html). The trailing
+          // slash made Vite's static file server resolve directly to that
+          // directory's index.html instead of falling through to the SPA
+          // shell, so any direct navigation, refresh, or bookmark of
+          // /zesty silently served a completely different, disconnected
+          // page instead of the real React Router route. Client-side
+          // <Link>/navigate() calls never hit this middleware at all,
+          // which is why the bug only showed up on hard navigations.
 
           next()
         })
