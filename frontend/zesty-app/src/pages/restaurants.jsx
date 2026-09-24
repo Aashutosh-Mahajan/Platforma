@@ -1,22 +1,46 @@
 import { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Star, Clock, ShieldCheck, UtensilsCrossed, CakeSlice, CookingPot, IceCreamCone, Soup, Candy, Salad, Coffee,
+  Pizza, Sandwich, Cake, Croissant, Wheat, Flame, PartyPopper, Leaf, Bike, CreditCard, EggFried,
+} from "lucide-react";
 
 import FilterBar from "../components/FilterBar";
 import RestaurantGrid from "../components/RestaurantGrid";
+import { ZESTY_HERO_IMAGES } from "../utils/foodImagery";
 
-const API_BASE_URL = "http://localhost:8000/api";
+const API_BASE_URL = "http://localhost:8000/api/v1/zesty";
 const LOCATION_STORAGE_KEY = "platforma_last_location";
 const HERO_SECTIONS = [
   {
     id: "gold-flash-sale",
-    imageUrl: "/zesty/Images/Hero1.jpeg",
+    imageUrl: ZESTY_HERO_IMAGES[0],
+    eyebrow: "Hungry? We've got you",
+    title: "Great food,",
+    offer: "delivered fast.",
+    subtitle: "Order from the best kitchens near you",
+    note: "Fresh ingredients, trusted restaurants, on-time delivery — every time.",
+    cta: "Explore Restaurants",
   },
   {
     id: "free-delivery-first-order",
-    imageUrl: "/zesty/Images/Hero%202.jpeg",
+    imageUrl: ZESTY_HERO_IMAGES[1],
+    eyebrow: "First order on us",
+    title: "Free delivery",
+    offer: "on your first order.",
+    subtitle: "Sign up and taste the difference",
+    note: "New to Zesty? Your first order ships free, no minimum.",
+    cta: "Order Now",
   },
   {
     id: "flat-50-delivery",
-    imageUrl: "/zesty/Images/Hero%203.jpeg",
+    imageUrl: ZESTY_HERO_IMAGES[2],
+    eyebrow: "Limited time",
+    title: "Flat ₹50 off",
+    offer: "on orders above ₹299.",
+    subtitle: "More flavor, less bill",
+    note: "Applies automatically at checkout across every partner restaurant.",
+    cta: "Grab the Deal",
   },
 ];
 
@@ -27,23 +51,23 @@ const HERO_CAROUSEL_SLIDES = [
 ];
 
 const PRIMARY_CUISINE_STRIP_ITEMS = [
-  { id: "all", label: "All", emoji: "🍽️", cuisineKey: "" },
-  { id: "desserts", label: "Desserts", emoji: "🍰", cuisineKey: "dessert" },
-  { id: "north-indian", label: "North Indian", emoji: "🍛", cuisineKey: "north indian" },
-  { id: "ice-cream", label: "Ice Cream", emoji: "🍨", cuisineKey: "ice cream" },
-  { id: "pav-bhaji", label: "Pav Bhaji", emoji: "🥘", cuisineKey: "pav bhaji" },
-  { id: "sweets", label: "Sweets", emoji: "🍬", cuisineKey: "sweet" },
-  { id: "jain-food", label: "Jain Food", emoji: "🥗", cuisineKey: "jain" },
-  { id: "south-indian", label: "South Indian", emoji: "🥥", cuisineKey: "south indian" },
-  { id: "waffles", label: "Waffles", emoji: "🧇", cuisineKey: "waffle" },
-  { id: "maharashtrian", label: "Maharashtrian", emoji: "🍲", cuisineKey: "maharashtrian" },
-  { id: "paneer", label: "Paneer", emoji: "🧀", cuisineKey: "paneer" },
-  { id: "sandwich", label: "Sandwich", emoji: "🥪", cuisineKey: "sandwich" },
-  { id: "cake", label: "Cake", emoji: "🎂", cuisineKey: "cake" },
-  { id: "dosa", label: "Dosa", emoji: "🥞", cuisineKey: "dosa" },
-  { id: "chinese", label: "Chinese", emoji: "🥡", cuisineKey: "chinese" },
-  { id: "fried-rice", label: "Fried Rice", emoji: "🍚", cuisineKey: "fried rice" },
-  { id: "pizza", label: "Pizza", emoji: "🍕", cuisineKey: "pizza" },
+  { id: "all", label: "All", icon: UtensilsCrossed, cuisineKey: "" },
+  { id: "desserts", label: "Desserts", icon: CakeSlice, cuisineKey: "dessert" },
+  { id: "north-indian", label: "North Indian", icon: CookingPot, cuisineKey: "north indian" },
+  { id: "ice-cream", label: "Ice Cream", icon: IceCreamCone, cuisineKey: "ice cream" },
+  { id: "pav-bhaji", label: "Pav Bhaji", icon: Soup, cuisineKey: "pav bhaji" },
+  { id: "sweets", label: "Sweets", icon: Candy, cuisineKey: "sweet" },
+  { id: "jain-food", label: "Jain Food", icon: Salad, cuisineKey: "jain" },
+  { id: "south-indian", label: "South Indian", icon: Coffee, cuisineKey: "south indian" },
+  { id: "waffles", label: "Waffles", icon: Croissant, cuisineKey: "waffle" },
+  { id: "maharashtrian", label: "Maharashtrian", icon: Soup, cuisineKey: "maharashtrian" },
+  { id: "paneer", label: "Paneer", icon: EggFried, cuisineKey: "paneer" },
+  { id: "sandwich", label: "Sandwich", icon: Sandwich, cuisineKey: "sandwich" },
+  { id: "cake", label: "Cake", icon: Cake, cuisineKey: "cake" },
+  { id: "dosa", label: "Dosa", icon: Wheat, cuisineKey: "dosa" },
+  { id: "chinese", label: "Chinese", icon: Soup, cuisineKey: "chinese" },
+  { id: "fried-rice", label: "Fried Rice", icon: Wheat, cuisineKey: "fried rice" },
+  { id: "pizza", label: "Pizza", icon: Pizza, cuisineKey: "pizza" },
 ];
 
 const EXTRA_CUISINE_DROPDOWN_ITEMS = [
@@ -126,7 +150,6 @@ export default function RestaurantsPage() {
   const activeHeroIndex =
     (carouselIndex - 1 + HERO_SECTIONS.length) % HERO_SECTIONS.length;
   const activeHero = HERO_SECTIONS[activeHeroIndex];
-  const isImageHero = Boolean(activeHero.imageUrl);
 
   const visibleRestaurants = useMemo(() => {
     const selectedCuisine = ALL_CUISINE_ITEMS.find((item) => item.id === activeCuisineStrip);
@@ -343,7 +366,7 @@ export default function RestaurantsPage() {
 
     async function fetchAreas() {
       try {
-        const areasResponse = await fetch(`${API_BASE_URL}/areas/`);
+        const areasResponse = await fetch(`${API_BASE_URL}/restaurants/areas/`);
 
         if (!areasResponse.ok) {
           throw new Error("Failed to fetch areas");
@@ -500,23 +523,11 @@ export default function RestaurantsPage() {
           </div>
         </div>
 
-        <div
-          className={`absolute inset-0 ${isImageHero ? "opacity-0" : "opacity-20"}`}
-          style={{
-            backgroundImage: "radial-gradient(circle at 1px 1px, #FFFFFF 1px, transparent 0)",
-            backgroundSize: "14px 14px",
-          }}
-        />
-
-        {!isImageHero && (
-          <div
-            className="absolute -bottom-16 left-[-6%] h-[320px] w-[320px] opacity-55"
-            style={{
-              background: activeHero.burst,
-              clipPath: "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)",
-            }}
-          />
-        )}
+        {/* Cinematic tint so white hero text stays legible over any photo,
+            matching Eventra's dual-layer overlay treatment. */}
+        <div className="pointer-events-none absolute inset-0 bg-black/35" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/10" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent" />
 
         <div className="relative z-30 w-full">
           <FilterBar
@@ -540,32 +551,78 @@ export default function RestaurantsPage() {
         </div>
 
         <div className="relative z-20 mx-auto flex h-full w-full max-w-7xl flex-col justify-between px-4 pb-8 pt-44 md:px-6 md:pb-10 md:pt-52 lg:px-8">
-          {isImageHero ? (
-            <div />
-          ) : (
-            <div className="max-w-[560px] text-white">
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-white/80">
-                Zesty Specials
-              </p>
-              <h2 className="mt-3 text-[64px] font-black uppercase leading-[0.9] tracking-tight drop-shadow-[0_4px_0_rgba(0,0,0,0.22)] md:text-[92px]">
-                {activeHero.title}
-              </h2>
-              <h3 className="mt-1 text-5xl font-black uppercase leading-none tracking-tight drop-shadow-[0_4px_0_rgba(0,0,0,0.22)] md:text-7xl">
-                {activeHero.offer}
-              </h3>
-              <p className="mt-2 text-2xl font-semibold text-white/95 md:text-4xl">
-                {activeHero.subtitle}
-              </p>
-              <p className="mt-4 text-sm font-medium text-white/90 md:text-lg">{activeHero.note}</p>
-
-              <button
-                type="button"
-                className="mt-7 rounded-full bg-black px-8 py-3 text-base font-bold text-white shadow-[0_10px_20px_rgba(0,0,0,0.35)] transition-transform duration-200 hover:-translate-y-0.5"
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeHero.id}
+              className="max-w-[600px] text-white"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <motion.p
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.08, duration: 0.5 }}
+                className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 font-zesty-display text-xs font-bold uppercase tracking-[0.2em] text-white backdrop-blur-sm"
               >
-                {activeHero.cta}
-              </button>
-            </div>
-          )}
+                {activeHero.eyebrow}
+              </motion.p>
+              <motion.h2
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.16, duration: 0.55 }}
+                className="mt-4 font-zesty-display text-[44px] font-extrabold leading-[1.02] tracking-tight drop-shadow-[0_4px_18px_rgba(0,0,0,0.45)] sm:text-[58px] md:text-[76px]"
+              >
+                {activeHero.title}
+                <span className="block text-zesty-gold">{activeHero.offer}</span>
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.24, duration: 0.5 }}
+                className="mt-3 text-xl font-semibold text-white/95 md:text-2xl"
+              >
+                {activeHero.subtitle}
+              </motion.p>
+              <motion.p
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className="mt-3 max-w-md text-sm font-medium text-white/80 md:text-base"
+              >
+                {activeHero.note}
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.38, duration: 0.5 }}
+                className="mt-8 flex flex-wrap items-center gap-4"
+              >
+                <a
+                  href="#recommended"
+                  className="rounded-full bg-zesty-red px-8 py-3.5 text-base font-bold text-white shadow-[0_14px_30px_rgba(226,55,68,0.45)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-zesty-redDark"
+                >
+                  {activeHero.cta}
+                </a>
+                <div className="flex items-center gap-5 text-sm font-semibold text-white/90">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Star className="h-4 w-4 text-zesty-gold" aria-hidden="true" />
+                    4.5+ rated kitchens
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Clock className="h-4 w-4 text-zesty-gold" aria-hidden="true" />
+                    30-min delivery
+                  </span>
+                  <span className="hidden items-center gap-1.5 sm:inline-flex">
+                    <ShieldCheck className="h-4 w-4 text-zesty-gold" aria-hidden="true" />
+                    Verified partners
+                  </span>
+                </div>
+              </motion.div>
+            </motion.div>
+          </AnimatePresence>
 
           <div className="flex items-center justify-center gap-2 pb-2">
             {HERO_SECTIONS.map((item, index) => (
@@ -587,6 +644,35 @@ export default function RestaurantsPage() {
 
       </section>
 
+      <div className="relative z-10 overflow-hidden bg-zesty-tickerBg py-3">
+        <motion.div
+          className="flex w-max items-center gap-10 whitespace-nowrap"
+          animate={{ x: ["0%", "-50%"] }}
+          transition={{ duration: 22, ease: "linear", repeat: Infinity }}
+        >
+          {Array.from({ length: 2 }).map((_, loopIndex) => (
+            <div key={loopIndex} className="flex items-center gap-10">
+              {[
+                { icon: Flame, label: "Fastest Delivery In Town" },
+                { icon: Star, label: "Top Rated Local Kitchens" },
+                { icon: PartyPopper, label: "Exclusive Daily Offers" },
+                { icon: Leaf, label: "Fresh Ingredients, Always" },
+                { icon: Bike, label: "Live Order Tracking" },
+                { icon: CreditCard, label: "Secure & Easy Checkout" },
+              ].map(({ icon: Icon, label }) => (
+                <span
+                  key={`${loopIndex}-${label}`}
+                  className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-[0.14em] text-white/95"
+                >
+                  <Icon className="h-4 w-4 text-zesty-gold" strokeWidth={2.2} aria-hidden="true" />
+                  {label}
+                </span>
+              ))}
+            </div>
+          ))}
+        </motion.div>
+      </div>
+
       <section className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6 lg:px-8">
         <div className="flex gap-5 overflow-x-auto pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button
@@ -595,7 +681,7 @@ export default function RestaurantsPage() {
             className={`min-w-[96px] rounded-2xl p-2 text-left transition-all duration-200 ${
               quickFilters.under200
                 ? "bg-[#D4F0E2]"
-                : "bg-gradient-to-br from-[#7AB4F7] via-[#6A9FF2] to-[#4A7AE0]"
+                : "bg-gradient-to-br from-zesty-red via-[#D42B3D] to-zesty-redDark"
             }`}
           >
             <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white">Meals Under</p>
@@ -611,7 +697,7 @@ export default function RestaurantsPage() {
               className="min-w-[96px] text-center"
             >
               <div className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-full bg-white shadow-[0_8px_18px_rgba(0,0,0,0.12)]">
-                <span className="text-[36px]" aria-hidden="true">{item.emoji}</span>
+                <item.icon className="h-8 w-8 text-zesty-redDark" strokeWidth={1.6} aria-hidden="true" />
               </div>
               <p className="mt-2 truncate text-base font-semibold text-[#263238]">{item.label}</p>
               <div
@@ -698,12 +784,20 @@ export default function RestaurantsPage() {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-7xl px-4 py-8 md:px-6 lg:px-8">
-        <h1 className="text-[30px] font-semibold uppercase tracking-[0.18em] text-[#6B6F72]">
-          Recommended For You
-        </h1>
+      <section id="recommended" className="mx-auto w-full max-w-7xl scroll-mt-24 px-4 py-10 md:px-6 lg:px-8">
+        <div className="mb-1 flex items-end justify-between">
+          <div>
+            <p className="font-zesty-display text-xs font-bold uppercase tracking-[0.3em] text-zesty-red">
+              Curated for you
+            </p>
+            <h1 className="mt-2 font-zesty-display text-3xl font-extrabold text-[#1C1C1C] md:text-4xl">
+              Recommended Restaurants
+            </h1>
+          </div>
+          <div className="hidden h-1.5 w-24 rounded-full bg-gradient-to-r from-zesty-red to-zesty-gold sm:block" />
+        </div>
 
-        <div className="mt-6">
+        <div className="mt-8">
           {error ? (
             <div className="rounded-xl border border-[#F0E0E0] bg-[#FFF7F7] px-5 py-4 text-[#696969]">
               Something went wrong
@@ -717,6 +811,35 @@ export default function RestaurantsPage() {
           ) : (
             <RestaurantGrid restaurants={visibleRestaurants} />
           )}
+        </div>
+      </section>
+
+      <section className="relative mt-4 overflow-hidden">
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1600&auto=format&fit=crop&q=80"
+            alt=""
+            aria-hidden="true"
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/30" />
+        </div>
+        <div className="relative mx-auto flex max-w-7xl flex-col items-start gap-4 px-4 py-16 md:px-6 lg:px-8">
+          <p className="font-zesty-display text-xs font-bold uppercase tracking-[0.3em] text-zesty-gold">
+            Own a restaurant?
+          </p>
+          <h2 className="max-w-xl font-zesty-display text-3xl font-extrabold text-white md:text-4xl">
+            Grow your business with Zesty
+          </h2>
+          <p className="max-w-lg text-base text-white/85">
+            Join thousands of restaurant partners reaching new customers every day. List your menu, manage orders and track earnings — all in one dashboard.
+          </p>
+          <a
+            href="/register"
+            className="mt-2 rounded-full bg-white px-7 py-3 text-base font-bold text-[#1C1C1C] shadow-[0_10px_24px_rgba(0,0,0,0.35)] transition-transform duration-200 hover:-translate-y-0.5"
+          >
+            Partner With Us
+          </a>
         </div>
       </section>
     </main>
