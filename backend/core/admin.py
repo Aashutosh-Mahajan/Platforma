@@ -1,5 +1,5 @@
 from django.contrib import admin
-from core.models import User, Address, Payment, Notification
+from core.models import User, Address, Payment, Notification, VerificationToken, AuditLog, SearchLog
 
 
 @admin.register(User)
@@ -27,3 +27,23 @@ class PaymentAdmin(admin.ModelAdmin):
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ['title', 'user', 'type', 'is_read', 'created_at']
     list_filter = ['type', 'is_read']
+
+
+@admin.register(VerificationToken)
+class VerificationTokenAdmin(admin.ModelAdmin):
+    list_display = ['user', 'purpose', 'expires_at', 'used_at', 'created_at']
+    list_filter = ['purpose']
+    search_fields = ['user__email', 'token']
+
+
+@admin.register(AuditLog)
+class AuditLogAdmin(admin.ModelAdmin):
+    list_display = ['actor', 'action', 'target_type', 'target_id', 'created_at']
+    list_filter = ['action']
+    search_fields = ['actor__email', 'target_type', 'target_id']
+
+
+@admin.register(SearchLog)
+class SearchLogAdmin(admin.ModelAdmin):
+    list_display = ['query_text', 'session_id', 'result_type', 'clicked', 'created_at']
+    search_fields = ['query_text', 'session_id']
