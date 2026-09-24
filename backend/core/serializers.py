@@ -25,14 +25,19 @@ class RegisterSerializer(serializers.Serializer):
     phone = serializers.CharField(required=False, allow_blank=True)
     restaurant_name = serializers.CharField(max_length=255, required=False, allow_blank=True)
     company_name = serializers.CharField(max_length=255, required=False, allow_blank=True)
-    role = serializers.ChoiceField(
-        choices=User.ROLE_CHOICES,
-        default='customer'
-    )
+    # Public sign-up is limited to these roles. Admin (and delivery partner)
+    # accounts are provisioned internally, never self-registered.
+    SELF_SERVICE_ROLES = [
+        ('customer', 'Customer'),
+        ('restaurant_owner', 'Restaurant Owner'),
+        ('event_organizer', 'Event Organizer'),
+    ]
+    role = serializers.ChoiceField(choices=SELF_SERVICE_ROLES, default='customer')
 
     def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("A user with this email already exists.")
+        value = value.strip().lower()
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("An account with this email already exists. Try signing in instead.")
         return value
 
     def validate_username(self, value):
@@ -84,7 +89,10 @@ class LoginSerializer(serializers.Serializer):
         password = data.get('password')
 
         if email and password:
-            user = authenticate(username=email, password=password)
+            # Match the stored address case-insensitively so "Me@x.com" and
+            # "me@x.com" reach the same account.
+            existing = User.objects.filter(email__iexact=email.strip()).only('email').first()
+            user = authenticate(username=existing.email if existing else email, password=password)
             if not user:
                 raise serializers.ValidationError("Invalid email or password.")
             if not user.is_active:
@@ -105,6 +113,24 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'email', 'username', 'role', 
                            'is_email_verified', 'is_phone_verified', 
                            'created_at', 'updated_at']
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True, required=True, min_length=8)
+    new_password_confirm = serializers.CharField(write_only=True, required=True)
+
+    def validate_new_password(self, value):
+        validate_password(value)
+        return value
+
+    def validate(self, data):
+        if data['new_password'] != data['new_password_confirm']:
+            raise serializers.ValidationError({"new_password_confirm": "Passwords do not match."})
+        return data
 
 
 class PasswordChangeSerializer(serializers.Serializer):
