@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { ChevronDown, MapPin } from "lucide-react";
 
 import { useAuth } from "../contexts";
 
@@ -110,11 +111,11 @@ export default function FilterBar({
               className="text-left"
             >
               <div className="flex items-start gap-2">
-                <span aria-hidden="true" className="pt-0.5">📍</span>
+                <MapPin className="mt-1.5 h-5 w-5 shrink-0 drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]" aria-hidden="true" />
                 <div className="min-w-0">
                   <p className="flex items-center gap-2 text-2xl font-black tracking-tight drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]">
                     <span className="truncate">{locationTitle}</span>
-                    <span className="text-lg" aria-hidden="true">▾</span>
+                    <ChevronDown className="h-5 w-5" aria-hidden="true" />
                   </p>
                   <p className="mt-1 truncate text-sm font-medium text-white/90 drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]">
                     {locationSubtitle}
