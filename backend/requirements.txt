@@ -22,6 +22,17 @@ Pillow>=10.2
 # Server
 gunicorn>=21.2
 
+# Task queue (nightly ETL, model runs, seat-hold expiry — PRD §3)
+celery>=5.3
+redis>=5.0
+django-celery-beat>=2.5
+
+# Data / ML (PRD §3 — datagen, warehouse ETL, mining modules)
+numpy>=1.26
+pandas>=2.2
+scikit-learn>=1.4
+mlxtend>=0.23
+
 # Utils
 python-dateutil>=2.8
 requests>=2.31
