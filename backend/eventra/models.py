@@ -1,6 +1,32 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 import uuid
+
+from eventra.event_types import EVENT_TYPE_CHOICES, category_for, label_for
+
+
+class Venue(models.Model):
+    """A physical venue, reusable across events (PRD §5.3)."""
+
+    name = models.CharField(max_length=255)
+    address = models.CharField(max_length=255)
+    area = models.CharField(max_length=100, blank=True)
+    city = models.CharField(max_length=100, blank=True, db_index=True)
+    state = models.CharField(max_length=100, blank=True, db_index=True)
+    latitude = models.DecimalField(max_digits=10, decimal_places=8, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=11, decimal_places=8, null=True, blank=True)
+    capacity = models.IntegerField(null=True, blank=True)
+    is_indoor = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'venues'
+        unique_together = ('name', 'address')
+
+    def __str__(self):
+        return f"{self.name}, {self.city or self.address}"
 
 
 class Event(models.Model):
@@ -22,8 +48,18 @@ class Event(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    # The specific kind of event within the category (cricket match,
+    # stand-up comedy, food festival...). Optional for older events; when
+    # set it decides the category, see eventra.event_types.
+    event_type = models.CharField(max_length=40, choices=EVENT_TYPE_CHOICES, blank=True, default='', db_index=True)
 
-    # Venue
+    # Venue — denormalized fields are kept so existing API responses don't
+    # change shape; `venue` is the PRD §5.3 normalized entity, kept in sync
+    # automatically in save() so venues are reusable across events without
+    # requiring every caller to be rewritten at once.
+    venue = models.ForeignKey(
+        Venue, on_delete=models.PROTECT, null=True, blank=True, related_name='events'
+    )
     venue_name = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
     latitude = models.DecimalField(max_digits=10, decimal_places=8, null=True, blank=True)
@@ -46,7 +82,8 @@ class Event(models.Model):
     available_seats = models.IntegerField(default=0)
 
     # Status
-    is_published = models.BooleanField(default=False)
+    is_published = models.BooleanField(default=False, help_text='Organizer-controlled draft/publish toggle.')
+    is_approved = models.BooleanField(default=False, help_text='Admin approval gate (FR-A4) — separate from is_published.')
     is_cancelled = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -58,6 +95,24 @@ class Event(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.get_category_display()})"
+
+    @property
+    def event_type_label(self):
+        return label_for(self.event_type)
+
+    def save(self, *args, **kwargs):
+        # A specific event type always implies its category, so the two can
+        # never disagree (the category drives the seat-map layout).
+        implied = category_for(self.event_type)
+        if implied:
+            self.category = implied
+        if self.venue_name and self.address and self.venue_id is None:
+            self.venue, _ = Venue.objects.get_or_create(
+                name=self.venue_name,
+                address=self.address,
+                defaults={'latitude': self.latitude, 'longitude': self.longitude},
+            )
+        super().save(*args, **kwargs)
 
     def update_rating(self):
         """Recalculate average rating from reviews."""
@@ -79,6 +134,12 @@ class TicketType(models.Model):
     quantity_available = models.IntegerField()
     description = models.TextField(blank=True)
     benefits = models.TextField(blank=True)
+
+    # PRD §5.3 Zone fields: refundability and cutoff window (per-tier, not per-event).
+    is_refundable = models.BooleanField(default=True)
+    refund_cutoff_hours = models.IntegerField(
+        default=24, help_text='Cancellation is refused within this many hours of the event.'
+    )
 
     class Meta:
         db_table = 'ticket_types'
@@ -110,6 +171,34 @@ class Seat(models.Model):
 
     def __str__(self):
         return f"{self.section}-{self.row}-{self.seat_number} ({self.status})"
+
+
+class SeatHold(models.Model):
+    """Temporary hold on a seat while a customer is checking out (PRD FR-E4).
+
+    Holds are advisory: they do not change Seat.status. Availability checks
+    must treat a seat as unavailable to other customers while a non-expired
+    hold exists, and must ignore expired holds without needing a background
+    job to have run first.
+    """
+
+    seat = models.ForeignKey(Seat, on_delete=models.CASCADE, related_name='holds')
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='seat_holds'
+    )
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'seat_holds'
+        indexes = [models.Index(fields=['expires_at'])]
+
+    def __str__(self):
+        return f"Hold({self.seat_id} by {self.customer_id} until {self.expires_at})"
+
+    @property
+    def is_expired(self):
+        return timezone.now() >= self.expires_at
 
 
 class Booking(models.Model):
@@ -153,7 +242,33 @@ class Booking(models.Model):
     def save(self, *args, **kwargs):
         if not self.booking_reference:
             self.booking_reference = f"EB-{uuid.uuid4().hex[:8].upper()}"
+
+        status_changed = False
+        old_status = None
+        if self.pk is not None:
+            old_status = type(self).objects.filter(pk=self.pk).values_list('status', flat=True).first()
+            status_changed = old_status is not None and old_status != self.status
+
         super().save(*args, **kwargs)
+
+        if status_changed:
+            BookingStatusHistory.objects.create(booking=self, old_status=old_status, new_status=self.status)
+
+
+class BookingStatusHistory(models.Model):
+    """Every status transition a booking has gone through (FR-D2)."""
+
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='status_history')
+    old_status = models.CharField(max_length=20)
+    new_status = models.CharField(max_length=20)
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'booking_status_history'
+        ordering = ['-changed_at']
+
+    def __str__(self):
+        return f"Booking #{self.booking_id}: {self.old_status} -> {self.new_status}"
 
 
 class BookingSeat(models.Model):
@@ -167,6 +282,51 @@ class BookingSeat(models.Model):
 
     def __str__(self):
         return f"{self.booking.booking_reference} → {self.seat}"
+
+
+class Ticket(models.Model):
+    """One QR-verifiable ticket per booked seat (PRD FR-E5/FR-E6).
+
+    A ticket verifies exactly once: `is_scanned` flips true on first
+    successful scan and every later scan attempt is rejected. `scanned_at`/
+    `scanned_gate` record only the original, authoritative scan.
+    """
+
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='tickets')
+    seat = models.OneToOneField(Seat, on_delete=models.PROTECT, related_name='ticket')
+    qr_token = models.CharField(max_length=64, unique=True, editable=False)
+    is_scanned = models.BooleanField(default=False)
+    scanned_at = models.DateTimeField(null=True, blank=True)
+    scanned_gate = models.CharField(max_length=50, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'tickets'
+
+    def __str__(self):
+        return f"Ticket {self.qr_token[:8]} - {self.booking.booking_reference}"
+
+    def save(self, *args, **kwargs):
+        if not self.qr_token:
+            self.qr_token = uuid.uuid4().hex
+        super().save(*args, **kwargs)
+
+
+class TicketScanAttempt(models.Model):
+    """Log of every verify attempt against a ticket, successful or not."""
+
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='scan_attempts')
+    was_accepted = models.BooleanField()
+    gate = models.CharField(max_length=50, blank=True)
+    attempted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'ticket_scan_attempts'
+        ordering = ['-attempted_at']
+
+    def __str__(self):
+        outcome = 'accepted' if self.was_accepted else 'rejected'
+        return f"{self.ticket.qr_token[:8]} {outcome} @ {self.attempted_at}"
 
 
 class EventReview(models.Model):
