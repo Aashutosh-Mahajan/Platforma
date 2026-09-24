@@ -1,181 +1,173 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Bike, Clock, Minus, Plus, ShoppingBag, TicketPercent, Trash2 } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
+import { fallbackFoodImage } from '../../utils/foodImagery';
+import { BillRows, FlowCard, FlowHeader, FlowPage, VegMark, inr } from '../../components/zesty/OrderFlow';
 
 const CartPage: React.FC = () => {
   const navigate = useNavigate();
-  const { items, restaurant, subtotal, deliveryFee, tax, total, updateQuantity, removeItem, clearCart } = useCart();
+  const { items, restaurant, subtotal, deliveryFee, tax, total, ready, updateQuantity, removeItem, clearCart } = useCart();
+  // Clearing is destructive, so it takes two taps; the second must come within a few seconds.
+  const [confirmClear, setConfirmClear] = useState(false);
+  useEffect(() => {
+    if (!confirmClear) return;
+    const timer = window.setTimeout(() => setConfirmClear(false), 4000);
+    return () => window.clearTimeout(timer);
+  }, [confirmClear]);
+
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const restaurantImage = restaurant ? restaurant.image_url || restaurant.banner || restaurant.image || fallbackFoodImage(restaurant.id) : null;
+
+  if (!ready) {
+    return (
+      <FlowPage>
+        <FlowHeader step={0} title="Your cart" />
+        <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-6 px-5 py-8 sm:px-8 lg:grid-cols-3" aria-busy="true">
+          <div className="h-64 animate-pulse rounded-2xl bg-[#f1e6da] lg:col-span-2" />
+          <div className="h-64 animate-pulse rounded-2xl bg-[#f1e6da]" />
+        </div>
+      </FlowPage>
+    );
+  }
 
   if (items.length === 0) {
     return (
-      <div className="theme-zesty theme-zesty-page min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🛒</div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Your cart is empty
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Add some delicious items to get started!
-          </p>
-          <button
-            onClick={() => navigate('/zesty')}
-            className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-          >
-            Browse Restaurants
-          </button>
+      <FlowPage>
+        <FlowHeader step={0} title="Your cart" subtitle="Nothing here yet." />
+        <div className="mx-auto max-w-xl px-5 py-16 text-center sm:px-8">
+          <span className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-zesty-red/10 text-zesty-red">
+            <ShoppingBag className="h-8 w-8" strokeWidth={1.6} aria-hidden="true" />
+          </span>
+          <h2 className="mt-5 font-zesty-display text-2xl font-bold">Your cart is empty</h2>
+          <p className="mt-2 text-[#7a6d63]">Pick a restaurant, add a few dishes and they'll wait for you here.</p>
+          <div className="mt-7 flex flex-wrap justify-center gap-3">
+            <Link to="/zesty" className="inline-flex items-center gap-2 rounded-full bg-zesty-red px-6 py-3 font-semibold text-white transition-colors hover:bg-zesty-redDark">
+              Browse restaurants <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+            <Link to="/zesty/orders" className="rounded-full border border-[#e7d9cb] bg-white px-6 py-3 font-semibold transition-colors hover:bg-[#fbf5ee]">
+              Past orders
+            </Link>
+          </div>
         </div>
-      </div>
+      </FlowPage>
     );
   }
 
   return (
-    <div className="theme-zesty theme-zesty-page min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Your Cart
-          </h1>
-          {restaurant && (
-            <p className="text-gray-600 dark:text-gray-400">
-              From {restaurant.name}
-            </p>
-          )}
-        </div>
+    <FlowPage>
+      <FlowHeader
+        step={0}
+        image={restaurantImage}
+        back={restaurant ? { to: `/zesty/restaurants/${restaurant.id}`, label: `Back to ${restaurant.name}` } : { to: '/zesty', label: 'Restaurants' }}
+        title="Your cart"
+        subtitle={
+          restaurant && (
+            <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+              <span className="font-semibold text-white">{restaurant.name}</span>
+              <span className="inline-flex items-center gap-1.5">
+                <Clock className="h-4 w-4" aria-hidden="true" /> {restaurant.delivery_time_min}–{restaurant.delivery_time_max} min
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Bike className="h-4 w-4" aria-hidden="true" /> {Number(restaurant.delivery_fee) ? `${inr(restaurant.delivery_fee, false)} delivery` : 'Free delivery'}
+              </span>
+            </span>
+          )
+        }
+      />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Cart Items */}
-          <div className="lg:col-span-2">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-              {/* Clear Cart Button */}
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Items ({items.length})
-                </h2>
-                <button
-                  onClick={clearCart}
-                  className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-                >
-                  Clear Cart
-                </button>
-              </div>
-
-              {/* Items List */}
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {items.map(item => (
-                  <div key={item.menuItem.id} className="p-4 flex gap-4">
-                    {/* Item Image */}
-                    <div className="w-20 h-20 flex-shrink-0 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
-                      {item.menuItem.image ? (
-                        <img
-                          src={item.menuItem.image}
-                          alt={item.menuItem.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="text-gray-400 text-2xl">🍽️</span>
-                        </div>
-                      )}
+      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] items-start gap-6 px-5 py-8 sm:px-8 lg:grid-cols-3">
+        <FlowCard
+          className="lg:col-span-2"
+          title={`${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
+          action={
+            <button
+              type="button"
+              onClick={() => (confirmClear ? (clearCart(), setConfirmClear(false)) : setConfirmClear(true))}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${
+                confirmClear ? 'bg-rose-600 text-white' : 'text-rose-700 hover:bg-rose-50'
+              }`}
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" /> {confirmClear ? 'Tap again to clear' : 'Clear cart'}
+            </button>
+          }
+        >
+          <ul className="-my-4 divide-y divide-[#f3e9de]">
+            {items.map((item) => (
+              <li key={item.menuItem.id} className="flex gap-4 py-4">
+                <img
+                  src={item.menuItem.image || fallbackFoodImage(item.menuItem.id)}
+                  alt=""
+                  className="h-20 w-20 shrink-0 rounded-xl object-cover"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-start gap-2 font-semibold">
+                    <span className="mt-1"><VegMark veg={item.menuItem.is_vegetarian} /></span>
+                    <span className="line-clamp-2">{item.menuItem.name}</span>
+                  </p>
+                  <p className="mt-0.5 text-sm text-[#7a6d63]">{inr(item.menuItem.price)} each</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <div className="inline-flex items-center rounded-full border border-[#e7d9cb] bg-[#fbf5ee] p-0.5">
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(item.menuItem.id, item.quantity - 1)}
+                        className="grid h-8 w-8 place-items-center rounded-full text-zesty-redDark transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zesty-red"
+                        aria-label={item.quantity === 1 ? `Remove ${item.menuItem.name}` : `One less ${item.menuItem.name}`}
+                      >
+                        {item.quantity === 1 ? <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> : <Minus className="h-3.5 w-3.5" aria-hidden="true" />}
+                      </button>
+                      <span className="w-8 text-center text-sm font-bold tabular-nums" aria-live="polite">{item.quantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(item.menuItem.id, item.quantity + 1)}
+                        className="grid h-8 w-8 place-items-center rounded-full text-zesty-redDark transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zesty-red"
+                        aria-label={`One more ${item.menuItem.name}`}
+                      >
+                        <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
                     </div>
-
-                    {/* Item Details */}
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                        {item.menuItem.name}
-                        {item.menuItem.is_vegetarian && <span className="ml-2 text-green-600">🌱</span>}
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                        ₹{item.menuItem.price} each
-                      </p>
-
-                      {/* Quantity Controls */}
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => updateQuantity(item.menuItem.id, item.quantity - 1)}
-                            className="w-8 h-8 flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
-                          >
-                            -
-                          </button>
-                          <span className="w-8 text-center text-gray-900 dark:text-white font-medium">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() => updateQuantity(item.menuItem.id, item.quantity + 1)}
-                            className="w-8 h-8 flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
-                          >
-                            +
-                          </button>
-                        </div>
-                        <button
-                          onClick={() => removeItem(item.menuItem.id)}
-                          className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Item Total */}
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-gray-900 dark:text-white">
-                        ₹{(item.menuItem.price * item.quantity).toFixed(2)}
-                      </p>
-                    </div>
+                    {item.quantity > 1 && (
+                      <button type="button" onClick={() => removeItem(item.menuItem.id)} className="text-sm font-medium text-[#7a6d63] hover:text-rose-700">
+                        Remove
+                      </button>
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 sticky top-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                Order Summary
-              </h2>
-
-              <div className="space-y-3 mb-4">
-                <div className="flex justify-between text-gray-700 dark:text-gray-300">
-                  <span>Subtotal</span>
-                  <span>₹{subtotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-gray-700 dark:text-gray-300">
-                  <span>Delivery Fee</span>
-                  <span>₹{deliveryFee.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-gray-700 dark:text-gray-300">
-                  <span>Tax (5%)</span>
-                  <span>₹{tax.toFixed(2)}</span>
-                </div>
-              </div>
+                <p className="shrink-0 font-semibold tabular-nums">{inr(item.menuItem.price * item.quantity)}</p>
+              </li>
+            ))}
+          </ul>
+          {restaurant && (
+            <Link
+              to={`/zesty/restaurants/${restaurant.id}`}
+              className="mt-6 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#e7d9cb] py-3 text-sm font-semibold text-zesty-redDark transition-colors hover:border-zesty-red"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" /> Add more from {restaurant.name}
+            </Link>
+          )}
+        </FlowCard>
 
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mb-6">
-                <div className="flex justify-between text-xl font-bold text-gray-900 dark:text-white">
-                  <span>Total</span>
-                  <span>₹{total.toFixed(2)}</span>
-                </div>
-              </div>
-
-              <button
-                onClick={() => navigate('/zesty/checkout')}
-                className="w-full px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
-              >
-                Proceed to Checkout
-              </button>
-
-              <button
-                onClick={() => navigate('/zesty')}
-                className="w-full mt-3 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                Add More Items
-              </button>
-            </div>
-          </div>
+        <div className="space-y-4 lg:sticky lg:top-20">
+          <FlowCard title="Bill details">
+            <BillRows subtotal={subtotal} deliveryFee={deliveryFee} tax={tax} total={total} />
+            <button
+              type="button"
+              onClick={() => navigate('/zesty/checkout')}
+              className="mt-6 flex w-full items-center justify-between rounded-full bg-zesty-red px-6 py-3.5 font-semibold text-white transition-colors hover:bg-zesty-redDark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zesty-red focus-visible:ring-offset-2"
+            >
+              <span>Checkout</span>
+              <span className="inline-flex items-center gap-2 tabular-nums">
+                {inr(total)} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </span>
+            </button>
+          </FlowCard>
+          <p className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm text-[#7a6d63] ring-1 ring-[#efe2d4]">
+            <TicketPercent className="h-4 w-4 shrink-0 text-zesty-red" aria-hidden="true" />
+            Have a promo code? Apply it at checkout.
+          </p>
         </div>
       </div>
-    </div>
+    </FlowPage>
   );
 };
 
