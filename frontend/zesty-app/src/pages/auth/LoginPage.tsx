@@ -1,175 +1,169 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ArrowRight, CalendarDays, Store } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { validateEmail, validateRequired } from '../../utils/validation';
-import { getPostAuthRedirectPath } from '../../utils';
+import { EmailNotVerifiedError, parseApiError } from '../../api/auth';
+import { validateEmail } from '../../utils/validation';
+import { resolvePostAuthPath } from '../../utils';
+import { AuthField, AuthHeading, AuthLayout, Notice, PasswordInput, PrimaryButton, inputClass } from '../../components/auth/AuthKit';
 
-interface FormErrors {
+interface LoginState {
+  from?: string;
+  notice?: string;
   email?: string;
-  password?: string;
-  general?: string;
 }
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login, isAuthenticated, user, error: authError, clearError } = useAuth();
+  const location = useLocation();
+  const { login, isAuthenticated, user, clearError } = useAuth();
+  const state = (location.state as LoginState | null) ?? {};
+  // Set by ProtectedRoute when it bounced someone here, so we can send them
+  // back to what they were trying to open after they sign in.
+  const from = state.from;
 
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
+  const [email, setEmail] = useState(state.email ?? '');
+  const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
+  const [submitting, setSubmitting] = useState(false);
 
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [loading, setLoading] = useState(false);
-
-  // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate(getPostAuthRedirectPath(user?.role), { replace: true });
-    }
-  }, [isAuthenticated, user?.role, navigate]);
+    if (isAuthenticated) navigate(resolvePostAuthPath(user?.role, from), { replace: true });
+  }, [isAuthenticated, user?.role, navigate, from]);
 
-  // Clear auth errors when component unmounts
-  useEffect(() => {
-    return () => clearError();
-  }, [clearError]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear field error on change
-    if (errors[name as keyof FormErrors]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!validateRequired(formData.email)) {
-      newErrors.email = 'Email is required';
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-
-    if (!validateRequired(formData.password)) {
-      newErrors.password = 'Password is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  useEffect(() => () => clearError(), [clearError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    clearError();
+    const next: typeof errors = {};
+    if (!email.trim()) next.email = 'Enter your email address.';
+    else if (!validateEmail(email.trim())) next.email = "That doesn't look like an email address.";
+    if (!password) next.password = 'Enter your password.';
+    setErrors(next);
+    if (Object.keys(next).length) return;
 
-    if (!validateForm()) {
-      return;
-    }
-
-    setLoading(true);
+    setSubmitting(true);
     try {
-      await login(formData);
-      // Navigation handled by useEffect when isAuthenticated changes
+      await login({ email: email.trim(), password });
     } catch (err: any) {
-      setErrors({ general: authError || 'Login failed. Please try again.' });
+      if (err instanceof EmailNotVerifiedError) {
+        navigate('/verify-email', {
+          state: {
+            email: err.info.email ?? email.trim(),
+            resendIn: err.info.resend_in,
+            devCode: err.info.dev_code,
+            // expires_in is only present when a fresh code was just issued.
+            freshCode: err.info.expires_in !== undefined,
+            from,
+            reason: 'login',
+          },
+        });
+        return;
+      }
+      const { message, fields } = parseApiError(err);
+      setErrors({
+        general:
+          message === 'Invalid email or password.' || fields.non_field_errors === 'Invalid email or password.'
+            ? "That email and password don't match. Check for typos or reset your password."
+            : message || fields.non_field_errors || 'Sign-in failed. Please try again.',
+      });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h1 className="mt-4 sm:mt-6 text-center text-2xl sm:text-3xl font-extrabold text-gray-900">
-          Sign in to your account
-        </h1>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Or{' '}
-          <Link to="/register" className="font-medium text-orange-600 hover:text-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500 rounded">
-            create a new account
+    <AuthLayout
+      aside={
+        <>
+          New to Platforma?{' '}
+          <Link to="/register" className="font-semibold text-[#141414] underline-offset-4 hover:underline">
+            Create an account
           </Link>
-        </p>
-      </div>
+        </>
+      }
+    >
+      <AuthHeading title="Welcome back" subtitle="Sign in to order food, book tickets or run your business on Platforma." />
 
-      <div className="mt-6 sm:mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-6 sm:py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-            {errors.general && (
-              <div className="rounded-md bg-red-50 p-4" role="alert" aria-live="polite">
-                <div className="text-sm text-red-800">{errors.general}</div>
-              </div>
-            )}
+      {state.notice && !errors.general && <Notice tone="success">{state.notice}</Notice>}
+      {errors.general && (
+        <Notice tone="error">
+          {errors.general}{' '}
+          <Link to="/forgot-password" state={{ email }} className="font-semibold underline underline-offset-2">
+            Reset password
+          </Link>
+        </Notice>
+      )}
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  aria-invalid={errors.email ? 'true' : 'false'}
-                  aria-describedby={errors.email ? 'email-error' : undefined}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.email ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 sm:text-sm`}
-                />
-                {errors.email && (
-                  <p className="mt-2 text-sm text-red-600" id="email-error" role="alert">
-                    {errors.email}
-                  </p>
-                )}
-              </div>
-            </div>
+      <form onSubmit={handleSubmit} noValidate className="space-y-5">
+        <AuthField label="Email" htmlFor="email" error={errors.email}>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (errors.email || errors.general) setErrors({});
+            }}
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? 'email-error' : undefined}
+            placeholder="you@example.com"
+            className={inputClass(!!errors.email)}
+          />
+        </AuthField>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  aria-invalid={errors.password ? 'true' : 'false'}
-                  aria-describedby={errors.password ? 'password-error' : undefined}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.password ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 sm:text-sm`}
-                />
-                {errors.password && (
-                  <p className="mt-2 text-sm text-red-600" id="password-error" role="alert">
-                    {errors.password}
-                  </p>
-                )}
-              </div>
-            </div>
+        <AuthField
+          label="Password"
+          htmlFor="password"
+          error={errors.password}
+          action={
+            <Link to="/forgot-password" state={{ email }} className="text-sm font-medium text-[#56652f] hover:text-[#141414]">
+              Forgot password?
+            </Link>
+          }
+        >
+          <PasswordInput
+            id="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (errors.password || errors.general) setErrors({});
+            }}
+            aria-invalid={!!errors.password}
+            aria-describedby={errors.password ? 'password-error' : undefined}
+            hasError={!!errors.password}
+          />
+        </AuthField>
 
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                aria-busy={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {loading ? 'Signing in...' : 'Sign in'}
-              </button>
-            </div>
-          </form>
+        <PrimaryButton type="submit" busy={submitting} busyLabel="Signing in…">
+          Sign in <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </PrimaryButton>
+      </form>
+
+      <div className="mt-10 border-t border-[#e6e2d8] pt-8">
+        <p className="text-sm font-semibold">Run a business?</p>
+        <p className="mt-1 text-sm text-[#6b6a63]">Partner accounts sign in here too. New partners can apply in a couple of minutes.</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <Link
+            to="/register?role=restaurant_owner"
+            className="group flex items-center gap-3 rounded-xl border border-[#e6e2d8] bg-white px-4 py-3 text-sm transition-colors hover:border-[#141414]"
+          >
+            <Store className="h-5 w-5 text-[#b7122a]" strokeWidth={1.7} aria-hidden="true" />
+            <span className="font-medium">List a restaurant</span>
+          </Link>
+          <Link
+            to="/register?role=event_organizer"
+            className="group flex items-center gap-3 rounded-xl border border-[#e6e2d8] bg-white px-4 py-3 text-sm transition-colors hover:border-[#141414]"
+          >
+            <CalendarDays className="h-5 w-5 text-[#c4621a]" strokeWidth={1.7} aria-hidden="true" />
+            <span className="font-medium">Host events</span>
+          </Link>
         </div>
       </div>
-    </div>
+    </AuthLayout>
   );
 };
 
