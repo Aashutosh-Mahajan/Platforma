@@ -1,193 +1,119 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Bell, BellOff, CheckCheck } from 'lucide-react';
 import { useNotification } from '../../contexts';
 import type { Notification } from '../../types';
 
 interface NotificationDropdownProps {
+  /** 'zesty' = light with red accent, 'default' = light Platforma, 'platforma' = dark (dashboards, Eventra). */
   variant?: 'default' | 'zesty' | 'platforma';
 }
 
+/** "Just now", "12 min ago", "3 h ago", "Yesterday", then an Indian-format date. */
+const relativeTime = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const minutes = Math.round((Date.now() - date.getTime()) / 60000);
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} h ago`;
+  if (hours < 48) return 'Yesterday';
+  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: date.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' });
+};
+
 export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ variant = 'default' }) => {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotification();
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
+  const dark = variant === 'platforma';
+  const accent = variant === 'zesty' ? 'text-zesty-redDark' : dark ? 'text-[#e8824a]' : 'text-[#56652f]';
+  const dot = variant === 'zesty' ? 'bg-zesty-red' : dark ? 'bg-[#e8824a]' : 'bg-[#6f7f42]';
 
-  const isZestyVariant = variant === 'zesty';
-  const isPlatformaVariant = variant === 'platforma';
-
-  const bellButtonClass = isZestyVariant
-    ? 'relative p-2 text-on-surface-variant hover:text-primary transition-colors'
-    : isPlatformaVariant
-      ? 'relative p-2 text-white/80 hover:text-white transition-colors'
-    : 'relative p-2 text-gray-600 hover:text-gray-900 transition-colors';
-
-  const markAllClass = isZestyVariant
-    ? 'text-sm text-primary hover:text-surface-tint font-medium transition-colors'
-    : isPlatformaVariant
-      ? 'text-sm text-[#c7d39f] hover:text-[#e4edc6] font-medium transition-colors'
-    : 'text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors';
-
-  const unreadItemClass = isZestyVariant
-    ? 'bg-primary-fixed/45 hover:bg-primary-fixed/70'
-    : isPlatformaVariant
-      ? 'bg-white/10 hover:bg-white/15'
-    : 'bg-blue-50 hover:bg-blue-100';
-
-  const unreadDotClass = isZestyVariant
-    ? 'w-2 h-2 bg-primary rounded-full mt-1 ml-2 flex-shrink-0'
-    : isPlatformaVariant
-      ? 'w-2 h-2 bg-[#c7d39f] rounded-full mt-1 ml-2 flex-shrink-0'
-    : 'w-2 h-2 bg-blue-600 rounded-full mt-1 ml-2 flex-shrink-0';
-
-  const dropdownClass = isPlatformaVariant
-    ? 'absolute right-0 mt-2 w-80 rounded-lg border border-white/15 bg-[rgba(17,21,27,0.96)] shadow-[0_18px_32px_rgba(0,0,0,0.45)] z-50 backdrop-blur-md'
-    : 'absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 border border-gray-200';
-
-  const dropdownHeaderClass = isPlatformaVariant
-    ? 'p-4 border-b border-white/15 flex justify-between items-center'
-    : 'p-4 border-b flex justify-between items-center';
-
-  const dropdownTitleClass = isPlatformaVariant
-    ? 'font-semibold text-white'
-    : 'font-semibold text-gray-900';
-
-  const emptyStateClass = isPlatformaVariant
-    ? 'p-8 text-center text-white/70'
-    : 'p-8 text-center text-gray-500';
-
-  const emptyIconClass = isPlatformaVariant
-    ? 'w-12 h-12 mx-auto mb-3 text-white/40'
-    : 'w-12 h-12 mx-auto mb-3 text-gray-400';
-
-  const readItemClass = isPlatformaVariant
-    ? 'bg-transparent hover:bg-white/8'
-    : 'bg-white hover:bg-gray-50';
-
-  const itemTitleClass = isPlatformaVariant
-    ? 'font-medium text-sm text-white'
-    : 'font-medium text-sm text-gray-900';
-
-  const itemMessageClass = isPlatformaVariant
-    ? 'text-sm text-white/70 mt-1'
-    : 'text-sm text-gray-600 mt-1';
-
-  const itemDateClass = isPlatformaVariant
-    ? 'text-xs text-white/50 mt-2'
-    : 'text-xs text-gray-500 mt-2';
-
-  // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowDropdown(false);
-      }
+    if (!open) return;
+    const onClick = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
     };
-
-    if (showDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
+    const onKey = (event: KeyboardEvent) => event.key === 'Escape' && setOpen(false);
+    document.addEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('keydown', onKey);
     };
-  }, [showDropdown]);
+  }, [open]);
 
-  const handleNotificationClick = async (notification: Notification) => {
-    if (!notification.is_read) {
-      await markAsRead(notification.id);
-    }
-    
-    // Close dropdown
-    setShowDropdown(false);
-    
-    // Navigate to related item if needed
-    if (notification.related_type === 'order' && notification.related_id) {
-      navigate(`/zesty/orders/${notification.related_id}`);
-    } else if (notification.related_type === 'booking' && notification.related_id) {
-      navigate(`/eventra/bookings/${notification.related_id}`);
-    } else if (notification.related_type === 'event' && notification.related_id) {
-      navigate(`/eventra/events/${notification.related_id}`);
-    }
+  const openNotification = async (notification: Notification) => {
+    if (!notification.is_read) await markAsRead(notification.id);
+    setOpen(false);
+    if (notification.related_type === 'order' && notification.related_id) navigate(`/zesty/orders/${notification.related_id}`);
+    else if (notification.related_type === 'booking' && notification.related_id) navigate(`/eventra/bookings/${notification.related_id}`);
+    else if (notification.related_type === 'event' && notification.related_id) navigate(`/eventra/events/${notification.related_id}`);
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative" ref={ref}>
       <button
-        onClick={() => setShowDropdown(!showDropdown)}
-        className={bellButtonClass}
-        aria-label="Notifications"
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+        aria-expanded={open}
+        aria-haspopup="true"
+        className={`relative grid h-10 w-10 place-items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 ${
+          dark ? 'text-white/80 hover:bg-white/10 hover:text-white focus-visible:ring-white/50' : 'text-[#4a4943] hover:bg-black/[0.05] hover:text-[#141414] focus-visible:ring-[#6f7f42]/50'
+        }`}
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-          />
-        </svg>
+        <Bell className="h-5 w-5" strokeWidth={1.8} aria-hidden="true" />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
-            {unreadCount}
+          <span className="absolute right-1 top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-[#e23744] px-1 text-[10px] font-bold text-white tabular-nums">
+            {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
-      {showDropdown && (
-        <div className={dropdownClass}>
-          <div className={dropdownHeaderClass}>
-            <h3 className={dropdownTitleClass}>Notifications</h3>
+      {open && (
+        <div
+          className={`absolute right-0 z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl shadow-[0_24px_48px_-12px_rgba(0,0,0,0.35)] ${
+            dark ? 'border border-white/10 bg-[#141414] text-[#f5f0e8]' : 'border border-[#e6e2d8] bg-white text-[#141414]'
+          }`}
+        >
+          <div className={`flex items-center justify-between border-b px-4 py-3 ${dark ? 'border-white/[0.08]' : 'border-[#efece4]'}`}>
+            <p className="font-semibold">Notifications</p>
             {unreadCount > 0 && (
-              <button
-                onClick={() => markAllAsRead()}
-                className={markAllClass}
-              >
-                Mark all as read
+              <button type="button" onClick={() => void markAllAsRead()} className={`inline-flex items-center gap-1 text-xs font-semibold hover:underline ${accent}`}>
+                <CheckCheck className="h-3.5 w-3.5" aria-hidden="true" /> Mark all read
               </button>
             )}
           </div>
-
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className={emptyStateClass}>
-                <svg
-                  className={emptyIconClass}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                  />
-                </svg>
-                <p>No notifications</p>
+              <div className={`flex flex-col items-center px-6 py-10 text-center text-sm ${dark ? 'text-white/60' : 'text-[#6b6a63]'}`}>
+                <BellOff className="mb-3 h-8 w-8 opacity-50" strokeWidth={1.5} aria-hidden="true" />
+                You're all caught up. Order and booking updates will show up here.
               </div>
             ) : (
-              notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  onClick={() => handleNotificationClick(notification)}
-                  className={`p-4 border-b cursor-pointer transition ${
-                    notification.is_read ? readItemClass : unreadItemClass
-                  }`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h4 className={itemTitleClass}>{notification.title}</h4>
-                      <p className={itemMessageClass}>{notification.message}</p>
-                      <p className={itemDateClass}>
-                        {new Date(notification.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                    {!notification.is_read && (
-                      <div className={unreadDotClass}></div>
-                    )}
-                  </div>
-                </div>
-              ))
+              <ul>
+                {notifications.map((notification) => (
+                  <li key={notification.id}>
+                    <button
+                      type="button"
+                      onClick={() => void openNotification(notification)}
+                      className={`flex w-full gap-3 px-4 py-3 text-left transition-colors ${
+                        dark ? 'hover:bg-white/[0.05]' : 'hover:bg-[#f6f4ee]'
+                      } ${!notification.is_read ? (dark ? 'bg-white/[0.03]' : 'bg-[#faf8f3]') : ''}`}
+                    >
+                      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.is_read ? 'bg-transparent' : dot}`} aria-hidden="true" />
+                      <span className="min-w-0 flex-1">
+                        <span className={`block text-sm ${notification.is_read ? '' : 'font-semibold'}`}>{notification.title}</span>
+                        <span className={`mt-0.5 block text-sm ${dark ? 'text-white/65' : 'text-[#6b6a63]'}`}>{notification.message}</span>
+                        <span className={`mt-1 block text-xs ${dark ? 'text-white/40' : 'text-[#9c9a90]'}`}>{relativeTime(notification.created_at)}</span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </div>
