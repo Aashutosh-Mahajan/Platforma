@@ -92,11 +92,15 @@ export interface Order {
   subtotal: number | string;
   delivery_fee: number | string;
   tax: number | string;
+  discount?: number | string;
+  promo_code?: string;
   total: number | string;
   delivery_address?: Partial<Address> | Record<string, unknown> | null;
   estimated_delivery?: string | null;
   actual_delivery?: string | null;
   special_instructions?: string;
+  payment_method?: string;
+  payment_status?: string;
   payment?: Payment;
   created_at: string;
   updated_at: string;
@@ -140,6 +144,9 @@ export interface Event {
   name: string;
   description: string;
   category: 'movie' | 'concert' | 'sports' | 'theater' | 'comedy' | 'expo' | 'dining';
+  /** Specific kind of event, e.g. cricket_match. Blank on older events. */
+  event_type?: string;
+  event_type_label?: string;
   venue_name: string;
   address: string;
   latitude?: number;
