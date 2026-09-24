@@ -47,6 +47,8 @@ const normalizeOrder = (raw: Order): Order => ({
   subtotal: toNumber(raw.subtotal, 0),
   delivery_fee: toNumber(raw.delivery_fee, 0),
   tax: toNumber(raw.tax, 0),
+  discount: toNumber(raw.discount, 0),
+  promo_code: raw.promo_code || '',
   total: toNumber(raw.total, 0),
   delivery_address: raw.delivery_address && typeof raw.delivery_address === 'object'
     ? raw.delivery_address
@@ -100,6 +102,7 @@ export interface OrderCreateData {
   delivery_address_id: number;
   special_instructions?: string;
   payment_method: string;
+  promo_code?: string;
   items: Array<{
     menu_item_id: number;
     quantity: number;
@@ -136,6 +139,56 @@ export interface MenuItemCreateData {
   is_vegan: boolean;
   image?: File;
 }
+
+export interface Payout {
+  id: number;
+  restaurant: number;
+  restaurant_name: string;
+  period_start: string;
+  period_end: string;
+  order_count: number;
+  gross_revenue: number | string;
+  commission_rate: number | string;
+  commission_amount: number | string;
+  net_amount: number | string;
+  status: 'pending' | 'paid';
+  paid_at: string | null;
+  notes: string;
+  created_at: string;
+}
+
+export interface EarningsSummary {
+  commission_rate: number;
+  unsettled: {
+    period_start: string;
+    period_end: string;
+    order_count: number;
+    gross_revenue: number;
+    commission_amount: number;
+    net_amount: number;
+  };
+  payouts: Payout[];
+}
+
+const normalizePayout = (raw: Payout): Payout => ({
+  ...raw,
+  gross_revenue: toNumber(raw.gross_revenue, 0),
+  commission_rate: toNumber(raw.commission_rate, 0),
+  commission_amount: toNumber(raw.commission_amount, 0),
+  net_amount: toNumber(raw.net_amount, 0),
+});
+
+const normalizeEarnings = (raw: EarningsSummary): EarningsSummary => ({
+  commission_rate: toNumber(raw.commission_rate, 0),
+  unsettled: {
+    ...raw.unsettled,
+    order_count: toNumber(raw.unsettled?.order_count, 0),
+    gross_revenue: toNumber(raw.unsettled?.gross_revenue, 0),
+    commission_amount: toNumber(raw.unsettled?.commission_amount, 0),
+    net_amount: toNumber(raw.unsettled?.net_amount, 0),
+  },
+  payouts: (raw.payouts || []).map(normalizePayout),
+});
 
 export const restaurantAPI = {
   list: async (params?: RestaurantListParams): Promise<PaginatedResponse<Restaurant>> => {
@@ -210,6 +263,11 @@ export const restaurantAPI = {
   createReview: async (id: number, data: ReviewCreateData): Promise<Review> => {
     const response = await apiClient.post(`/zesty/restaurants/${id}/reviews/`, data);
     return normalizeReview(response.data);
+  },
+
+  getEarnings: async (id: number): Promise<EarningsSummary> => {
+    const response = await apiClient.get(`/zesty/restaurants/${id}/earnings/`);
+    return normalizeEarnings(response.data);
   },
 };
 
@@ -296,5 +354,189 @@ export const orderAPI = {
   updateStatus: async (id: string | number, status: string): Promise<Order> => {
     const response = await apiClient.patch(`/zesty/orders/${id}/update_status/`, { status });
     return normalizeOrder(response.data);
+  },
+};
+
+// ---- Cart (backend-persisted — see backend/zesty/views.py CartView et al.) ----
+
+export interface BackendCartItem {
+  id: number;
+  menu_item: number;
+  menu_item_name: string;
+  menu_item_detail: MenuItem;
+  unit_price: number | string;
+  quantity: number;
+  line_total: number | string;
+}
+
+export interface BackendCart {
+  id: number;
+  restaurant: number | null;
+  restaurant_name: string | null;
+  restaurant_detail: Restaurant | null;
+  items: BackendCartItem[];
+  subtotal: number | string;
+  updated_at: string;
+}
+
+export interface CartConflictError {
+  isCartConflict: true;
+  currentRestaurant: number;
+  requestedRestaurant: number;
+}
+
+const normalizeCart = (raw: BackendCart): BackendCart => ({
+  ...raw,
+  items: (raw.items || []).map((item) => ({
+    ...item,
+    menu_item: toNumber(item.menu_item, 0),
+    quantity: toNumber(item.quantity, 1),
+    unit_price: toNumber(item.unit_price, 0),
+    line_total: toNumber(item.line_total, 0),
+    menu_item_detail: item.menu_item_detail
+      ? { ...normalizeMenuItem(item.menu_item_detail), restaurant: toNumber(raw.restaurant, 0) }
+      : item.menu_item_detail,
+  })),
+  restaurant: raw.restaurant != null ? toNumber(raw.restaurant, 0) : null,
+  restaurant_detail: raw.restaurant_detail ? normalizeRestaurant(raw.restaurant_detail) : null,
+  subtotal: toNumber(raw.subtotal, 0),
+});
+
+export const cartAPI = {
+  get: async (): Promise<BackendCart> => {
+    const response = await apiClient.get('/zesty/cart');
+    return normalizeCart(response.data);
+  },
+
+  /** Throws an Axios error whose `response.data.error.details` carries a
+   * `current_restaurant`/`requested_restaurant` pair when the cart holds
+   * items from a different restaurant — caller decides whether to retry
+   * with confirmSwitch. */
+  addItem: async (menuItemId: number, quantity: number, confirmSwitch = false): Promise<BackendCart & { cart_was_cleared?: boolean }> => {
+    const response = await apiClient.post('/zesty/cart/items', {
+      menu_item_id: menuItemId,
+      quantity,
+      confirm_switch: confirmSwitch,
+    });
+    return normalizeCart(response.data) as BackendCart & { cart_was_cleared?: boolean };
+  },
+
+  updateItem: async (cartItemId: number, quantity: number): Promise<BackendCart> => {
+    const response = await apiClient.patch(`/zesty/cart/items/${cartItemId}`, { quantity });
+    return normalizeCart(response.data);
+  },
+
+  removeItem: async (cartItemId: number): Promise<void> => {
+    await apiClient.delete(`/zesty/cart/items/${cartItemId}`);
+  },
+};
+
+// ---- Promotions (owner-managed discount codes) ----
+
+export interface Promotion {
+  id: number;
+  restaurant: number | null;
+  code: string;
+  description: string;
+  discount_type: 'percent' | 'fixed';
+  discount_value: number | string;
+  min_order_value: number | string;
+  max_discount_amount: number | string | null;
+  usage_limit: number | null;
+  times_used: number;
+  valid_from: string | null;
+  valid_until: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface PromotionCreateData {
+  restaurant: number;
+  code: string;
+  description?: string;
+  discount_type: 'percent' | 'fixed';
+  discount_value: number;
+  min_order_value?: number;
+  max_discount_amount?: number | null;
+  usage_limit?: number | null;
+  valid_from?: string | null;
+  valid_until?: string | null;
+  is_active?: boolean;
+}
+
+export interface PromoValidationResult {
+  code: string;
+  discount: number;
+  description: string;
+}
+
+const normalizePromotion = (raw: Promotion): Promotion => ({
+  ...raw,
+  restaurant: raw.restaurant != null ? toNumber(raw.restaurant, 0) : null,
+  discount_value: toNumber(raw.discount_value, 0),
+  min_order_value: toNumber(raw.min_order_value, 0),
+  max_discount_amount: raw.max_discount_amount != null ? toNumber(raw.max_discount_amount, 0) : null,
+  times_used: toNumber(raw.times_used, 0),
+});
+
+export const promotionAPI = {
+  list: async (restaurantId?: number): Promise<Promotion[]> => {
+    const response = await apiClient.get('/zesty/promotions/', {
+      params: restaurantId ? { restaurant: restaurantId } : undefined,
+    });
+    const results = Array.isArray(response.data.results) ? response.data.results : response.data;
+    return (results || []).map(normalizePromotion);
+  },
+
+  create: async (data: PromotionCreateData): Promise<Promotion> => {
+    const response = await apiClient.post('/zesty/promotions/', data);
+    return normalizePromotion(response.data);
+  },
+
+  update: async (id: number, data: Partial<PromotionCreateData>): Promise<Promotion> => {
+    const response = await apiClient.patch(`/zesty/promotions/${id}/`, data);
+    return normalizePromotion(response.data);
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`/zesty/promotions/${id}/`);
+  },
+
+  /** Throws (via axios) with `error.response.data.error` holding a
+   * user-facing reason when the code doesn't apply. */
+  validate: async (code: string, restaurantId: number, subtotal: number): Promise<PromoValidationResult> => {
+    const response = await apiClient.post('/zesty/promotions/validate', {
+      code,
+      restaurant_id: restaurantId,
+      subtotal,
+    });
+    return { ...response.data, discount: toNumber(response.data.discount, 0) };
+  },
+};
+
+// ---- Payouts (admin-only settlement) ----
+
+export interface PayoutCreateData {
+  restaurant: number;
+  period_start: string;
+  period_end: string;
+  notes?: string;
+}
+
+export const payoutAPI = {
+  list: async (params?: { restaurant?: number; status?: string }): Promise<Payout[]> => {
+    const response = await apiClient.get('/zesty/payouts/', { params });
+    const results = Array.isArray(response.data.results) ? response.data.results : response.data;
+    return (results || []).map(normalizePayout);
+  },
+
+  create: async (data: PayoutCreateData): Promise<Payout> => {
+    const response = await apiClient.post('/zesty/payouts/', data);
+    return normalizePayout(response.data);
+  },
+
+  markPaid: async (id: number): Promise<Payout> => {
+    const response = await apiClient.patch(`/zesty/payouts/${id}/mark_paid/`);
+    return normalizePayout(response.data);
   },
 };
