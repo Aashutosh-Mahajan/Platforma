@@ -13,6 +13,8 @@ const HomePage = lazy(() => import('./pages/HomePage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
+const VerifyEmailPage = lazy(() => import('./pages/auth/VerifyEmailPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
 const ProfilePage = lazy(() => import('./pages/auth/ProfilePage'));
 const UserDashboardPage = lazy(() => import('./pages/dashboard/UserDashboardPage'));
 const ZestyDashboardPage = lazy(() => import('./pages/dashboard/ZestyDashboardPage'));
@@ -29,7 +31,6 @@ const OrderDetailPage = lazy(() => import('./pages/zesty/OrderDetailPage'));
 // Eventra pages
 const EventListPage = lazy(() => import('./pages/eventra/EventListPage'));
 const EventraPremiumLandingPage = lazy(() => import('./pages/eventra/EventraPremiumLandingPage'));
-const EventraLegacyDiscoverPage = lazy(() => import('./pages/eventra/EventraLandingPage.jsx'));
 const EventDetailPage = lazy(() => import('./pages/eventra/EventDetailPage'));
 const SeatSelectionPage = lazy(() => import('./pages/eventra/SeatSelectionPage'));
 const BookingCheckoutPage = lazy(() => import('./pages/eventra/BookingCheckoutPage'));
@@ -39,6 +40,7 @@ const BookingDetailPage = lazy(() => import('./pages/eventra/BookingDetailPage')
 // Dashboard pages
 const RestaurantOwnerDashboard = lazy(() => import('./pages/dashboard/RestaurantOwnerDashboard'));
 const EventOrganizerDashboard = lazy(() => import('./pages/dashboard/EventOrganizerDashboard'));
+const AdminDashboardPage = lazy(() => import('./pages/dashboard/AdminDashboardPage'));
 
 // Component to handle page title updates based on route
 const PageTitleUpdater = () => {
@@ -51,7 +53,9 @@ const PageTitleUpdater = () => {
     const routeTitles: Record<string, string> = {
       '/': 'Explore The Best Food & Events',
       '/login': 'Login',
-      '/register': 'Register',
+      '/register': 'Create account',
+      '/verify-email': 'Verify email',
+      '/forgot-password': 'Reset password',
       '/profile': 'Profile',
       '/dashboard': 'Dashboard',
       '/dashboard/zesty': 'Zesty Dashboard',
@@ -72,6 +76,7 @@ const PageTitleUpdater = () => {
       '/eventra/discover': 'Eventra Discover',
       '/dashboard/restaurant-owner': 'Restaurant Dashboard',
       '/dashboard/event-organizer': 'Event Dashboard',
+      '/dashboard/admin': 'Admin Dashboard',
     };
 
     // Check for exact match first
@@ -130,6 +135,8 @@ function App() {
                     <Route path="/" element={<HomePage />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
+                    <Route path="/verify-email" element={<VerifyEmailPage />} />
+                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
                     {/* Protected Routes */}
                     <Route
@@ -143,7 +150,7 @@ function App() {
                     <Route
                       path="/dashboard"
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute customerOnly>
                           <UserDashboardPage />
                         </ProtectedRoute>
                       }
@@ -151,7 +158,7 @@ function App() {
                     <Route
                       path="/dashboard/zesty"
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute customerOnly>
                           <ZestyDashboardPage />
                         </ProtectedRoute>
                       }
@@ -159,7 +166,7 @@ function App() {
                     <Route
                       path="/dashboard/eventra"
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute customerOnly>
                           <EventraDashboardPage />
                         </ProtectedRoute>
                       }
@@ -204,7 +211,7 @@ function App() {
                     <Route path="/evetra" element={<EventraPremiumLandingPage />} />
                     <Route path="/evetra/" element={<EventraPremiumLandingPage />} />
                     <Route path="/eventra" element={<EventraPremiumLandingPage />} />
-                    <Route path="/eventra/discover" element={<EventraLegacyDiscoverPage />} />
+                    <Route path="/eventra/discover" element={<Navigate to="/eventra/events" replace />} />
                     <Route path="/eventra/events" element={<EventListPage />} />
                     <Route path="/eventra/events/:id" element={<EventDetailPage />} />
                     <Route
@@ -265,6 +272,14 @@ function App() {
                       element={
                         <ProtectedRoute requiredRole="event_organizer">
                           <EventOrganizerDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/dashboard/admin"
+                      element={
+                        <ProtectedRoute requiredRole="admin">
+                          <AdminDashboardPage />
                         </ProtectedRoute>
                       }
                     />
