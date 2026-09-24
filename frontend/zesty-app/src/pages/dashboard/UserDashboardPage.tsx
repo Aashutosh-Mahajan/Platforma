@@ -1,77 +1,26 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowRight, ArrowUpRight, Hourglass, RotateCw, Ticket, UtensilsCrossed, Wallet } from 'lucide-react';
 import { bookingAPI } from '../../api/eventra';
 import { orderAPI } from '../../api/zesty';
-import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
+import { useAuth } from '../../contexts';
+import { DashboardShell } from '../../components/dashboard/DashboardShell';
+import { AreaChart, EmptyState, ErrorBanner, KpiLedger, Panel, SkeletonRows, StatusPill } from '../../components/dashboard/primitives';
+import { customerNav } from '../../components/dashboard/roleNav';
+import { bucketByDay, formatDate, formatINR, formatInt, greeting, shortRef, themes, toNumber } from '../../components/dashboard/theme';
 import type { Booking, Order } from '../../types';
 
-const toNumber = (value: unknown, fallback = 0): number => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
+const W = 'platforma' as const;
+const t = themes[W];
 
-const formatCurrency = (value: unknown): string => `₹${toNumber(value).toFixed(2)}`;
+const ACTIVE_ORDER = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery'];
 
-const formatDateTime = (value: string): string => {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return 'Unknown date';
-  }
-
-  return parsed.toLocaleDateString('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
-const formatStatus = (value: string): string =>
-  value
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-
-const getOrderStatusClass = (status: Order['status']): string => {
-  const classes: Record<Order['status'], string> = {
-    pending: 'border border-amber-400/45 bg-amber-500/20 text-amber-100',
-    confirmed: 'border border-sky-400/45 bg-sky-500/20 text-sky-100',
-    preparing: 'border border-[#8a9a5b]/60 bg-[#8a9a5b]/25 text-[#e4edc6]',
-    ready: 'border border-indigo-400/45 bg-indigo-500/20 text-indigo-100',
-    out_for_delivery: 'border border-violet-400/45 bg-violet-500/20 text-violet-100',
-    delivered: 'border border-emerald-400/45 bg-emerald-500/20 text-emerald-100',
-    cancelled: 'border border-red-400/45 bg-red-500/20 text-red-100',
-  };
-
-  return classes[status] || 'border border-white/25 bg-white/10 text-white/85';
-};
-
-const getBookingStatusClass = (status: Booking['status']): string => {
-  const classes: Record<Booking['status'], string> = {
-    pending: 'border border-amber-400/45 bg-amber-500/20 text-amber-100',
-    confirmed: 'border border-sky-400/45 bg-sky-500/20 text-sky-100',
-    completed: 'border border-emerald-400/45 bg-emerald-500/20 text-emerald-100',
-    cancelled: 'border border-red-400/45 bg-red-500/20 text-red-100',
-  };
-
-  return classes[status] || 'border border-white/25 bg-white/10 text-white/85';
-};
-
-const DashboardError: React.FC<{ message: string; onRetry: () => void }> = ({ message, onRetry }) => (
-  <div className="mb-4 rounded-xl border border-red-300/45 bg-red-500/10 p-4" role="alert" aria-live="assertive">
-    <p className="text-sm text-red-100">{message}</p>
-    <button
-      type="button"
-      onClick={onRetry}
-      className="mt-3 rounded border border-red-200/45 bg-transparent px-3 py-1 text-xs font-semibold text-red-100 transition-colors duration-200 hover:bg-red-500/20"
-    >
-      Retry
-    </button>
-  </div>
-);
+type Activity =
+  | { kind: 'order'; id: string | number; date: string; title: string; detail: string; amount: unknown; status: string; to: string }
+  | { kind: 'booking'; id: string | number; date: string; title: string; detail: string; amount: unknown; status: string; to: string };
 
 const UserDashboardPage: React.FC = () => {
+  const { user } = useAuth();
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [bookingsLoading, setBookingsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -82,7 +31,6 @@ const UserDashboardPage: React.FC = () => {
 
   const fetchOrders = async () => {
     setOrdersLoading(true);
-
     try {
       const response = await orderAPI.list();
       setOrders(response.results || []);
@@ -96,7 +44,6 @@ const UserDashboardPage: React.FC = () => {
 
   const fetchBookings = async () => {
     setBookingsLoading(true);
-
     try {
       const response = await bookingAPI.list();
       setBookings(response.results || []);
@@ -109,248 +56,216 @@ const UserDashboardPage: React.FC = () => {
   };
 
   const fetchDashboardData = async (showRefreshState = true) => {
-    if (showRefreshState) {
-      setIsRefreshing(true);
-    }
-
+    if (showRefreshState) setIsRefreshing(true);
     await Promise.allSettled([fetchOrders(), fetchBookings()]);
-
-    if (showRefreshState) {
-      setIsRefreshing(false);
-    }
+    if (showRefreshState) setIsRefreshing(false);
   };
 
   useEffect(() => {
     void fetchDashboardData(false);
   }, []);
 
-  const zestySpend = useMemo(
-    () => orders.reduce((total, order) => total + toNumber(order.total), 0),
-    [orders]
+  const zestySpend = useMemo(() => orders.reduce((sum, o) => sum + toNumber(o.total), 0), [orders]);
+  const eventraSpend = useMemo(() => bookings.reduce((sum, b) => sum + toNumber(b.total), 0), [bookings]);
+  const activeOrders = orders.filter((o) => ACTIVE_ORDER.includes(o.status));
+  const openBookings = bookings.filter((b) => b.status === 'pending' || b.status === 'confirmed');
+  const loading = ordersLoading || bookingsLoading;
+
+  const activity: Activity[] = useMemo(
+    () =>
+      [
+        ...orders.map<Activity>((o) => ({
+          kind: 'order',
+          id: o.id,
+          date: o.created_at,
+          title: o.restaurant_name || 'Restaurant',
+          detail: `Order #${shortRef(o.id)} · ${o.items?.length ?? 0} ${o.items?.length === 1 ? 'item' : 'items'}`,
+          amount: o.total,
+          status: o.status,
+          to: `/zesty/orders/${o.id}`,
+        })),
+        ...bookings.map<Activity>((b) => ({
+          kind: 'booking',
+          id: b.id,
+          date: b.booking_date,
+          title: b.event_name || 'Event',
+          detail: `${b.booking_reference} · ${b.total_tickets} ${b.total_tickets === 1 ? 'ticket' : 'tickets'}`,
+          amount: b.total,
+          status: b.status,
+          to: `/eventra/bookings/${b.id}`,
+        })),
+      ].sort((a, b) => +new Date(b.date) - +new Date(a.date)),
+    [orders, bookings]
   );
 
-  const eventraSpend = useMemo(
-    () => bookings.reduce((total, booking) => total + toNumber(booking.total), 0),
-    [bookings]
-  );
-
-  const combinedSpend = zestySpend + eventraSpend;
+  const spendSeries = bucketByDay(activity, (a) => a.date, (a) => toNumber(a.amount), 30);
+  const lastOrder = activity.find((a) => a.kind === 'order');
+  const lastBooking = activity.find((a) => a.kind === 'booking');
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0d0d0d] text-white">
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1600&q=80')",
-        }}
-      />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,13,18,0.76)_0%,rgba(10,13,18,0.9)_42%,rgba(10,13,18,0.95)_100%)]" />
+    <DashboardShell
+      world={W}
+      context="Your account"
+      nav={customerNav}
+      activeKey="overview"
+      image="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1800&q=80"
+      imagePosition="center 60%"
+      title={
+        <>
+          {greeting()}, <span className={t.titleAccent}>{user?.first_name || 'there'}</span>
+        </>
+      }
+      subtitle="Your tables and your tickets, in one place."
+      actions={
+        <button type="button" onClick={() => void fetchDashboardData()} disabled={isRefreshing} className={t.btnOnImage}>
+          <RotateCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+          {isRefreshing ? 'Refreshing' : 'Refresh'}
+        </button>
+      }
+      ledger={
+        <KpiLedger
+          world={W}
+          loading={loading}
+          items={[
+            { label: 'Total spent', icon: Wallet, value: formatINR(zestySpend + eventraSpend), hint: 'Across Zesty and Eventra' },
+            { label: 'Food orders', icon: UtensilsCrossed, value: formatInt(orders.length), hint: `${formatINR(zestySpend)} spent` },
+            { label: 'Event bookings', icon: Ticket, value: formatInt(bookings.length), hint: `${formatINR(eventraSpend)} spent` },
+            { label: 'In progress', icon: Hourglass, value: formatInt(activeOrders.length + openBookings.length), hint: `${activeOrders.length} orders · ${openBookings.length} bookings` },
+          ]}
+        />
+      }
+    >
+      {orderError && <ErrorBanner world={W} message={orderError} onRetry={() => void fetchOrders()} />}
+      {bookingError && <ErrorBanner world={W} message={bookingError} onRetry={() => void fetchBookings()} />}
 
-      <div className="relative z-10 py-8">
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          <section className="rounded-3xl border border-white/20 bg-[rgba(12,16,22,0.62)] p-6 shadow-[0_20px_36px_rgba(0,0,0,0.36)] backdrop-blur-md md:p-8">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/65">Platforma</p>
-                <h1
-                  className="mt-3 text-4xl font-semibold leading-tight text-white md:text-5xl"
-                  style={{ fontFamily: '"Playfair Display", serif' }}
-                >
-                  My Dashboard
-                </h1>
-                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/75 md:text-base">
-                  Unified snapshot of your Zesty orders and Eventra bookings.
-                </p>
+      {/* Two doors: one per vertical */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {[
+          {
+            key: 'zesty',
+            to: '/dashboard/zesty',
+            browse: '/zesty',
+            browseLabel: 'Order food',
+            name: 'Zesty',
+            line: 'Food from the kitchens you love, delivered.',
+            image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1400&q=80',
+            overlay: 'bg-[linear-gradient(180deg,rgba(23,17,15,0.15)_0%,rgba(23,17,15,0.9)_100%)]',
+            accent: 'text-[#ffb302]',
+            button: 'bg-[#e23744] hover:bg-[#b7122a]',
+            nameClass: 'font-zesty-display font-extrabold',
+            last: lastOrder,
+            count: `${orders.length} orders`,
+          },
+          {
+            key: 'eventra',
+            to: '/dashboard/eventra',
+            browse: '/eventra/events',
+            browseLabel: 'Find events',
+            name: 'Eventra',
+            line: 'Concerts, theatre and nights worth dressing up for.',
+            image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1400&q=80',
+            overlay: 'bg-[linear-gradient(180deg,rgba(10,10,10,0.15)_0%,rgba(10,10,10,0.92)_100%)]',
+            accent: 'text-[#e8824a]',
+            button: 'bg-[#c4621a] hover:bg-[#d8712a]',
+            nameClass: 'font-eventra-display italic',
+            last: lastBooking,
+            count: `${bookings.length} bookings`,
+          },
+        ].map((door) => (
+          <article key={door.key} className="group relative isolate flex min-h-[300px] flex-col justify-end overflow-hidden rounded-3xl text-white">
+            <img src={door.image} alt="" className="absolute inset-0 -z-20 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
+            <div className={`absolute inset-0 -z-10 ${door.overlay}`} aria-hidden="true" />
+            <div className="p-6 sm:p-8">
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <h2 className={`${door.nameClass} text-4xl leading-none`}>{door.name}</h2>
+                  <p className="mt-2 max-w-xs text-sm text-white/75">{door.line}</p>
+                </div>
+                <p className={`text-sm font-semibold ${door.accent}`}>{door.count}</p>
               </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <Link
-                  to="/dashboard/zesty"
-                  className="rounded-lg border border-white/45 bg-transparent px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-white hover:text-[#111111]"
-                >
-                  Zesty Dashboard
+              <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-white/15 pt-5">
+                {door.last ? (
+                  <Link to={door.last.to} className="min-w-0 flex-1 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
+                    <p className="text-xs text-white/60">Most recent</p>
+                    <p className="truncate font-semibold">{door.last.title}</p>
+                    <p className="text-xs text-white/60">{formatDate(door.last.date)} · {formatINR(door.last.amount)}</p>
+                  </Link>
+                ) : (
+                  <p className="min-w-0 flex-1 text-sm text-white/70">Nothing here yet.</p>
+                )}
+                <Link to={door.to} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold ring-1 ring-white/25 backdrop-blur transition-colors hover:bg-white/20">
+                  History <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
-                <Link
-                  to="/dashboard/eventra"
-                  className="rounded-lg border border-white/45 bg-transparent px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-white hover:text-[#111111]"
-                >
-                  Eventra Dashboard
+                <Link to={door.browse} className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${door.button}`}>
+                  {door.browseLabel} <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
-                <button
-                  type="button"
-                  onClick={() => {
-                    void fetchDashboardData();
-                  }}
-                  disabled={isRefreshing}
-                  className="w-fit rounded-lg border border-white/45 bg-transparent px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-white hover:text-[#111111]"
-                >
-                  {isRefreshing ? 'Refreshing...' : 'Refresh'}
-                </button>
               </div>
             </div>
-          </section>
-
-          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-            <article className="rounded-2xl border border-white/15 bg-[rgba(15,19,25,0.72)] p-5 shadow-[0_16px_30px_rgba(0,0,0,0.3)] backdrop-blur-md">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#c7d39f]">Zesty Orders</p>
-              <p className="mt-3 text-4xl font-semibold text-white" style={{ fontFamily: '"Playfair Display", serif' }}>
-                {ordersLoading ? '...' : orders.length}
-              </p>
-              <p className="mt-2 text-sm text-white/75">
-                Total spent: {ordersLoading ? 'Loading...' : formatCurrency(zestySpend)}
-              </p>
-            </article>
-
-            <article className="rounded-2xl border border-white/15 bg-[rgba(15,19,25,0.72)] p-5 shadow-[0_16px_30px_rgba(0,0,0,0.3)] backdrop-blur-md">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/80">Eventra Bookings</p>
-              <p className="mt-3 text-4xl font-semibold text-white" style={{ fontFamily: '"Playfair Display", serif' }}>
-                {bookingsLoading ? '...' : bookings.length}
-              </p>
-              <p className="mt-2 text-sm text-white/75">
-                Total spent: {bookingsLoading ? 'Loading...' : formatCurrency(eventraSpend)}
-              </p>
-            </article>
-
-            <article className="rounded-2xl border border-white/15 bg-[rgba(15,19,25,0.72)] p-5 shadow-[0_16px_30px_rgba(0,0,0,0.3)] backdrop-blur-md">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/70">Combined Activity</p>
-              <p className="mt-3 text-4xl font-semibold text-white" style={{ fontFamily: '"Playfair Display", serif' }}>
-                {ordersLoading || bookingsLoading ? '...' : orders.length + bookings.length}
-              </p>
-              <p className="mt-2 text-sm text-white/75">
-                Total spent: {ordersLoading || bookingsLoading ? 'Loading...' : formatCurrency(combinedSpend)}
-              </p>
-            </article>
-          </div>
-
-          <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <section className="rounded-2xl border border-white/15 bg-[rgba(15,19,25,0.72)] p-5 shadow-[0_16px_30px_rgba(0,0,0,0.3)] backdrop-blur-md">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-white" style={{ fontFamily: '"Playfair Display", serif' }}>
-                  Zesty Order History
-                </h2>
-                <Link
-                  to="/zesty/orders"
-                  className="text-sm font-semibold text-[#c7d39f] transition-colors duration-200 hover:text-[#e4edc6]"
-                >
-                  View All
-                </Link>
-              </div>
-
-              {orderError && (
-                <DashboardError
-                  message={orderError}
-                  onRetry={() => {
-                    void fetchOrders();
-                  }}
-                />
-              )}
-
-              {ordersLoading && !orderError && (
-                <div className="rounded-xl border border-white/12 bg-white/5 p-4">
-                  <LoadingSpinner size="sm" />
-                  <p className="mt-3 text-center text-sm text-white/75">Loading Zesty orders...</p>
-                </div>
-              )}
-
-              {!ordersLoading && !orderError && orders.length === 0 && (
-                <div className="rounded-xl border border-white/12 bg-white/5 p-4 text-sm text-white/80">
-                  No Zesty orders yet.
-                </div>
-              )}
-
-              {!ordersLoading && !orderError && orders.length > 0 && (
-                <div className="space-y-3">
-                  {orders.slice(0, 5).map((order) => (
-                    <Link
-                      key={order.id}
-                      to={`/zesty/orders/${order.id}`}
-                      className="block rounded-xl border border-white/12 bg-[rgba(255,255,255,0.04)] p-4 transition-colors duration-200 hover:bg-[rgba(255,255,255,0.08)]"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-semibold text-white">{order.restaurant_name || 'Restaurant'}</p>
-                          <p className="mt-1 text-sm text-white/70">Order #{order.id}</p>
-                          <p className="mt-1 text-xs text-white/60">{formatDateTime(order.created_at)}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getOrderStatusClass(order.status)}`}>
-                            {formatStatus(order.status)}
-                          </span>
-                          <p className="mt-2 text-sm font-semibold text-white">{formatCurrency(order.total)}</p>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <section className="rounded-2xl border border-white/15 bg-[rgba(15,19,25,0.72)] p-5 shadow-[0_16px_30px_rgba(0,0,0,0.3)] backdrop-blur-md">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-white" style={{ fontFamily: '"Playfair Display", serif' }}>
-                  Eventra Booking History
-                </h2>
-                <Link
-                  to="/eventra/bookings"
-                  className="text-sm font-semibold text-[#c7d39f] transition-colors duration-200 hover:text-[#e4edc6]"
-                >
-                  View All
-                </Link>
-              </div>
-
-              {bookingError && (
-                <DashboardError
-                  message={bookingError}
-                  onRetry={() => {
-                    void fetchBookings();
-                  }}
-                />
-              )}
-
-              {bookingsLoading && !bookingError && (
-                <div className="rounded-xl border border-white/12 bg-white/5 p-4">
-                  <LoadingSpinner size="sm" />
-                  <p className="mt-3 text-center text-sm text-white/75">Loading Eventra bookings...</p>
-                </div>
-              )}
-
-              {!bookingsLoading && !bookingError && bookings.length === 0 && (
-                <div className="rounded-xl border border-white/12 bg-white/5 p-4 text-sm text-white/80">
-                  No Eventra bookings yet.
-                </div>
-              )}
-
-              {!bookingsLoading && !bookingError && bookings.length > 0 && (
-                <div className="space-y-3">
-                  {bookings.slice(0, 5).map((booking) => (
-                    <Link
-                      key={booking.id}
-                      to={`/eventra/bookings/${booking.id}`}
-                      className="block rounded-xl border border-white/12 bg-[rgba(255,255,255,0.04)] p-4 transition-colors duration-200 hover:bg-[rgba(255,255,255,0.08)]"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-semibold text-white">{booking.event_name || 'Event'}</p>
-                          <p className="mt-1 text-sm text-white/70">Booking #{booking.booking_reference}</p>
-                          <p className="mt-1 text-xs text-white/60">{formatDateTime(booking.booking_date)}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getBookingStatusClass(booking.status)}`}>
-                            {formatStatus(booking.status)}
-                          </span>
-                          <p className="mt-2 text-sm font-semibold text-white">{formatCurrency(booking.total)}</p>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </section>
-          </div>
-        </div>
+          </article>
+        ))}
       </div>
-    </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-5">
+        <Panel
+          world={W}
+          className="xl:col-span-2"
+          title="Spending"
+          description={`${spendSeries[0]?.label} – ${spendSeries[spendSeries.length - 1]?.label}`}
+        >
+          {loading ? (
+            <SkeletonRows world={W} rows={3} />
+          ) : (
+            <AreaChart world={W} data={spendSeries} height={200} ariaLabel="Daily spending" format={(v) => `₹${new Intl.NumberFormat('en-IN', { notation: 'compact' }).format(v)}`} />
+          )}
+        </Panel>
+
+        <Panel world={W} flush className="xl:col-span-3" title="Recent activity" description="Orders and bookings, newest first">
+          {loading ? (
+            <div className="p-6">
+              <SkeletonRows world={W} rows={5} />
+            </div>
+          ) : activity.length === 0 ? (
+            <EmptyState
+              world={W}
+              icon={Wallet}
+              title="Nothing yet"
+              body="Order from a restaurant on Zesty or book a seat on Eventra. Everything you do shows up here."
+              action={
+                <Link to="/zesty" className={t.btnPrimary}>
+                  Start with dinner
+                </Link>
+              }
+            />
+          ) : (
+            <ul className={`divide-y ${t.divide}`}>
+              {activity.slice(0, 7).map((item) => (
+                <li key={`${item.kind}-${item.id}`}>
+                  <Link to={item.to} className={`flex items-center gap-4 px-5 py-4 transition-colors sm:px-6 ${t.rowHover}`}>
+                    <span
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${
+                        item.kind === 'order' ? 'bg-[#e23744]/10 text-[#b7122a]' : 'bg-[#c4621a]/12 text-[#9a4a10]'
+                      }`}
+                    >
+                      {item.kind === 'order' ? <UtensilsCrossed className="h-[18px] w-[18px]" aria-hidden="true" /> : <Ticket className="h-[18px] w-[18px]" aria-hidden="true" />}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold">{item.title}</p>
+                      <p className={`truncate text-xs ${t.muted}`}>
+                        {item.detail} · {formatDate(item.date)}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <span className="text-sm font-semibold tabular-nums">{formatINR(item.amount, true)}</span>
+                      <StatusPill world={W} status={item.status} />
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+      </div>
+    </DashboardShell>
   );
 };
 
