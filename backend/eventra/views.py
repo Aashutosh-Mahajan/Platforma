@@ -1,35 +1,42 @@
-from rest_framework import viewsets, status, serializers
+from rest_framework import viewsets, status, serializers, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.views import APIView
+from rest_framework.exceptions import NotFound, ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.exceptions import PermissionDenied
 from django.utils import timezone
-from django.db import transaction
+from django.db import transaction, models
 from datetime import timedelta
 from decimal import Decimal
 
 from eventra.models import (
-    Event, TicketType, Seat, Booking, BookingSeat, EventReview, EventAnalytics
+    Event, TicketType, Seat, SeatHold, Booking, BookingSeat, Ticket,
+    TicketScanAttempt, EventReview, EventAnalytics
 )
 from eventra.serializers import (
     EventListSerializer, EventDetailSerializer, SeatSerializer,
     BookingSerializer, CreateBookingSerializer, EventReviewSerializer,
-    EventAnalyticsSerializer, TicketTypeSerializer, EventReviewCreateSerializer
+    EventAnalyticsSerializer, TicketTypeSerializer, EventReviewCreateSerializer,
+    SeatHoldSerializer, SeatHoldCreateSerializer, TicketSerializer
 )
 from core.models import Payment, Notification
 from utils.pagination import StandardPagination
+from utils.permissions import ensure_verified
+
+SEAT_HOLD_WINDOW_MINUTES = 10
 
 
 class EventViewSet(viewsets.ModelViewSet):
     """List, retrieve, and manage events."""
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    search_fields = ['name', 'venue_name', 'category']
+    search_fields = ['name', 'venue_name', 'category', 'event_type']
     ordering_fields = ['event_date', 'rating', '-event_date']
     ordering = ['-event_date']
-    filterset_fields = ['category']
+    filterset_fields = ['category', 'event_type']
     pagination_class = StandardPagination
 
     def _can_manage_events(self, user):
@@ -69,14 +76,23 @@ class EventViewSet(viewsets.ModelViewSet):
             if self.action in ['list', 'retrieve', 'seats'] and self._wants_organizer_scope():
                 return organizer_qs
 
-        # Public browsing sees only published and active events.
-        qs = Event.objects.filter(is_published=True, is_cancelled=False)
+        # Public browsing requires both the organizer's own publish toggle
+        # AND admin approval (FR-A4) — one without the other stays hidden.
+        qs = Event.objects.filter(is_published=True, is_approved=True, is_cancelled=False)
 
-        # Date filtering
+        # Date filtering. The public discover list (FR-E1: "browse events")
+        # defaults to upcoming-only — without this, every past event ever
+        # published stays visible forever with no way to tell it's already
+        # happened, since nothing else in the UI filters this. Direct
+        # detail lookups (`retrieve`) are exempt so a customer can still
+        # open a past event they attended/booked via a direct link.
         date_from = self.request.query_params.get('date_from')
         date_to = self.request.query_params.get('date_to')
+        include_past = self.request.query_params.get('include_past', '').lower() in ('1', 'true', 'yes')
         if date_from:
             qs = qs.filter(event_date__gte=date_from)
+        elif self.action == 'list' and not include_past:
+            qs = qs.filter(event_date__gte=timezone.now())
         if date_to:
             qs = qs.filter(event_date__lte=date_to)
 
@@ -144,13 +160,24 @@ class EventViewSet(viewsets.ModelViewSet):
         if seat_status:
             seats = seats.filter(status=seat_status)
 
+        # Active (non-expired) holds, keyed by seat id, so the map reflects
+        # FR-E4 live without needing a background expiry job to have run.
+        now = timezone.now()
+        active_hold_seat_ids = set(
+            SeatHold.objects.filter(seat__in=seats, expires_at__gt=now)
+            .values_list('seat_id', flat=True)
+        )
+
         # Group by section
         sections = {}
         for seat in seats.select_related('ticket_type'):
             sec = seat.section
             if sec not in sections:
                 sections[sec] = []
-            sections[sec].append(SeatSerializer(seat).data)
+            seat_data = SeatSerializer(seat).data
+            if seat.status == 'available' and seat.id in active_hold_seat_ids:
+                seat_data['status'] = 'held'
+            sections[sec].append(seat_data)
 
         return Response({
             'event_id': event.id,
@@ -210,22 +237,39 @@ class EventViewSet(viewsets.ModelViewSet):
     def toggle_published(self, request, pk=None):
         """Toggle event published status."""
         event = self.get_object()
-        if event.organizer != request.user and not request.user.is_staff and request.user.role != 'admin':
+        acting_as_admin = event.organizer != request.user
+        if acting_as_admin and not request.user.is_staff and request.user.role != 'admin':
             return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
-        
+
         event.is_published = not event.is_published
         event.save()
+
+        if acting_as_admin:
+            from core.models import AuditLog
+            AuditLog.record(
+                actor=request.user,
+                action='event.publish' if event.is_published else 'event.unpublish',
+                target_type='event', target_id=event.id, event_name=event.name,
+            )
         return Response(EventDetailSerializer(event).data)
 
     @action(detail=True, methods=['patch'])
     def cancel_event(self, request, pk=None):
         """Cancel an event."""
         event = self.get_object()
-        if event.organizer != request.user and not request.user.is_staff and request.user.role != 'admin':
+        acting_as_admin = event.organizer != request.user
+        if acting_as_admin and not request.user.is_staff and request.user.role != 'admin':
             return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
-        
+
         event.is_cancelled = True
         event.save()
+
+        if acting_as_admin:
+            from core.models import AuditLog
+            AuditLog.record(
+                actor=request.user, action='event.cancel',
+                target_type='event', target_id=event.id, event_name=event.name,
+            )
         
         # Notify all bookers
         bookings = Booking.objects.filter(event=event, status='confirmed')
@@ -273,7 +317,7 @@ class TicketTypeViewSet(viewsets.ModelViewSet):
                 event = Event.objects.get(id=event_id)
             else:
                 event = Event.objects.get(id=event_id, organizer=self.request.user)
-            serializer.save(event=event)
+            serializer.save(event=event, quantity_available=serializer.validated_data['quantity_total'])
         except Event.DoesNotExist:
             raise serializers.ValidationError({'error': 'Event not found.'})
 
@@ -380,7 +424,7 @@ class BookingViewSet(viewsets.ModelViewSet):
 
         qs = qs.select_related(
             'event', 'payment'
-        ).prefetch_related('booked_seats__seat')
+        ).prefetch_related('booked_seats__seat', 'status_history')
 
         booking_status = self.request.query_params.get('status')
         if booking_status:
@@ -389,82 +433,113 @@ class BookingViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        """Create a booking with tickets."""
+        """Create a booking with tickets.
+
+        Runs inside a single atomic block; every failure path below raises
+        a DRF exception instead of manually deleting rows and returning a
+        Response, so a mid-loop failure rolls back everything that already
+        happened in this request (earlier ticket types included) rather
+        than leaving orphaned 'reserved' seats or short inventory counts.
+        """
         if request.user.role != 'customer':
             return Response(
                 {'error': 'Only customers can create bookings.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
+        ensure_verified(request.user)
 
         serializer = CreateBookingSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        # Get event
         try:
-            event = Event.objects.get(id=data['event_id'], is_published=True, is_cancelled=False)
+            event = Event.objects.get(
+                id=data['event_id'], is_published=True, is_approved=True, is_cancelled=False
+            )
         except Event.DoesNotExist:
-            return Response({'error': 'Event not found.'}, status=404)
+            raise NotFound('Event not found.')
 
-        # Check if event is sold out
         if event.available_seats <= 0:
-            return Response({'error': 'Event is sold out.'}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError('Event is sold out.')
 
-        # Create booking
-        booking = Booking.objects.create(
-            user=request.user,
-            event=event,
-        )
+        booking = Booking.objects.create(user=request.user, event=event)
 
         total_tickets = 0
         subtotal = Decimal('0.00')
+        now = timezone.now()
 
         for ticket_data in data['tickets']:
+            # Lock the ticket-type row for the rest of this transaction so a
+            # concurrent booking can't read the same quantity_available.
             try:
-                ticket_type = TicketType.objects.get(
+                ticket_type = TicketType.objects.select_for_update().get(
                     id=ticket_data['ticket_type_id'], event=event
                 )
             except TicketType.DoesNotExist:
-                booking.delete()
-                return Response({'error': f"Ticket type {ticket_data['ticket_type_id']} not found."}, status=404)
+                raise NotFound(f"Ticket type {ticket_data['ticket_type_id']} not found.")
 
             quantity = ticket_data['quantity']
 
             if ticket_type.quantity_available < quantity:
-                booking.delete()
-                return Response({
-                    'error': f"Only {ticket_type.quantity_available} '{ticket_type.name}' tickets available."
-                }, status=400)
+                raise ValidationError(
+                    f"Only {ticket_type.quantity_available} '{ticket_type.name}' tickets available."
+                )
 
-            # Allocate seats if specified
             seat_ids = ticket_data.get('seats', [])
             if seat_ids:
-                seats = Seat.objects.filter(
-                    id__in=seat_ids, event=event,
-                    ticket_type=ticket_type, status='available'
+                # Lock the specific seats so two concurrent requests can't
+                # both pass the availability check for the same seat.
+                seats = list(
+                    Seat.objects.select_for_update()
+                    .filter(id__in=seat_ids, event=event, ticket_type=ticket_type, status='available')
                 )
-                if seats.count() != len(seat_ids):
-                    booking.delete()
-                    return Response({'error': 'Some seats are not available.'}, status=400)
+                if len(seats) != len(seat_ids):
+                    raise ValidationError('Some seats are not available.')
+
+                # A seat actively held by a different customer is not
+                # bookable by this request; a hold owned by this customer
+                # (from POST /seats/hold) is honoured and consumed.
+                held = {
+                    h.seat_id: h.customer_id
+                    for h in SeatHold.objects.select_for_update().filter(
+                        seat_id__in=seat_ids, expires_at__gt=now
+                    )
+                }
+                for seat in seats:
+                    holder = held.get(seat.id)
+                    if holder is not None and holder != request.user.id:
+                        raise ValidationError(f"Seat {seat} is currently held by another customer.")
+
+                SeatHold.objects.filter(seat_id__in=seat_ids, customer=request.user).delete()
 
                 for seat in seats:
                     BookingSeat.objects.create(booking=booking, seat=seat)
                     seat.status = 'reserved'
-                    seat.save()
+                    seat.save(update_fields=['status'])
             else:
-                # Auto-allocate seats
-                available_seats = Seat.objects.filter(
-                    event=event, ticket_type=ticket_type, status='available'
-                )[:quantity]
+                # Auto-allocate seats, excluding any currently held by someone else.
+                unavailable_held = set(
+                    SeatHold.objects.filter(
+                        seat__event=event, seat__ticket_type=ticket_type, expires_at__gt=now
+                    ).exclude(customer=request.user).values_list('seat_id', flat=True)
+                )
+                candidate_seats = list(
+                    Seat.objects.select_for_update()
+                    .filter(event=event, ticket_type=ticket_type, status='available')
+                    .exclude(id__in=unavailable_held)[:quantity]
+                )
+                if len(candidate_seats) < quantity:
+                    raise ValidationError(
+                        f"Only {len(candidate_seats)} '{ticket_type.name}' seats available."
+                    )
 
-                for seat in available_seats:
+                for seat in candidate_seats:
                     BookingSeat.objects.create(booking=booking, seat=seat)
                     seat.status = 'reserved'
-                    seat.save()
+                    seat.save(update_fields=['status'])
 
-            # Update availability
             ticket_type.quantity_available -= quantity
-            ticket_type.save()
+            ticket_type.save(update_fields=['quantity_available'])
 
             total_tickets += quantity
             subtotal += ticket_type.price * quantity
@@ -488,27 +563,21 @@ class BookingViewSet(viewsets.ModelViewSet):
         )
         payment.simulate_payment()
 
-        # Check if payment was successful
         if payment.status != 'completed':
-            # Rollback: delete booking and restore seats
-            for booked_seat in booking.booked_seats.all():
-                booked_seat.seat.status = 'available'
-                booked_seat.seat.save()
-            booking.delete()
-            return Response(
-                {'error': 'Payment processing failed. Booking not created.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            # Seat holds/reservations for this request roll back automatically
+            # when this ValidationError propagates out of the atomic block.
+            raise ValidationError('Payment processing failed. Booking not created.')
 
         booking.payment = payment
         booking.status = 'confirmed'
         booking.confirmation_sent = timezone.now()
         booking.save()
 
-        # Mark seats as booked
-        for booked_seat in booking.booked_seats.all():
+        # Mark seats as booked and issue one QR ticket per seat (FR-E5).
+        for booked_seat in booking.booked_seats.select_related('seat'):
             booked_seat.seat.status = 'booked'
-            booked_seat.seat.save()
+            booked_seat.seat.save(update_fields=['status'])
+            Ticket.objects.create(booking=booking, seat=booked_seat.seat)
 
         # Update event available seats
         event.available_seats -= total_tickets
@@ -544,8 +613,15 @@ class BookingViewSet(viewsets.ModelViewSet):
         return Response(BookingSerializer(booking).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['patch'])
+    @transaction.atomic
     def cancel(self, request, pk=None):
-        """Cancel a booking."""
+        """Cancel a booking.
+
+        Per-tier refund policy (PRD §5.3 Zone.is_refundable/refund_cutoff_hours):
+        a booking spanning multiple ticket types is refused if any of them is
+        non-refundable, or if the current time is inside the widest cutoff
+        window among its ticket types.
+        """
         booking = self.get_object()
 
         if booking.user != request.user:
@@ -553,28 +629,45 @@ class BookingViewSet(viewsets.ModelViewSet):
                 {'error': 'Only the customer can cancel this booking.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        
+
         # Validate booking can be cancelled
         if booking.status not in ('pending', 'confirmed'):
             return Response(
                 {'error': 'Booking cannot be cancelled at this stage.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        # Validate event is at least 24 hours in future
-        hours_until_event = (booking.event.event_date - timezone.now()).total_seconds() / 3600
-        if hours_until_event < 24:
+
+        ticket_type_ids = booking.booked_seats.values_list('seat__ticket_type_id', flat=True).distinct()
+        ticket_types = TicketType.objects.filter(id__in=ticket_type_ids)
+
+        if ticket_types.filter(is_refundable=False).exists():
             return Response(
-                {'error': 'Bookings can only be cancelled at least 24 hours before the event.'},
+                {'error': 'This booking includes a non-refundable ticket type and cannot be cancelled.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        # Release seats
-        for booked_seat in booking.booked_seats.all():
-            booked_seat.seat.status = 'available'
-            booked_seat.seat.save()
 
-        # Restore ticket availability
+        cutoff_hours = ticket_types.aggregate(models.Max('refund_cutoff_hours'))['refund_cutoff_hours__max'] or 24
+        hours_until_event = (booking.event.event_date - timezone.now()).total_seconds() / 3600
+        if hours_until_event < cutoff_hours:
+            return Response(
+                {'error': f'Bookings can only be cancelled at least {cutoff_hours} hours before the event.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Release seats and any tickets issued for them.
+        for booked_seat in booking.booked_seats.select_related('seat'):
+            booked_seat.seat.status = 'available'
+            booked_seat.seat.save(update_fields=['status'])
+        Ticket.objects.filter(booking=booking).delete()
+
+        # Restore ticket-type availability
+        for booked_seat in booking.booked_seats.select_related('seat__ticket_type'):
+            tt = booked_seat.seat.ticket_type
+            TicketType.objects.filter(pk=tt.pk).update(
+                quantity_available=models.F('quantity_available') + 1
+            )
+
+        # Restore event availability
         booking.event.available_seats += booking.total_tickets
         booking.event.save(update_fields=['available_seats'])
 
@@ -632,3 +725,102 @@ class BookingViewSet(viewsets.ModelViewSet):
             booking=booking
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class SeatHoldCreateView(APIView):
+    """POST /seats/hold — hold one or more seats for a bounded checkout window (FR-E4)."""
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        serializer = SeatHoldCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        seat_ids = serializer.validated_data['seat_ids']
+
+        now = timezone.now()
+        seats = list(Seat.objects.select_for_update().filter(id__in=seat_ids))
+        if len(seats) != len(seat_ids):
+            raise NotFound('One or more seats not found.')
+
+        conflicting = SeatHold.objects.select_for_update().filter(
+            seat_id__in=seat_ids, expires_at__gt=now
+        ).exclude(customer=request.user)
+        if conflicting.exists():
+            raise ValidationError('One or more seats are already held by another customer.')
+
+        unavailable = [s for s in seats if s.status != 'available']
+        if unavailable:
+            raise ValidationError('One or more seats are not available.')
+
+        # Replace any of this customer's existing holds on these seats so
+        # re-holding refreshes the expiry rather than stacking rows.
+        SeatHold.objects.filter(seat_id__in=seat_ids, customer=request.user).delete()
+
+        expires_at = now + timedelta(minutes=SEAT_HOLD_WINDOW_MINUTES)
+        holds = SeatHold.objects.bulk_create([
+            SeatHold(seat=seat, customer=request.user, expires_at=expires_at)
+            for seat in seats
+        ])
+        return Response(SeatHoldSerializer(holds, many=True).data, status=status.HTTP_201_CREATED)
+
+
+class SeatHoldDeleteView(APIView):
+    """DELETE /seats/hold/{id} — release a hold before it expires."""
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        try:
+            hold = SeatHold.objects.get(pk=pk, customer=request.user)
+        except SeatHold.DoesNotExist:
+            raise NotFound('Hold not found.')
+        hold.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TicketVerifyView(APIView):
+    """POST /tickets/{token}/verify — verify a ticket exactly once (FR-E6).
+
+    Every attempt is logged, accepted or not, so a rejected re-scan is
+    still auditable against the original, authoritative scan.
+    """
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, token):
+        gate = request.data.get('gate', '')
+        try:
+            ticket = Ticket.objects.select_for_update().get(qr_token=token)
+        except Ticket.DoesNotExist:
+            raise NotFound('Ticket not found.')
+
+        if not (request.user.is_staff or request.user.role in ('event_organizer', 'admin')):
+            raise PermissionDenied('Only organizers or admins can verify tickets.')
+
+        if ticket.is_scanned:
+            TicketScanAttempt.objects.create(ticket=ticket, was_accepted=False, gate=gate)
+            return Response(
+                {
+                    'valid': False,
+                    'error': 'Ticket already scanned.',
+                    'original_scanned_at': ticket.scanned_at,
+                    'original_scanned_gate': ticket.scanned_gate,
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        ticket.is_scanned = True
+        ticket.scanned_at = timezone.now()
+        ticket.scanned_gate = gate
+        ticket.save(update_fields=['is_scanned', 'scanned_at', 'scanned_gate'])
+        TicketScanAttempt.objects.create(ticket=ticket, was_accepted=True, gate=gate)
+
+        return Response({'valid': True, 'ticket': TicketSerializer(ticket).data})
+
+
+class EventTypesView(APIView):
+    """GET /api/v1/eventra/event-types - every kind of event, grouped by category."""
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        from eventra.event_types import as_api_payload
+        return Response(as_api_payload())
