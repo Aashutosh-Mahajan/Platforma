@@ -1,6 +1,7 @@
 ﻿import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts';
+import { getPostAuthRedirectPath } from '../utils';
 
 const navLinks = [
   {
@@ -17,12 +18,12 @@ const navLinks = [
   },
   {
     label: 'About',
-    href: '#',
+    href: '#about',
     className: 'text-sm font-medium text-white no-underline transition-colors duration-200 hover:text-white/80',
   },
   {
     label: 'Contact',
-    href: '#',
+    href: '#contact',
     className: 'text-sm font-medium text-white no-underline transition-colors duration-200 hover:text-white/80',
   },
 ];
@@ -38,7 +39,7 @@ const HomePage: React.FC = () => {
   };
 
   const handleDashboardClick = () => {
-    navigate('/dashboard');
+    navigate(getPostAuthRedirectPath(user?.role));
   };
 
   const handleLogoutClick = async () => {
@@ -104,12 +105,12 @@ const HomePage: React.FC = () => {
                 </button>
               </li>
               <li>
-                <a href="#" className={authNavActionClass}>
+                <a href="#about" className={authNavActionClass}>
                   About
                 </a>
               </li>
               <li>
-                <a href="#" className={authNavActionClass}>
+                <a href="#contact" className={authNavActionClass}>
                   Contact
                 </a>
               </li>
@@ -206,7 +207,7 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      <section className="bg-[#fafaf7] px-4 py-16 text-[#111111] md:px-6 md:py-20 lg:px-8">
+      <section id="about" className="scroll-mt-4 bg-[#fafaf7] px-4 py-16 text-[#111111] md:px-6 md:py-20 lg:px-8">
         <div className="mx-auto w-full max-w-7xl">
           <div className="text-center">
             <h3
@@ -366,7 +367,7 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      <section className="bg-[#111111] px-4 py-16 md:px-6 md:py-20 lg:px-8">
+      <section id="contact" className="scroll-mt-4 bg-[#111111] px-4 py-16 md:px-6 md:py-20 lg:px-8">
         <div className="mx-auto w-full max-w-4xl text-center">
           <h3
             className="text-4xl font-semibold leading-tight text-white md:text-5xl"
@@ -392,7 +393,7 @@ const HomePage: React.FC = () => {
               className="rounded-lg border border-white bg-transparent px-6 py-3 text-sm font-semibold text-white"
               onClick={() => navigate('/eventra/events')}
             >
-              Speak to an Expert
+              Explore events
             </button>
           </div>
         </div>
@@ -417,8 +418,12 @@ const HomePage: React.FC = () => {
             <div>
               <h6 className="text-sm font-semibold text-white">Platform</h6>
               <ul className="mt-4 space-y-2 text-sm text-[#9ca3af]">
-                <li>Zesty</li>
-                <li>Eventra</li>
+                <li>
+                  <Link to="/zesty" className="transition-colors hover:text-white">Zesty</Link>
+                </li>
+                <li>
+                  <Link to="/eventra" className="transition-colors hover:text-white">Eventra</Link>
+                </li>
                 <li>Chef Network</li>
               </ul>
             </div>
@@ -426,7 +431,9 @@ const HomePage: React.FC = () => {
             <div>
               <h6 className="text-sm font-semibold text-white">Company</h6>
               <ul className="mt-4 space-y-2 text-sm text-[#9ca3af]">
-                <li>About</li>
+                <li>
+                  <a href="#about" className="transition-colors hover:text-white">About</a>
+                </li>
                 <li>Privacy Policy</li>
                 <li>Terms of Service</li>
               </ul>
@@ -443,7 +450,7 @@ const HomePage: React.FC = () => {
           </div>
 
           <div className="mt-10 border-t border-[#1f2937] pt-5 text-center">
-            <p className="text-xs text-[#6b7280]">© 2024 Platforma. All rights reserved.</p>
+            <p className="text-xs text-[#6b7280]">© {new Date().getFullYear()} Platforma. All rights reserved.</p>
           </div>
         </div>
       </footer>
