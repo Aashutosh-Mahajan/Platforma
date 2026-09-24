@@ -41,13 +41,15 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'django_filters',
+    'django_celery_beat',
 
     # Local apps
     'core',
     'zesty',
     'eventra',
-    'restaurants',
-    'orders',
+    'datagen',
+    'warehouse',
+    'mining',
 ]
 
 # ====================
@@ -162,6 +164,17 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ],
     'EXCEPTION_HANDLER': 'utils.exception_handlers.custom_exception_handler',
+    # Catalog browsing (restaurants, events, menus) went AllowAny this
+    # session so guests can shop without logging in — throttle by IP/user
+    # so that openness doesn't become an easy scraping/abuse surface.
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '120/min',
+        'user': '300/min',
+    },
 }
 
 # ====================
@@ -230,5 +243,47 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ====================
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@platforma.com')
+# SMTP delivery for verification and reset codes. Set EMAIL_BACKEND to
+# django.core.mail.backends.smtp.EmailBackend and fill these in to send real mail.
+EMAIL_HOST = config('EMAIL_HOST', default='localhost')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 
 UNSPLASH_ACCESS_KEY = os.environ.get('UNSPLASH_ACCESS_KEY')
+
+# ====================
+# CELERY (task queue — PRD §3)
+# ====================
+from celery.schedules import crontab
+
+REDIS_URL = config('REDIS_URL', default='redis://localhost:6379/0')
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+CELERY_BEAT_SCHEDULE = {
+    'expire-seat-holds': {
+        'task': 'eventra.tasks.expire_seat_holds',
+        'schedule': 60.0,  # every minute; holds themselves last SEAT_HOLD_WINDOW_MINUTES
+    },
+    # Nightly warehouse refresh, staggered so mining always sees the ETL's
+    # output rather than racing it: ETL at 2 AM, cuboids at 2:30, mining at 3.
+    'nightly-warehouse-etl': {
+        'task': 'warehouse.tasks.run_etl_task',
+        'schedule': crontab(hour=2, minute=0),
+    },
+    'nightly-cuboid-refresh': {
+        'task': 'warehouse.tasks.refresh_cuboids_task',
+        'schedule': crontab(hour=2, minute=30),
+    },
+    'nightly-mining-run': {
+        'task': 'mining.tasks.run_mining_task',
+        'schedule': crontab(hour=3, minute=0),
+    },
+}
