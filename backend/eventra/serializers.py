@@ -1,12 +1,44 @@
 from rest_framework import serializers
-from eventra.models import Event, TicketType, Seat, Booking, BookingSeat, EventReview, EventAnalytics
+from eventra.models import (
+    Event, Venue, TicketType, Seat, SeatHold, Booking, BookingSeat, Ticket,
+    BookingStatusHistory, EventReview, EventAnalytics
+)
+from eventra.event_types import category_for
+
+
+class VenueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Venue
+        fields = ['id', 'name', 'address', 'area', 'city', 'latitude', 'longitude',
+                  'capacity', 'is_indoor']
 
 
 class TicketTypeSerializer(serializers.ModelSerializer):
+    # quantity_available (remaining/unsold count) starts equal to
+    # quantity_total and is thereafter maintained by the booking flow, not
+    # set by the caller — requiring the organizer to pass a second,
+    # redundant "how many are unsold" number at creation time is both
+    # pointless and error-prone.
+    quantity_available = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = TicketType
         fields = ['id', 'name', 'price', 'quantity_total', 'quantity_available',
-                  'description', 'benefits']
+                  'description', 'benefits', 'is_refundable', 'refund_cutoff_hours']
+
+
+class SeatHoldSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SeatHold
+        fields = ['id', 'seat', 'customer', 'expires_at', 'created_at']
+        read_only_fields = ['id', 'customer', 'expires_at', 'created_at']
+
+
+class SeatHoldCreateSerializer(serializers.Serializer):
+    """Input for POST /seats/hold — hold one or more seats for checkout."""
+    seat_ids = serializers.ListField(
+        child=serializers.IntegerField(), min_length=1
+    )
 
 
 class SeatSerializer(serializers.ModelSerializer):
@@ -20,28 +52,64 @@ class SeatSerializer(serializers.ModelSerializer):
                   'ticket_type_name', 'price']
 
 
-class EventListSerializer(serializers.ModelSerializer):
+class TicketSerializer(serializers.ModelSerializer):
+    seat = SeatSerializer(read_only=True)
+
+    class Meta:
+        model = Ticket
+        fields = ['id', 'booking', 'seat', 'qr_token', 'is_scanned', 'scanned_at', 'scanned_gate', 'created_at']
+        read_only_fields = fields
+
+
+class EventTypeMixin:
+    """Keeps category consistent with a chosen event type on write."""
+
+    def get_fields(self):
+        fields = super().get_fields()
+        # The event type implies the category, so it need not be sent.
+        if 'category' in fields:
+            fields['category'].required = False
+        return fields
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        implied = category_for(attrs.get('event_type'))
+        if implied:
+            attrs['category'] = implied
+        elif 'category' not in attrs and not getattr(self, 'instance', None):
+            raise serializers.ValidationError({'event_type': 'Choose what kind of event this is.'})
+        return attrs
+
+
+class EventListSerializer(EventTypeMixin, serializers.ModelSerializer):
     """Lightweight event list serializer."""
+    venue_detail = VenueSerializer(source='venue', read_only=True)
+    event_type_label = serializers.CharField(read_only=True)
+
     class Meta:
         model = Event
-        fields = ['id', 'organizer', 'name', 'description', 'category', 'venue_name',
-                  'address', 'event_date', 'event_end_date', 'image',
+        fields = ['id', 'organizer', 'name', 'description', 'category', 'event_type', 'event_type_label', 'venue_name',
+                  'address', 'venue_detail', 'event_date', 'event_end_date', 'image',
                   'rating', 'review_count', 'total_seats', 'available_seats',
-                  'is_published', 'is_cancelled']
-        read_only_fields = ['id', 'organizer', 'rating', 'review_count', 'total_seats', 'available_seats', 'is_cancelled']
+                  'is_published', 'is_approved', 'is_cancelled']
+        read_only_fields = ['id', 'organizer', 'rating', 'review_count', 'total_seats',
+                             'available_seats', 'is_approved', 'is_cancelled']
 
 
-class EventDetailSerializer(serializers.ModelSerializer):
+class EventDetailSerializer(EventTypeMixin, serializers.ModelSerializer):
     """Full event detail with ticket types."""
     ticket_types = TicketTypeSerializer(many=True, read_only=True)
+    venue_detail = VenueSerializer(source='venue', read_only=True)
+    event_type_label = serializers.CharField(read_only=True)
 
     class Meta:
         model = Event
-        fields = ['id', 'organizer', 'name', 'description', 'category', 'venue_name',
-                  'address', 'latitude', 'longitude', 'event_date',
+        fields = ['id', 'organizer', 'name', 'description', 'category', 'event_type', 'event_type_label', 'venue_name',
+                  'address', 'latitude', 'longitude', 'venue_detail', 'event_date',
                   'event_end_date', 'image', 'banner', 'rating', 'review_count',
-                  'total_seats', 'available_seats', 'is_published', 'is_cancelled',
-                  'ticket_types']
+                  'total_seats', 'available_seats', 'is_published', 'is_approved',
+                  'is_cancelled', 'ticket_types']
+        read_only_fields = ['is_approved']
 
 
 class BookingSeatSerializer(serializers.ModelSerializer):
@@ -52,17 +120,24 @@ class BookingSeatSerializer(serializers.ModelSerializer):
         fields = ['id', 'seat']
 
 
+class BookingStatusHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BookingStatusHistory
+        fields = ['old_status', 'new_status', 'changed_at']
+
+
 class BookingSerializer(serializers.ModelSerializer):
     event_name = serializers.CharField(source='event.name', read_only=True)
     booked_seats = BookingSeatSerializer(many=True, read_only=True)
+    status_history = BookingStatusHistorySerializer(many=True, read_only=True)
 
     class Meta:
         model = Booking
         fields = ['id', 'booking_reference', 'event', 'event_name', 'status',
-                  'total_tickets', 'subtotal', 'tax', 'total',
+                  'total_tickets', 'subtotal', 'tax', 'total', 'status_history',
                   'booked_seats', 'booking_date', 'confirmation_sent']
         read_only_fields = ['id', 'booking_reference', 'subtotal', 'tax', 'total',
-                            'booking_date', 'confirmation_sent']
+                            'status_history', 'booking_date', 'confirmation_sent']
 
 
 class CreateBookingSerializer(serializers.Serializer):
