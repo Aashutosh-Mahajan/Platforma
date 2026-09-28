@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense } from 'react';
+import { useEffect, lazy as reactLazy, Suspense, type ComponentType } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import {
   AuthProvider,
@@ -8,7 +8,28 @@ import {
 } from './contexts';
 import { ErrorBoundary, ProtectedRoute, Header, LoadingFallback } from './components/shared';
 
-// Lazy load page components for code splitting
+// Lazy load page components for code splitting. After a redeploy or dev
+// server restart an open tab can still point at module URLs that no longer
+// exist; reload once to pick up the fresh ones instead of showing an error.
+const RELOAD_KEY = 'platforma:chunk-reload';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const lazy = <T extends ComponentType<any>>(load: () => Promise<{ default: T }>) =>
+  reactLazy(() =>
+    load()
+      .then((mod) => {
+        try { sessionStorage.removeItem(RELOAD_KEY); } catch { /* storage unavailable */ }
+        return mod;
+      })
+      .catch((error) => {
+        let reloaded = true;
+        try { reloaded = sessionStorage.getItem(RELOAD_KEY) === '1'; sessionStorage.setItem(RELOAD_KEY, '1'); } catch { /* storage unavailable */ }
+        if (!reloaded) {
+          window.location.reload();
+          return new Promise<{ default: T }>(() => {});
+        }
+        throw error;
+      })
+  );
 const HomePage = lazy(() => import('./pages/HomePage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
