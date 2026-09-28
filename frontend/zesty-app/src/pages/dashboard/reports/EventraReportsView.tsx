@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   Armchair, CalendarClock, ClipboardList, IndianRupee, Repeat, ScanLine, Ticket, Users, Wallet, XCircle,
 } from 'lucide-react';
-import { analyticsAPI, type EventraAnalytics, type OrganizerAnalytics } from '../../../api/analytics';
+import { analyticsAPI, type EventraAnalytics, type OrganizerAnalytics } from '../../../api/reports';
 import {
   CATEGORY_COLORS,
   ColumnBars,
@@ -16,7 +16,7 @@ import {
   describeDelta,
   leader,
   type Insight,
-} from '../../../components/dashboard/analytics';
+} from '../../../components/dashboard/reportCharts';
 import { Panel, RankedBars, StatusBreakdown, StatusPill } from '../../../components/dashboard/primitives';
 import { formatDate, formatINR, formatInt, humanize, plural, themes, type DashWorld } from '../../../components/dashboard/theme';
 import { AnalyticsFrame, AnalyticsHeader, StatTile, downloadCsv, useAnalytics } from './shared';

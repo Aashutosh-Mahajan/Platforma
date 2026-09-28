@@ -15,4 +15,6 @@ urlpatterns = [
     path('users/<int:pk>/suspend', AdminUserSuspendView.as_view(), name='admin-user-suspend'),
     path('audit-log', AdminAuditLogListView.as_view(), name='admin-audit-log'),
     path('analytics/overview', AdminAnalyticsOverviewView.as_view(), name='admin-analytics-overview'),
+    # Same view without 'analytics' in the URL, which ad/privacy blockers drop.
+    path('reports/overview', AdminAnalyticsOverviewView.as_view(), name='admin-reports-overview'),
 ]

@@ -1,6 +1,6 @@
 import React from 'react';
 import { IndianRupee, Percent, Receipt, Repeat, ShoppingBag, UserPlus, Users, XCircle } from 'lucide-react';
-import { analyticsAPI } from '../../../api/analytics';
+import { analyticsAPI } from '../../../api/reports';
 import {
   CATEGORY_COLORS,
   ColumnBars,
@@ -15,7 +15,7 @@ import {
   describeDelta,
   paymentName,
   type Insight,
-} from '../../../components/dashboard/analytics';
+} from '../../../components/dashboard/reportCharts';
 import { Panel, RankedBars } from '../../../components/dashboard/primitives';
 import { formatINR, formatInt, humanize, themes } from '../../../components/dashboard/theme';
 import { AnalyticsFrame, AnalyticsHeader, StatTile, downloadCsv, useAnalytics } from './shared';

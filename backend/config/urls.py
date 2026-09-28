@@ -26,6 +26,9 @@ urlpatterns = [
     path('api/v1/search/', include('core.urls.search_urls')),
     path('api/v1/admin/', include('core.urls.admin_urls')),
     path('api/v1/analytics/', include('core.urls.analytics_urls')),
+    # Alias used by the frontend: many ad/privacy blockers drop any request
+    # whose URL contains '/analytics/', which broke the dashboards for them.
+    path('api/v1/reports/', include('core.urls.analytics_urls')),
     path('api/v1/olap/', include('warehouse.urls')),
     path('api/v1/insights/', include('mining.urls')),
 

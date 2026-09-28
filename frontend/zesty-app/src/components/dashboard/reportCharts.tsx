@@ -1,7 +1,7 @@
 import React, { useId, useState } from 'react';
 import { ArrowDownRight, ArrowUpRight, Lightbulb, Minus } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import type { AnalyticsRange, Kpi, KpiKind, LabelValue } from '../../api/analytics';
+import type { AnalyticsRange, Kpi, KpiKind, LabelValue } from '../../api/reports';
 import { Segmented } from './primitives';
 import { formatINR, formatInt, humanize, themes, type DashWorld } from './theme';
 

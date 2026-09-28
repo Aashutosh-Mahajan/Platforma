@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Download } from 'lucide-react';
-import type { AnalyticsRange } from '../../../api/analytics';
-import { RangePicker, rangeLong } from '../../../components/dashboard/analytics';
+import type { AnalyticsRange } from '../../../api/reports';
+import { RangePicker, rangeLong } from '../../../components/dashboard/reportCharts';
 import { ErrorBanner, Panel, SkeletonRows } from '../../../components/dashboard/primitives';
 import { themes, type DashWorld } from '../../../components/dashboard/theme';
 

@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Banknote, CheckCircle2, IndianRupee, Percent, ReceiptText, Repeat, ShoppingBasket, TicketPercent, Users, XCircle,
 } from 'lucide-react';
-import { analyticsAPI, type RestaurantAnalytics, type ZestyAnalytics } from '../../../api/analytics';
+import { analyticsAPI, type RestaurantAnalytics, type ZestyAnalytics } from '../../../api/reports';
 import {
   CATEGORY_COLORS,
   ColumnBars,
@@ -19,7 +19,7 @@ import {
   paymentName,
   type Insight,
   type KpiSpec,
-} from '../../../components/dashboard/analytics';
+} from '../../../components/dashboard/reportCharts';
 import { EmptyState, Panel, RankedBars, StatusBreakdown } from '../../../components/dashboard/primitives';
 import { formatINR, formatInt, plural, themes, type DashWorld } from '../../../components/dashboard/theme';
 import { AnalyticsFrame, AnalyticsHeader, StatTile, downloadCsv, useAnalytics } from './shared';

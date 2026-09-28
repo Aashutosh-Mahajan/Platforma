@@ -58,7 +58,7 @@ import {
   toNumber,
 } from '../../components/dashboard/theme';
 import { fallbackFoodImage, ZESTY_HERO_IMAGES } from '../../utils/foodImagery';
-import ZestyAnalyticsView from './analytics/ZestyAnalyticsView';
+import ZestyAnalyticsView from './reports/ZestyReportsView';
 
 interface RestaurantFormData {
   name: string;

@@ -27,9 +27,9 @@ import { restaurantAPI, payoutAPI } from '../../api/zesty';
 import type { EarningsSummary } from '../../api/zesty';
 import type { Restaurant } from '../../types';
 import { DashboardShell, type DashNavGroup } from '../../components/dashboard/DashboardShell';
-import PlatformAnalyticsView from './analytics/PlatformAnalyticsView';
-import ZestyAnalyticsView from './analytics/ZestyAnalyticsView';
-import EventraAnalyticsView from './analytics/EventraAnalyticsView';
+import PlatformAnalyticsView from './reports/PlatformReportsView';
+import ZestyAnalyticsView from './reports/ZestyReportsView';
+import EventraAnalyticsView from './reports/EventraReportsView';
 import {
   EmptyState,
   ErrorBanner,
