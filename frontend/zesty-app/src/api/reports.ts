@@ -141,10 +141,10 @@ const get = async <T,>(url: string, params: Record<string, unknown>): Promise<T>
 };
 
 export const analyticsAPI = {
-  platform: (range: AnalyticsRange) => get<PlatformAnalytics>('/analytics/platform', { range }),
-  zesty: (range: AnalyticsRange) => get<ZestyAnalytics>('/analytics/zesty', { range }),
-  eventra: (range: AnalyticsRange) => get<EventraAnalytics>('/analytics/eventra', { range }),
-  restaurant: (id: number, range: AnalyticsRange) => get<RestaurantAnalytics>(`/analytics/restaurants/${id}`, { range }),
+  platform: (range: AnalyticsRange) => get<PlatformAnalytics>('/reports/platform', { range }),
+  zesty: (range: AnalyticsRange) => get<ZestyAnalytics>('/reports/zesty', { range }),
+  eventra: (range: AnalyticsRange) => get<EventraAnalytics>('/reports/eventra', { range }),
+  restaurant: (id: number, range: AnalyticsRange) => get<RestaurantAnalytics>(`/reports/restaurants/${id}`, { range }),
   organizer: (range: AnalyticsRange, event?: number | null) =>
-    get<OrganizerAnalytics>('/analytics/organizer', event ? { range, event } : { range }),
+    get<OrganizerAnalytics>('/reports/organizer', event ? { range, event } : { range }),
 };

@@ -138,7 +138,7 @@ export const adminAPI = {
   },
 
   analyticsOverview: async (groupBy: 'city' | 'state' = 'city'): Promise<AnalyticsOverview> => {
-    const response = await apiClient.get('/admin/analytics/overview', { params: { group_by: groupBy } });
+    const response = await apiClient.get('/admin/reports/overview', { params: { group_by: groupBy } });
     const data = response.data as AnalyticsOverview;
     return {
       ...data,

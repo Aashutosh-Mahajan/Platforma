@@ -40,7 +40,7 @@ import {
   StatusBreakdown,
   StatusPill,
 } from '../../components/dashboard/primitives';
-import EventraAnalyticsView from './analytics/EventraAnalyticsView';
+import EventraAnalyticsView from './reports/EventraReportsView';
 import { bucketByDay, formatDate, formatINR, formatInt, greeting, humanize, themes, toNumber } from '../../components/dashboard/theme';
 import { seatCode } from '../../utils';
 import { parseApiError } from '../../api/auth';
