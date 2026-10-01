@@ -4,6 +4,7 @@ import { ArrowRight, Bike, Clock, Minus, Plus, ShoppingBag, TicketPercent, Trash
 import { useCart } from '../../contexts/CartContext';
 import { fallbackFoodImage } from '../../utils/foodImagery';
 import { BillRows, FlowCard, FlowHeader, FlowPage, VegMark, inr } from '../../components/zesty/OrderFlow';
+import PairsWellWith from '../../components/zesty/PairsWellWith';
 
 const CartPage: React.FC = () => {
   const navigate = useNavigate();
@@ -145,6 +146,7 @@ const CartPage: React.FC = () => {
               <Plus className="h-4 w-4" aria-hidden="true" /> Add more from {restaurant.name}
             </Link>
           )}
+          <PairsWellWith />
         </FlowCard>
 
         <div className="space-y-4 lg:sticky lg:top-20">
