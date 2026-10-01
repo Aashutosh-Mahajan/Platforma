@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
+  Activity,
   CalendarDays,
   Check,
   CheckCircle2,
@@ -9,8 +10,11 @@ import {
   LayoutDashboard,
   ScrollText,
   Search,
+  ShieldAlert,
   ShieldCheck,
+  Sparkles,
   Store,
+  Table2,
   Ticket,
   TrendingUp,
   UserRound,
@@ -30,6 +34,13 @@ import { DashboardShell, type DashNavGroup } from '../../components/dashboard/Da
 import PlatformAnalyticsView from './reports/PlatformReportsView';
 import ZestyAnalyticsView from './reports/ZestyReportsView';
 import EventraAnalyticsView from './reports/EventraReportsView';
+import ExplorerView from './warehouse/ExplorerView';
+import CustomerIntelView from './warehouse/CustomerIntelView';
+import DemandIntelView from './warehouse/DemandIntelView';
+import AnomalyQueueView from './warehouse/AnomalyQueueView';
+import PipelineHealthView from './warehouse/PipelineHealthView';
+import { miningAPI } from '../../api/warehouse';
+import { useStoredVertical } from '../../components/dashboard/intelligenceUtils';
 import {
   EmptyState,
   ErrorBanner,
@@ -42,8 +53,13 @@ import {
 } from '../../components/dashboard/primitives';
 import { formatDate, formatINR, formatInt, greeting, humanize, themes, toNumber } from '../../components/dashboard/theme';
 
-type Tab = 'approvals' | 'users' | 'audit' | 'analytics' | 'zesty_analytics' | 'eventra_analytics' | 'payouts';
-const ANALYTICS_TABS: Tab[] = ['analytics', 'zesty_analytics', 'eventra_analytics'];
+type Tab =
+  | 'approvals' | 'users' | 'audit' | 'analytics' | 'zesty_analytics' | 'eventra_analytics' | 'payouts'
+  | 'explorer' | 'customers_intel' | 'demand' | 'review' | 'pipeline';
+// Tabs that bring their own headline numbers, so the banner ledger is hidden on them.
+const ANALYTICS_TABS: Tab[] = [
+  'analytics', 'zesty_analytics', 'eventra_analytics', 'explorer', 'customers_intel', 'demand', 'review', 'pipeline',
+];
 
 // The admin API returns geo and commission fields the shared Restaurant type omits.
 type RestaurantWithGeo = Restaurant & { city?: string; state?: string; commission_rate?: number };
@@ -60,6 +76,9 @@ const AdminDashboardPage: React.FC = () => {
   const [userSearch, setUserSearch] = useState('');
   const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
   const [ledgerData, setLedgerData] = useState<AnalyticsOverview | null>(null);
+  const [openAnomalies, setOpenAnomalies] = useState(0);
+  // Both / Zesty / Eventra filter shared by every Intelligence tab.
+  const [vertical, setVertical] = useStoredVertical();
 
   // Payouts tab
   const [payoutRestaurantSearch, setPayoutRestaurantSearch] = useState('');
@@ -234,6 +253,7 @@ const AdminDashboardPage: React.FC = () => {
   // every tab, so fetch them once up front regardless of the active tab.
   useEffect(() => {
     adminAPI.analyticsOverview('city').then(setLedgerData).catch(() => undefined);
+    miningAPI.anomalies({ status: 'open' }).then((r) => setOpenAnomalies(r.counts.open ?? 0)).catch(() => undefined);
     Promise.all([adminAPI.pendingRestaurants(), adminAPI.pendingEvents()])
       .then(([restaurants, events]) => {
         setPendingRestaurants(restaurants);
@@ -255,6 +275,16 @@ const AdminDashboardPage: React.FC = () => {
         { key: 'analytics', label: 'Platform', icon: LayoutDashboard, onClick: () => setActiveTab('analytics') },
         { key: 'zesty_analytics', label: 'Zesty', icon: UtensilsCrossed, onClick: () => setActiveTab('zesty_analytics') },
         { key: 'eventra_analytics', label: 'Eventra', icon: Ticket, onClick: () => setActiveTab('eventra_analytics') },
+      ],
+    },
+    {
+      label: 'Intelligence',
+      items: [
+        { key: 'explorer', label: 'Data explorer', icon: Table2, onClick: () => setActiveTab('explorer') },
+        { key: 'customers_intel', label: 'Customers', icon: Users, onClick: () => setActiveTab('customers_intel') },
+        { key: 'demand', label: 'Demand', icon: Sparkles, onClick: () => setActiveTab('demand') },
+        { key: 'review', label: 'Review queue', icon: ShieldAlert, onClick: () => setActiveTab('review'), badge: openAnomalies || undefined },
+        { key: 'pipeline', label: 'Pipeline', icon: Activity, onClick: () => setActiveTab('pipeline') },
       ],
     },
     {
@@ -326,6 +356,11 @@ const AdminDashboardPage: React.FC = () => {
           {activeTab === 'analytics' && <PlatformAnalyticsView onNavigate={setActiveTab} />}
           {activeTab === 'zesty_analytics' && <ZestyAnalyticsView mode="admin" />}
           {activeTab === 'eventra_analytics' && <EventraAnalyticsView mode="admin" />}
+          {activeTab === 'explorer' && <ExplorerView world={W} vertical={vertical} onVerticalChange={setVertical} />}
+          {activeTab === 'customers_intel' && <CustomerIntelView vertical={vertical} onVerticalChange={setVertical} />}
+          {activeTab === 'demand' && <DemandIntelView vertical={vertical} onVerticalChange={setVertical} />}
+          {activeTab === 'review' && <AnomalyQueueView onCountChange={setOpenAnomalies} vertical={vertical} onVerticalChange={setVertical} />}
+          {activeTab === 'pipeline' && <PipelineHealthView vertical={vertical} onVerticalChange={setVertical} />}
 
           {/* Approvals */}
           {activeTab === 'approvals' && (
