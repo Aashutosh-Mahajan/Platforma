@@ -18,6 +18,7 @@ import {
   Plus,
   Sparkles,
   Star,
+  Table2,
   Ticket,
   Trash2,
   UserRound,
@@ -41,6 +42,8 @@ import {
   StatusPill,
 } from '../../components/dashboard/primitives';
 import EventraAnalyticsView from './reports/EventraReportsView';
+import OrganizerIntelView from './warehouse/OrganizerIntelView';
+import ExplorerView from './warehouse/ExplorerView';
 import { bucketByDay, formatDate, formatINR, formatInt, greeting, humanize, themes, toNumber } from '../../components/dashboard/theme';
 import { seatCode } from '../../utils';
 import { parseApiError } from '../../api/auth';
@@ -104,7 +107,7 @@ export const EventOrganizerDashboard: React.FC = () => {
   const [analytics, setAnalytics] = useState<Analytics>({ totalBookings: 0, revenue: 0, availableSeats: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'events' | 'tickets' | 'seats' | 'bookings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'forecast' | 'explore' | 'events' | 'tickets' | 'seats' | 'bookings'>('overview');
 
   // Modal states
   const [showEventModal, setShowEventModal] = useState(false);
@@ -539,6 +542,8 @@ export const EventOrganizerDashboard: React.FC = () => {
       label: 'Business',
       items: [
         { key: 'events', label: 'All events', icon: CalendarDays, onClick: () => setActiveTab('events'), badge: events.length > 1 ? events.length : undefined },
+        { key: 'forecast', label: 'Forecasts', icon: Sparkles, onClick: () => setActiveTab('forecast') },
+        { key: 'explore', label: 'Explore data', icon: Table2, onClick: () => setActiveTab('explore') },
         { key: 'profile', label: 'Profile', icon: UserRound, to: '/profile' },
       ],
     },
@@ -642,7 +647,7 @@ export const EventOrganizerDashboard: React.FC = () => {
         )
       }
       ledger={
-        activeTab === 'analytics' ? undefined : <KpiLedger
+        ['analytics', 'forecast', 'explore'].includes(activeTab) ? undefined : <KpiLedger
           world={W}
           loading={loading}
           items={[
@@ -755,6 +760,12 @@ export const EventOrganizerDashboard: React.FC = () => {
       {/* Analytics */}
       {!loading && activeTab === 'analytics' && selectedEvent && (
         <EventraAnalyticsView mode="organizer" events={events.map((e) => ({ id: e.id, name: e.name }))} />
+      )}
+
+      {!loading && activeTab === 'forecast' && <OrganizerIntelView />}
+
+      {!loading && activeTab === 'explore' && (
+        <ExplorerView world={W} intro="Slice ticket sales for your own events by day, event and tier. Add a second dimension for a pivot table." />
       )}
 
       {/* Events */}
