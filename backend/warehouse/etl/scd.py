@@ -42,7 +42,18 @@ def apply_scd2(model, natural_id_field, natural_id_value, tracked_fields, incomi
 
     changed = any(getattr(current_row, f) != incoming_values.get(f) for f in tracked_fields)
     if not changed:
-        return current_row, 'noop'
+        # Untracked attributes (coordinates, an event's date, ...) are
+        # type-1: corrected in place on the current row, no new version.
+        drifted = [
+            f for f, v in incoming_values.items()
+            if f not in tracked_fields and getattr(current_row, f) != v
+        ]
+        if not drifted:
+            return current_row, 'noop'
+        for f in drifted:
+            setattr(current_row, f, incoming_values[f])
+        current_row.save(update_fields=drifted)
+        return current_row, 'updated'
 
     current_row.valid_to = today - datetime.timedelta(days=1)
     current_row.is_current = False
