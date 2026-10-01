@@ -3,7 +3,8 @@ from warehouse.models import (
     DimDate, DimTime, DimCustomer, DimLocation, DimPayment,
     DimRestaurant, DimMenuItem, DimPromotion, DimEvent, DimVenue, DimTicketType,
     FactOrder, FactOrderItem, FactBooking, FactTicketSale,
-    EtlRunAudit, EtlQuarantine,
+    FactOrderLifecycle, FactSeatInventorySnapshot, FactSearch, FactPayout,
+    EtlRunAudit, EtlQuarantine, DataQualityCheck,
     CbDailyOutletRevenue, CbDailyItemPerformance, CbMonthlyCustomerActivity,
     CbDailyEventSales, CbHourlyDemandProfile,
 )
@@ -20,6 +21,12 @@ class EtlRunAuditAdmin(admin.ModelAdmin):
 class EtlQuarantineAdmin(admin.ModelAdmin):
     list_display = ['table_name', 'source_pk', 'violated_rule', 'quarantined_at']
     list_filter = ['table_name', 'violated_rule']
+
+
+@admin.register(DataQualityCheck)
+class DataQualityCheckAdmin(admin.ModelAdmin):
+    list_display = ['check_name', 'table_name', 'status', 'observed', 'threshold', 'checked_at']
+    list_filter = ['status', 'check_name']
 
 
 @admin.register(DimCustomer)
@@ -62,3 +69,7 @@ admin.site.register(CbDailyItemPerformance)
 admin.site.register(CbMonthlyCustomerActivity)
 admin.site.register(CbDailyEventSales)
 admin.site.register(CbHourlyDemandProfile)
+admin.site.register(FactOrderLifecycle)
+admin.site.register(FactSeatInventorySnapshot)
+admin.site.register(FactSearch)
+admin.site.register(FactPayout)
