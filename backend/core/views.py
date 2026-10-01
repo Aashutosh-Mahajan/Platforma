@@ -543,11 +543,17 @@ def global_search(request):
     if not request.session.session_key:
         request.session.save()
     total_results = sum(len(v) for v in results.values())
+    # result_id records the first hit ('restaurants:12'), or 'none' when the
+    # search found nothing — what search mining uses to surface unmet demand.
+    first_hit = next(
+        (f"{kind}:{rows[0].get('id', '')}" for kind, rows in results.items() if rows),
+        'none',
+    )
     SearchLog.objects.create(
         session_id=request.session.session_key,
         query_text=query[:255],
         result_type=scope,
-        result_id='',
+        result_id=first_hit[:64],
         clicked=False,
     )
     results['session_id'] = request.session.session_key
