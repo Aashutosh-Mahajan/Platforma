@@ -19,6 +19,7 @@ import { customerNav } from '../../components/dashboard/roleNav';
 import { bucketByDay, formatDate, formatINR, formatInt, shortRef, themes, toNumber } from '../../components/dashboard/theme';
 import { fallbackFoodImage } from '../../utils/foodImagery';
 import type { Order } from '../../types';
+import PicksForYou from './warehouse/PicksForYou';
 
 const W = 'zesty' as const;
 const t = themes[W];
@@ -233,6 +234,10 @@ const ZestyDashboardPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <div className="mt-6">
+        <PicksForYou kind="food" />
+      </div>
     </DashboardShell>
   );
 };
