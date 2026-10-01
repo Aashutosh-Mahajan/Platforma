@@ -1,5 +1,6 @@
 """Shared reference data and helpers for all datagen generators."""
 import random
+from contextlib import contextmanager
 import zlib
 import numpy as np
 from django.contrib.auth.hashers import make_password
@@ -155,3 +156,22 @@ def weighted_hour(np_rng, day_part_weights=None):
     ])
     weights = weights / weights.sum()
     return int(np_rng.choice(hours, p=weights))
+
+
+@contextmanager
+def historical_timestamps(model, *field_names):
+    """Temporarily switch off auto_now/auto_now_add on `field_names` so a
+    bulk_create keeps the historical timestamps the caller set — one INSERT
+    instead of bulk_create_with_timestamps' INSERT + UPDATE round trip.
+    """
+    fields = [model._meta.get_field(name) for name in field_names]
+    saved = [(f, f.auto_now, f.auto_now_add) for f in fields]
+    for f in fields:
+        f.auto_now = False
+        f.auto_now_add = False
+    try:
+        yield
+    finally:
+        for f, auto_now, auto_now_add in saved:
+            f.auto_now = auto_now
+            f.auto_now_add = auto_now_add
