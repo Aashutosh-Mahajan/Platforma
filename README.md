@@ -243,6 +243,63 @@ npm run build
 npm run lint
 ```
 
+## Data Warehouse and Mining
+
+The `warehouse` (star schema, ETL, OLAP cuboids) and `mining` (14 models) apps live in their own
+PostgreSQL database, so nightly loads and model training never touch the main app's database.
+`config/db_routers.py` sends both apps to the `warehouse` connection when `WAREHOUSE_DATABASE_URL`
+is set; without it they fall back to `DATABASE_URL`.
+
+### First-time setup
+
+```powershell
+# 1. Put the warehouse database URL (e.g. a Neon database) in .env:
+#    WAREHOUSE_DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
+# 2. Create its tables, load it, and run every model:
+python backend\manage.py setup_warehouse
+```
+
+### Day to day
+
+Celery beat runs these nightly (ETL 2:00, cuboids 2:30, mining 3:00); they can also be run by hand:
+
+```powershell
+python backend\manage.py run_etl                 # incremental; --full-refresh re-extracts everything
+python backend\manage.py run_mining              # all models; --module=forecast for one
+python backend\manage.py verify_warehouse        # strict integrity gate (non-zero exit on failure)
+```
+
+After moving to a separate warehouse database, the old copies of the warehouse tables in the main
+database can be listed (and with `--confirm`, dropped):
+
+```powershell
+python backend\manage.py drop_legacy_warehouse_tables
+```
+
+### What the models produce
+
+| Model | Output | Shown in |
+|---|---|---|
+| basket | Dishes ordered together | Owner: Forecasts; cart: "Goes well with" |
+| segments, customers | RFM segments, churn risk, predicted 90-day value | Admin: Customers |
+| anomaly | Unusual orders/bookings with reasons | Admin: Review queue |
+| risk | No-show and cancellation probabilities | Organizer: Forecasts; Owner: Forecasts |
+| forecast, sellout | 14-day demand; event sell-out projections | Admin: Demand; Owner/Organizer: Forecasts |
+| recommend, sequences | Personal picks; cross-vertical habits | Customer hubs; Admin: Customers |
+| delivery | Delivery-time estimates | Checkout; Owner: Forecasts |
+| hotspots, search, promos, pricing | Demand clusters, unmet searches, promo lift, price elasticity | Admin: Demand; Organizer: Forecasts |
+
+Every model is evaluated on held-out data each run; the metrics are listed under Admin → Pipeline.
+Models with too little data skip with a reason instead of producing noise.
+
+### Synthetic data
+
+`python backend\manage.py gen_data --seed 42 --scale 0.2` generates a dataset with planted patterns
+(basket pairs, a concert → North Indian habit, a no-show function, anomalies, unmet searches) that
+the models are scored against. `enrich_synthetic_data` adds the newer signals (order status history,
+gate scans, promotions, searches) to synthetic data generated before they existed. Both only ever
+touch synthetic rows.
+
 ## Seed Data and Demo Accounts
 
 ### Eventra bulk seed command
