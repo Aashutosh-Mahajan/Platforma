@@ -29,27 +29,27 @@ from warehouse.models import (
 # Each cuboid's (measure -> queryset field, dimension -> queryset field) coverage.
 _CUBOID_REGISTRY = [
     {
-        'name': 'cb_daily_outlet_revenue', 'model': CbDailyOutletRevenue,
+        'name': 'cb_daily_outlet_revenue', 'vertical': 'zesty', 'model': CbDailyOutletRevenue,
         'measures': {'net_revenue': 'net_revenue', 'order_count': 'order_count'},
         'dimensions': {'date': 'date', 'restaurant': 'restaurant_id', 'area': 'area'},
     },
     {
-        'name': 'cb_daily_item_performance', 'model': CbDailyItemPerformance,
+        'name': 'cb_daily_item_performance', 'vertical': 'zesty', 'model': CbDailyItemPerformance,
         'measures': {'net_revenue': 'net_revenue', 'quantity_sold': 'quantity_sold'},
         'dimensions': {'date': 'date', 'menu_item': 'menu_item_id', 'restaurant': 'restaurant_id'},
     },
     {
-        'name': 'cb_monthly_customer_activity', 'model': CbMonthlyCustomerActivity,
+        'name': 'cb_monthly_customer_activity', 'vertical': 'both', 'model': CbMonthlyCustomerActivity,
         'measures': {'total_spend': 'total_spend', 'transaction_count': 'transaction_count'},
         'dimensions': {'month': 'month', 'customer': 'customer_id', 'domain': 'domain'},
     },
     {
-        'name': 'cb_daily_event_sales', 'model': CbDailyEventSales,
+        'name': 'cb_daily_event_sales', 'vertical': 'eventra', 'model': CbDailyEventSales,
         'measures': {'net_revenue': 'net_revenue', 'tickets_sold': 'tickets_sold'},
         'dimensions': {'date': 'date', 'event': 'event_id', 'venue': 'venue_id', 'ticket_type': 'ticket_type_id'},
     },
     {
-        'name': 'cb_hourly_demand_profile', 'model': CbHourlyDemandProfile,
+        'name': 'cb_hourly_demand_profile', 'vertical': 'both', 'model': CbHourlyDemandProfile,
         'measures': {'net_revenue': 'net_revenue', 'transaction_count': 'transaction_count'},
         'dimensions': {'date': 'date', 'day_part': 'day_part', 'area': 'area', 'domain': 'domain'},
     },
@@ -114,8 +114,20 @@ _RAW_MEASURE_SOURCES = {
 }
 
 
+def _unavailable(measure, dimensions):
+    return {
+        'measure': measure, 'dimensions': list(dimensions), 'rows': [],
+        'source_cuboid': 'unavailable', 'as_of': timezone.now().isoformat(),
+    }
+
+
 def _resolve_raw(measure, dimensions, filters, limit):
     source = _RAW_MEASURE_SOURCES.get(measure)
+    # A filter the raw source can't apply must fail closed: silently
+    # dropping it would return unfiltered totals (e.g. every restaurant's
+    # revenue to an owner whose scope filter didn't fit this measure).
+    if source is not None and any(dim not in source[2] for dim in filters):
+        source = None
     if source is None:
         return {
             'measure': measure, 'dimensions': list(dimensions), 'rows': [],
@@ -124,8 +136,6 @@ def _resolve_raw(measure, dimensions, filters, limit):
     model, field, dim_map = source
     qs = model.objects.all()
     for dim, value in filters.items():
-        if dim not in dim_map:
-            continue
         orm_field = dim_map[dim]
         if isinstance(value, (list, tuple)):
             qs = qs.filter(**{f"{orm_field}__in": value})
@@ -180,3 +190,75 @@ def op_pivot(measure, row_dimension, column_dimension, filters=None):
         'row_values': row_values, 'column_values': col_values, 'matrix': matrix,
         'source_cuboid': result['source_cuboid'], 'as_of': result['as_of'],
     }
+
+
+# ---------------------------------------------------------------------------
+# Catalog + labels (for the explorer UI)
+# ---------------------------------------------------------------------------
+
+MEASURE_LABELS = {
+    'net_revenue': 'Revenue', 'order_count': 'Orders', 'quantity_sold': 'Items sold',
+    'total_spend': 'Customer spend', 'transaction_count': 'Transactions', 'tickets_sold': 'Tickets sold',
+    'booking_revenue': 'Booking revenue',
+}
+DIMENSION_LABELS = {
+    'date': 'Day', 'month': 'Month', 'restaurant': 'Restaurant', 'area': 'Area', 'menu_item': 'Dish',
+    'customer': 'Customer', 'domain': 'Vertical', 'event': 'Event', 'venue': 'Venue',
+    'ticket_type': 'Ticket tier', 'day_part': 'Time of day',
+}
+
+
+def catalog(allowed_dimension=None):
+    """Cuboids with their measures and dimensions. `allowed_dimension`
+    ('restaurant' / 'event') limits the list to cuboids that can be scoped
+    to one partner's own rows.
+    """
+    out = []
+    for cuboid in _CUBOID_REGISTRY:
+        if allowed_dimension and allowed_dimension not in cuboid['dimensions']:
+            continue
+        out.append({
+            'name': cuboid['name'],
+            'vertical': cuboid['vertical'],  # zesty | eventra | both (has a 'domain' dimension)
+            'measures': [{'key': m, 'label': MEASURE_LABELS.get(m, m)} for m in cuboid['measures']],
+            'dimensions': [{'key': d, 'label': DIMENSION_LABELS.get(d, d)} for d in cuboid['dimensions']],
+        })
+    return out
+
+
+def label_lookup(dimension, values):
+    """{value: display name} for id-valued dimensions; {} for the rest."""
+    from warehouse.models import DimRestaurant, DimEvent, DimMenuItem, DimVenue, DimTicketType
+    sources = {
+        'restaurant': (DimRestaurant, 'restaurant_id', 'name', True),
+        'event': (DimEvent, 'event_id', 'title', True),
+        'menu_item': (DimMenuItem, 'item_id', 'item_name', True),
+        'venue': (DimVenue, 'venue_id', 'venue_name', False),
+        'ticket_type': (DimTicketType, 'ticket_type_id', 'class_name', True),
+    }
+    if dimension not in sources:
+        return {}
+    model, key, name, scd2 = sources[dimension]
+    ids = [v for v in values if v is not None]
+    qs = model.objects.filter(**{f'{key}__in': ids})
+    if scd2:
+        qs = qs.filter(is_current=True)
+    return dict(qs.values_list(key, name))
+
+
+def add_labels(result):
+    """Adds '<dimension>_label' to each row (and row/column labels to a pivot)."""
+    if 'rows' in result:
+        for dim in result['dimensions']:
+            names = label_lookup(dim, {r.get(dim) for r in result['rows']})
+            if names:
+                for r in result['rows']:
+                    r[f'{dim}_label'] = names.get(r.get(dim), str(r.get(dim)))
+    if 'matrix' in result:
+        row_dim, col_dim = result['dimensions']
+        for key, values in (('row_labels', (row_dim, result['row_values'])),
+                            ('column_labels', (col_dim, result['column_values']))):
+            dim, vals = values
+            names = label_lookup(dim, {int(v) if str(v).isdigit() else v for v in vals})
+            result[key] = {v: names.get(int(v) if str(v).isdigit() else v, v) for v in vals}
+    return result
