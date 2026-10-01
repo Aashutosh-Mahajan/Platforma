@@ -128,6 +128,10 @@ class DimRestaurant(Scd2Mixin):
     price_band = models.CharField(max_length=20, blank=True)
     area = models.CharField(max_length=100, blank=True)
     rating_band = models.CharField(max_length=20, blank=True)  # low|mid|high|top
+    # Untracked (type-1 in place) attributes — used by geo hotspot mining.
+    city = models.CharField(max_length=100, blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
 
     class Meta:
         db_table = 'dim_restaurant'
@@ -163,17 +167,19 @@ class DimMenuItem(Scd2Mixin):
 
 
 class DimPromotion(models.Model):
-    """SCD 1. No operational source table exists yet (out of scope per PRD
-    §5.2's model list) — the ETL's extract stage for this dimension is a
-    documented no-op until a Promotion/Campaign model is added upstream;
-    this table exists so fact_order can carry a (currently always-null)
-    promotion_key without a later migration.
+    """SCD 1, sourced from zesty.Promotion. `campaign_name` is the promo
+    code — the value orders carry in `promo_code`, so it's the natural key
+    fact_order joins on.
     """
     promotion_key = models.BigAutoField(primary_key=True)
     campaign_name = models.CharField(max_length=255, unique=True)
     promo_type = models.CharField(max_length=50, blank=True)
     discount_pct = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     channel = models.CharField(max_length=50, blank=True)
+    promotion_id = models.BigIntegerField(null=True, blank=True)  # zesty.Promotion.id
+    restaurant_id = models.BigIntegerField(null=True, blank=True)  # null = platform-wide code
+    valid_from = models.DateTimeField(null=True, blank=True)
+    valid_until = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'dim_promotion'
@@ -191,6 +197,10 @@ class DimEvent(Scd2Mixin):
     genre = models.CharField(max_length=50, blank=True)
     organiser = models.CharField(max_length=255, blank=True)
     language = models.CharField(max_length=50, default='en')
+    # Untracked (type-1 in place) attributes.
+    organizer_id = models.BigIntegerField(null=True, blank=True)  # core.User.id
+    event_date = models.DateTimeField(null=True, blank=True)
+    total_seats = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'dim_event'
@@ -211,6 +221,8 @@ class DimVenue(models.Model):
     capacity_band = models.CharField(max_length=20, blank=True)  # small|medium|large
     zone = models.CharField(max_length=50, blank=True)
     city = models.CharField(max_length=100, blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
 
     class Meta:
         db_table = 'dim_venue'
@@ -223,6 +235,7 @@ class DimTicketType(Scd2Mixin):
     tier = models.CharField(max_length=50, blank=True)
     base_price = models.DecimalField(max_digits=10, decimal_places=2)
     is_refundable = models.BooleanField(default=True)
+    capacity = models.IntegerField(default=0)  # untracked: seats on sale in this tier
 
     class Meta:
         db_table = 'dim_ticket_type'
