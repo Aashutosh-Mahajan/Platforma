@@ -89,11 +89,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # ====================
 # DATABASE
 # ====================
-def _build_postgres_database_config():
-    database_url = config('DATABASE_URL', default='').strip()
+def _build_postgres_database_config(env_var='DATABASE_URL', required=True):
+    database_url = config(env_var, default='').strip()
     if not database_url:
+        if not required:
+            return None
         raise ImproperlyConfigured(
-            'DATABASE_URL is required. SQLite is disabled for this project.'
+            f'{env_var} is required. SQLite is disabled for this project.'
         )
 
     parsed = urlparse(database_url)
@@ -102,15 +104,15 @@ def _build_postgres_database_config():
     if parsed.scheme not in allowed_schemes:
         if parsed.scheme.startswith('sqlite'):
             raise ImproperlyConfigured(
-                'SQLite is disabled. Set DATABASE_URL to a PostgreSQL URL.'
+                f'SQLite is disabled. Set {env_var} to a PostgreSQL URL.'
             )
         raise ImproperlyConfigured(
-            'Unsupported DATABASE_URL scheme. Use a PostgreSQL URL.'
+            f'Unsupported {env_var} scheme. Use a PostgreSQL URL.'
         )
 
     db_name = parsed.path.lstrip('/')
     if not db_name:
-        raise ImproperlyConfigured('DATABASE_URL must include a database name.')
+        raise ImproperlyConfigured(f'{env_var} must include a database name.')
 
     db_config = {
         'ENGINE': 'django.db.backends.postgresql',
@@ -120,7 +122,17 @@ def _build_postgres_database_config():
         'HOST': parsed.hostname or '',
         'PORT': str(parsed.port) if parsed.port else '',
         'CONN_MAX_AGE': 600,
+        # Serverless hosts (Neon) suspend idle compute and drop connections;
+        # check a persistent connection before reusing it.
+        'CONN_HEALTH_CHECKS': True,
     }
+
+    # Neon's pooled endpoint ('-pooler' host) runs PgBouncer in transaction
+    # mode, which can't reliably hold the server-side cursors .iterator()
+    # opens. Applied to the warehouse connection only: the main database's
+    # behaviour is left exactly as it was (its ETL extract relies on them).
+    if env_var != 'DATABASE_URL' and '-pooler' in (parsed.hostname or ''):
+        db_config['DISABLE_SERVER_SIDE_CURSORS'] = True
 
     options = dict(parse_qsl(parsed.query, keep_blank_values=False))
     if options:
@@ -132,6 +144,16 @@ def _build_postgres_database_config():
 DATABASES = {
     'default': _build_postgres_database_config(),
 }
+
+# Data warehouse + mining live in their own database so nightly ETL, OLAP
+# queries and model training never compete with the transactional app.
+# Without WAREHOUSE_DATABASE_URL both apps fall back to 'default' (single-DB
+# mode). See config/db_routers.py.
+_warehouse_database = _build_postgres_database_config('WAREHOUSE_DATABASE_URL', required=False)
+if _warehouse_database:
+    DATABASES['warehouse'] = _warehouse_database
+
+DATABASE_ROUTERS = ['config.db_routers.WarehouseRouter']
 
 # ====================
 # AUTH
