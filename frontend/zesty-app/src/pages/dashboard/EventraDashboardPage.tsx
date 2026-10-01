@@ -9,6 +9,7 @@ import { customerNav } from '../../components/dashboard/roleNav';
 import { bucketByDay, formatDate, formatINR, formatInt, themes, toNumber } from '../../components/dashboard/theme';
 import type { Booking } from '../../types';
 import { seatCode } from '../../utils';
+import PicksForYou from './warehouse/PicksForYou';
 
 const W = 'eventra' as const;
 const t = themes[W];
@@ -192,6 +193,10 @@ const EventraDashboardPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <div className="mt-6">
+        <PicksForYou kind="events" />
+      </div>
     </DashboardShell>
   );
 };
