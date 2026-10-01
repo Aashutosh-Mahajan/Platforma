@@ -23,6 +23,7 @@ from datagen.generators.orders import generate_orders
 from datagen.generators.events import generate_venues, generate_events, generate_ticket_types_and_seats
 from datagen.generators.bookings import generate_bookings
 from datagen.generators.anomalies import inject_anomalies
+from datagen.generators.enrichment import enrich_all
 
 # PRD §10 full-scale (scale=1.0) target volumes.
 BASE_VOLUMES = {
@@ -67,36 +68,41 @@ class Command(BaseCommand):
         self.stdout.write(f"Target volumes: {volumes}")
 
         t0 = time.time()
-        self.stdout.write("1/6 customers...")
+        self.stdout.write("1/7 customers...")
         customers = generate_customers(volumes['customers'], start, end, np_rng, run_tag)
         self.stdout.write(f"    {len(customers)} customers ({time.time() - t0:.1f}s)")
 
         t1 = time.time()
-        self.stdout.write("2/6 restaurants + menu items...")
+        self.stdout.write("2/7 restaurants + menu items...")
         restaurants = generate_catalog(volumes['restaurants'], volumes['items_per_restaurant'], np_rng, run_tag)
         self.stdout.write(f"    {len(restaurants)} restaurants ({time.time() - t1:.1f}s)")
 
         t2 = time.time()
-        self.stdout.write("3/6 orders + order items...")
+        self.stdout.write("3/7 orders + order items...")
         n_orders = generate_orders(volumes['orders'], restaurants, customers, np_rng, start, end)
         self.stdout.write(f"    {n_orders} orders ({time.time() - t2:.1f}s)")
 
         t3 = time.time()
-        self.stdout.write("4/6 venues + events + seats...")
+        self.stdout.write("4/7 venues + events + seats...")
         venues = generate_venues(volumes['venues'], np_rng, run_tag)
         events = generate_events(volumes['events'], venues, np_rng, start, end, run_tag)
         generate_ticket_types_and_seats(events, np_rng)
         self.stdout.write(f"    {len(venues)} venues, {len(events)} events ({time.time() - t3:.1f}s)")
 
         t4 = time.time()
-        self.stdout.write("5/6 bookings + tickets...")
+        self.stdout.write("5/7 bookings + tickets...")
         n_bookings = generate_bookings(volumes['bookings'], events, customers, np_rng, run_tag)
         self.stdout.write(f"    {n_bookings} bookings ({time.time() - t4:.1f}s)")
 
         t5 = time.time()
-        self.stdout.write("6/6 anomalies...")
+        self.stdout.write("6/7 anomalies...")
         n_anomalies = inject_anomalies(run, run_tag, np_rng)
         self.stdout.write(f"    {n_anomalies} anomalies injected ({time.time() - t5:.1f}s)")
+
+        t6 = time.time()
+        self.stdout.write("7/7 lifecycles, attendance, promotions, searches...")
+        enrichment = enrich_all(seed=seed, scale=scale, log=self.stdout.write)
+        self.stdout.write(f"    {enrichment} ({time.time() - t6:.1f}s)")
 
         run.finished_at = timezone.now()
         run.summary = {
@@ -108,6 +114,7 @@ class Command(BaseCommand):
             'events': len(events),
             'bookings': n_bookings,
             'anomalies': n_anomalies,
+            'enrichment': enrichment,
             'total_seconds': round(time.time() - t0, 1),
         }
         run.save(update_fields=['finished_at', 'summary'])
