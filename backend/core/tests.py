@@ -1,9 +1,33 @@
+import re
+from types import SimpleNamespace
+
+from django.core import mail
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
 
 User = get_user_model()
+
+REGISTER_URL = '/api/v1/auth/register/'
+VERIFY_CODE_URL = '/api/v1/auth/verify-code'
+
+
+def emailed_code():
+    """The 6-digit code from the most recent email (the test mail outbox)."""
+    return re.search(r'\b(\d{6})\b', mail.outbox[-1].body).group(1)
+
+
+def register_and_verify(client, data):
+    """Register, then confirm the emailed code - the only way to get a
+    session for a new account. Returns an object shaped like the old
+    register response: `.data['tokens']` holds access/refresh.
+    """
+    response = client.post(REGISTER_URL, data, format='json')
+    assert response.status_code == status.HTTP_201_CREATED, response.data
+    verified = client.post(VERIFY_CODE_URL, {'email': data['email'], 'code': emailed_code()}, format='json')
+    assert verified.status_code == status.HTTP_200_OK, verified.data
+    return SimpleNamespace(data={'tokens': {'access': verified.data['access'], 'refresh': verified.data['refresh']}})
 
 
 class AuthenticationTests(TestCase):
@@ -28,14 +52,33 @@ class AuthenticationTests(TestCase):
         }
 
     def test_register_user_success(self):
-        """Test successful user registration."""
+        """Registration creates the account and emails a code; confirming
+        the code verifies the email and returns a session."""
         response = self.client.post(self.register_url, self.user_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn('user', response.data)
-        self.assertIn('tokens', response.data)
-        self.assertIn('access', response.data['tokens'])
-        self.assertIn('refresh', response.data['tokens'])
-        self.assertEqual(response.data['user']['email'], self.user_data['email'])
+        self.assertTrue(response.data['requires_verification'])
+        self.assertEqual(response.data['email'], self.user_data['email'])
+        self.assertNotIn('tokens', response.data)  # no session before the email is confirmed
+        self.assertEqual(len(mail.outbox), 1)
+
+        verified = self.client.post(VERIFY_CODE_URL, {'email': self.user_data['email'], 'code': emailed_code()}, format='json')
+        self.assertEqual(verified.status_code, status.HTTP_200_OK)
+        self.assertIn('access', verified.data)
+        self.assertIn('refresh', verified.data)
+        self.assertTrue(User.objects.get(email=self.user_data['email']).is_email_verified)
+
+    def test_verify_code_rejects_wrong_code(self):
+        self.client.post(self.register_url, self.user_data, format='json')
+        wrong = '000000' if emailed_code() != '000000' else '111111'
+        response = self.client.post(VERIFY_CODE_URL, {'email': self.user_data['email'], 'code': wrong}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(User.objects.get(email=self.user_data['email']).is_email_verified)
+
+    def test_login_before_verifying_is_refused(self):
+        self.client.post(self.register_url, self.user_data, format='json')
+        response = self.client.post(self.login_url, {'email': self.user_data['email'], 'password': self.user_data['password']}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data['reason'], 'email_not_verified')
 
     def test_register_user_duplicate_email(self):
         """Test registration with duplicate email fails."""
@@ -52,8 +95,8 @@ class AuthenticationTests(TestCase):
 
     def test_login_success(self):
         """Test successful login."""
-        # First register a user
-        self.client.post(self.register_url, self.user_data, format='json')
+        # First register (and verify) a user
+        register_and_verify(self.client, self.user_data)
         
         # Then login
         login_data = {
@@ -77,7 +120,7 @@ class AuthenticationTests(TestCase):
     def test_profile_retrieval_authenticated(self):
         """Test authenticated user can retrieve profile."""
         # Register and get tokens
-        register_response = self.client.post(self.register_url, self.user_data, format='json')
+        register_response = register_and_verify(self.client, self.user_data)
         access_token = register_response.data['tokens']['access']
         
         # Get profile
@@ -94,7 +137,7 @@ class AuthenticationTests(TestCase):
     def test_profile_update(self):
         """Test authenticated user can update profile."""
         # Register and get tokens
-        register_response = self.client.post(self.register_url, self.user_data, format='json')
+        register_response = register_and_verify(self.client, self.user_data)
         access_token = register_response.data['tokens']['access']
         
         # Update profile
@@ -111,7 +154,7 @@ class AuthenticationTests(TestCase):
     def test_password_change_success(self):
         """Test successful password change."""
         # Register and get tokens
-        register_response = self.client.post(self.register_url, self.user_data, format='json')
+        register_response = register_and_verify(self.client, self.user_data)
         access_token = register_response.data['tokens']['access']
         
         # Change password
@@ -136,7 +179,7 @@ class AuthenticationTests(TestCase):
     def test_password_change_wrong_old_password(self):
         """Test password change with wrong old password fails."""
         # Register and get tokens
-        register_response = self.client.post(self.register_url, self.user_data, format='json')
+        register_response = register_and_verify(self.client, self.user_data)
         access_token = register_response.data['tokens']['access']
         
         # Try to change password with wrong old password
@@ -152,7 +195,7 @@ class AuthenticationTests(TestCase):
     def test_logout_success(self):
         """Test successful logout."""
         # Register and get tokens
-        register_response = self.client.post(self.register_url, self.user_data, format='json')
+        register_response = register_and_verify(self.client, self.user_data)
         access_token = register_response.data['tokens']['access']
         refresh_token = register_response.data['tokens']['refresh']
         
@@ -181,7 +224,7 @@ class AddressManagementTests(TestCase):
             'last_name': 'User',
             'role': 'customer'
         }
-        register_response = self.client.post(self.register_url, self.user_data, format='json')
+        register_response = register_and_verify(self.client, self.user_data)
         self.access_token = register_response.data['tokens']['access']
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.access_token}')
 
@@ -241,7 +284,7 @@ class AddressManagementTests(TestCase):
             'last_name': 'User2',
             'role': 'customer'
         }
-        register_response = self.client.post(self.register_url, user2_data, format='json')
+        register_response = register_and_verify(self.client, user2_data)
         user2_token = register_response.data['tokens']['access']
 
         # Switch to second user
@@ -350,7 +393,7 @@ class AddressManagementTests(TestCase):
             'last_name': 'User2',
             'role': 'customer'
         }
-        register_response = self.client.post(self.register_url, user2_data, format='json')
+        register_response = register_and_verify(self.client, user2_data)
         user2_token = register_response.data['tokens']['access']
 
         # Try to access first user's address as second user
