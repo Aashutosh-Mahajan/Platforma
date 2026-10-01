@@ -7,6 +7,7 @@ Scoped strictly to this run's own synthetic customers (matched by the
 `run_tag` embedded in their synthetic email addresses) — never touches
 real user data.
 """
+import datetime
 import random
 import uuid
 from decimal import Decimal
@@ -27,7 +28,7 @@ def inject_anomalies(run, run_tag, np_rng):
         return 0
 
     orders = list(Order.objects.filter(user__in=synthetic_customers))
-    bookings = list(Booking.objects.filter(user__in=synthetic_customers, status='confirmed'))
+    bookings = list(Booking.objects.filter(user__in=synthetic_customers, status='confirmed').select_related('event'))
 
     labels = []
     injected = 0
@@ -73,9 +74,15 @@ def inject_anomalies(run, run_tag, np_rng):
         for _ in range(n_bursts):
             burst_customer = random.choice(synthetic_customers)
             burst_sample = random.sample(bookings, min(5, len(bookings)))
+            # All placed within minutes of each other, a day before the
+            # earliest of the events (so every booking still precedes its event).
+            earliest = min(b.event.event_date for b in burst_sample)
+            burst_start = earliest - datetime.timedelta(days=1, minutes=random.randint(0, 600))
             burst_ids = []
-            for b in burst_sample:
-                Booking.objects.filter(pk=b.pk).update(user=burst_customer)
+            for i, b in enumerate(burst_sample):
+                Booking.objects.filter(pk=b.pk).update(
+                    user=burst_customer, booking_date=burst_start + datetime.timedelta(minutes=2 * i),
+                )
                 burst_ids.append(b.id)
             labels.append(PlantedAnomaly(
                 run=run, anomaly_type='bulk_booking_burst', target_type='booking',
