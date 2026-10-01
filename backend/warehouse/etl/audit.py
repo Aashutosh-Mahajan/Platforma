@@ -12,15 +12,17 @@ def start_table_audit(run_id, table_name, window_from, window_to):
     )
 
 
-def finish_table_audit(audit, rows_read, rows_rejected, rows_loaded, status='succeeded', error_message=''):
+def finish_table_audit(audit, rows_read, rows_rejected, rows_loaded, status='succeeded', error_message='',
+                       high_water_id=None):
     audit.ended_at = timezone.now()
     audit.rows_read = rows_read
     audit.rows_rejected = rows_rejected
     audit.rows_loaded = rows_loaded
     audit.status = status
     audit.error_message = error_message
+    audit.high_water_id = high_water_id
     audit.save(update_fields=[
-        'ended_at', 'rows_read', 'rows_rejected', 'rows_loaded', 'status', 'error_message'
+        'ended_at', 'rows_read', 'rows_rejected', 'rows_loaded', 'status', 'error_message', 'high_water_id',
     ])
 
 
@@ -60,3 +62,16 @@ def latest_high_water_mark(table_name):
         .first()
     )
     return last.window_to if last else None
+
+
+def latest_high_water_id(table_name):
+    """The id watermark recorded by the most recent successful run for this
+    table, or None (meaning: extract everything).
+    """
+    last = (
+        EtlRunAudit.objects
+        .filter(table_name=table_name, status='succeeded', high_water_id__isnull=False)
+        .order_by('-window_to')
+        .first()
+    )
+    return last.high_water_id if last else None
