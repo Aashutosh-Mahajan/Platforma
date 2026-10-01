@@ -5,6 +5,7 @@ import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { addressAPI } from '../../api/addresses';
 import { orderAPI, promotionAPI } from '../../api/zesty';
+import { miningAPI, type DeliveryEstimate } from '../../api/warehouse';
 import type { Address } from '../../types';
 import { fallbackFoodImage } from '../../utils/foodImagery';
 import { BillRows, FlowCard, FlowHeader, FlowPage, VegMark, inr } from '../../components/zesty/OrderFlow';
@@ -58,6 +59,18 @@ const CheckoutPage: React.FC = () => {
   });
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState<{ code: string; discount: number } | null>(null);
+  // Delivery time predicted from this restaurant's past deliveries at this time
+  // of day for a basket this size; falls back to the listed range.
+  const [eta, setEta] = useState<DeliveryEstimate | null>(null);
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  useEffect(() => {
+    if (!restaurant || itemCount === 0) return;
+    let cancelled = false;
+    miningAPI.deliveryEstimate(restaurant.id, itemCount)
+      .then((estimate) => { if (!cancelled) setEta(estimate); })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [restaurant, itemCount]);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [applyingPromo, setApplyingPromo] = useState(false);
 
@@ -258,7 +271,7 @@ const CheckoutPage: React.FC = () => {
         image={restaurantImage}
         back={{ to: '/zesty/cart', label: 'Back to cart' }}
         title="Checkout"
-        subtitle={restaurant && <>Ordering from <span className="font-semibold text-white">{restaurant.name}</span> · {restaurant.delivery_time_min}–{restaurant.delivery_time_max} min</>}
+        subtitle={restaurant && <>Ordering from <span className="font-semibold text-white">{restaurant.name}</span> · {eta ? `${eta.low}–${eta.high}` : `${restaurant.delivery_time_min}–${restaurant.delivery_time_max}`} min{eta?.source === 'model' && ' right now'}</>}
       />
 
       <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] items-start gap-6 px-5 py-8 sm:px-8 lg:grid-cols-3">
