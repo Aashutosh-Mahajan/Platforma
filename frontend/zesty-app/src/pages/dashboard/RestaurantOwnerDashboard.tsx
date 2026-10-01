@@ -18,8 +18,10 @@ import {
   Power,
   ReceiptText,
   Search,
+  Sparkles,
   Star,
   Store,
+  Table2,
   TicketPercent,
   Trash2,
   UserRound,
@@ -59,6 +61,8 @@ import {
 } from '../../components/dashboard/theme';
 import { fallbackFoodImage, ZESTY_HERO_IMAGES } from '../../utils/foodImagery';
 import ZestyAnalyticsView from './reports/ZestyReportsView';
+import RestaurantIntelView from './warehouse/RestaurantIntelView';
+import ExplorerView from './warehouse/ExplorerView';
 
 interface RestaurantFormData {
   name: string;
@@ -97,7 +101,7 @@ export const RestaurantOwnerDashboard: React.FC = () => {
   const [analytics, setAnalytics] = useState<Analytics>({ totalOrders: 0, revenue: 0, averageRating: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'restaurants' | 'menu' | 'orders' | 'promotions' | 'earnings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'forecast' | 'explore' | 'restaurants' | 'menu' | 'orders' | 'promotions' | 'earnings'>('overview');
   const [orderFilter, setOrderFilter] = useState<'active' | 'delivered' | 'cancelled' | 'all'>('active');
   const [menuQuery, setMenuQuery] = useState('');
 
@@ -521,6 +525,8 @@ export const RestaurantOwnerDashboard: React.FC = () => {
       items: [
         { key: 'overview', label: 'Overview', icon: LayoutDashboard, onClick: () => setActiveTab('overview'), disabled: needsKitchen },
         { key: 'analytics', label: 'Analytics', icon: ChartNoAxesCombined, onClick: () => setActiveTab('analytics'), disabled: needsKitchen },
+        { key: 'forecast', label: 'Forecasts', icon: Sparkles, onClick: () => setActiveTab('forecast'), disabled: needsKitchen },
+        { key: 'explore', label: 'Explore data', icon: Table2, onClick: () => setActiveTab('explore'), disabled: needsKitchen },
         { key: 'orders', label: 'Orders', icon: ReceiptText, onClick: () => setActiveTab('orders'), disabled: needsKitchen, badge: liveOrders.length || undefined },
         { key: 'menu', label: 'Menu', icon: UtensilsCrossed, onClick: () => setActiveTab('menu'), disabled: needsKitchen },
         { key: 'promotions', label: 'Promotions', icon: TicketPercent, onClick: () => setActiveTab('promotions'), disabled: needsKitchen },
@@ -646,7 +652,7 @@ export const RestaurantOwnerDashboard: React.FC = () => {
         )
       }
       ledger={
-        activeTab === 'analytics' ? undefined : <KpiLedger
+        ['analytics', 'forecast', 'explore'].includes(activeTab) ? undefined : <KpiLedger
           world={W}
           loading={loading}
           items={[
@@ -773,6 +779,14 @@ export const RestaurantOwnerDashboard: React.FC = () => {
       {/* Analytics */}
       {!loading && activeTab === 'analytics' && selectedRestaurant && (
         <ZestyAnalyticsView mode="restaurant" restaurantId={selectedRestaurant.id} restaurantName={selectedRestaurant.name} />
+      )}
+
+      {!loading && activeTab === 'forecast' && selectedRestaurant && (
+        <RestaurantIntelView restaurantId={selectedRestaurant.id} restaurantName={selectedRestaurant.name} />
+      )}
+
+      {!loading && activeTab === 'explore' && (
+        <ExplorerView world={W} intro="Slice your own sales by day, dish and area. Add a second dimension for a pivot table." />
       )}
 
       {/* Restaurants */}
