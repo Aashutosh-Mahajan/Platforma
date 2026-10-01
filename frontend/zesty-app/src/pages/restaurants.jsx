@@ -8,8 +8,10 @@ import {
 import FilterBar from "../components/FilterBar";
 import RestaurantGrid from "../components/RestaurantGrid";
 import { ZESTY_HERO_IMAGES } from "../utils/foodImagery";
+import { API_BASE_URL as API_ROOT } from "../api/client";
 
-const API_BASE_URL = "http://localhost:8000/api/v1/zesty";
+// Same API root as every other page (VITE_API_BASE_URL), not a hardcoded host.
+const API_BASE_URL = `${API_ROOT}/zesty`;
 const LOCATION_STORAGE_KEY = "platforma_last_location";
 const HERO_SECTIONS = [
   {

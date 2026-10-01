@@ -12,7 +12,8 @@ const resolveApiBaseUrl = (rawBaseUrl?: string): string => {
   return normalizedBase;
 };
 
-const API_BASE_URL = resolveApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
+/** Resolved API root (VITE_API_BASE_URL, default http://localhost:8000/api/v1). */
+export const API_BASE_URL = resolveApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
 const DEFAULT_TIMEOUT = 30000; // 30 seconds
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1000; // 1 second
