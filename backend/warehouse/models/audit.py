@@ -13,6 +13,10 @@ class EtlRunAudit(models.Model):
     ended_at = models.DateTimeField(null=True, blank=True)
     window_from = models.DateTimeField(null=True, blank=True)
     window_to = models.DateTimeField(null=True, blank=True)
+    # Id watermark for sources that change without touching the timestamp
+    # the main extract filters on (status-history tables, search log): the
+    # highest source id this load has seen.
+    high_water_id = models.BigIntegerField(null=True, blank=True)
     rows_read = models.IntegerField(default=0)
     rows_rejected = models.IntegerField(default=0)
     rows_loaded = models.IntegerField(default=0)
