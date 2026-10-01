@@ -30,6 +30,7 @@ class EventraDynamicSyncTests(APITestCase):
             first_name='Customer',
             last_name='User',
             role='customer',
+            is_email_verified=True,
         )
         self.customer_two = User.objects.create_user(
             email='customer2@test.com',
@@ -38,6 +39,7 @@ class EventraDynamicSyncTests(APITestCase):
             first_name='Customer',
             last_name='Two',
             role='customer',
+            is_email_verified=True,
         )
 
     def test_new_organizer_event_is_visible_to_customer(self):
@@ -61,6 +63,17 @@ class EventraDynamicSyncTests(APITestCase):
 
         created_event_id = create_response.data['id']
 
+        # Not public until an admin approves it.
+        self.client.force_authenticate(self.customer)
+        before = self.client.get('/api/v1/eventra/events/')
+        self.assertNotIn(created_event_id, [event['id'] for event in before.data['results']])
+
+        admin = User.objects.create_user(email='admin@test.com', username='admin', password='AdminPass123!',
+                                         role='admin', is_staff=True)
+        self.client.force_authenticate(admin)
+        approve = self.client.patch(f'/api/v1/admin/events/{created_event_id}/approve', {'is_approved': True}, format='json')
+        self.assertEqual(approve.status_code, status.HTTP_200_OK)
+
         self.client.force_authenticate(self.customer)
         list_response = self.client.get('/api/v1/eventra/events/')
         self.assertEqual(list_response.status_code, status.HTTP_200_OK)
@@ -81,6 +94,7 @@ class EventraDynamicSyncTests(APITestCase):
             event_date=event_date,
             event_end_date=event_date + timedelta(hours=2),
             is_published=True,
+            is_approved=True,
             is_cancelled=False,
             total_seats=5,
             available_seats=5,
@@ -158,6 +172,7 @@ class EventraDynamicSyncTests(APITestCase):
             event_date=event_date,
             event_end_date=event_date + timedelta(hours=2),
             is_published=True,
+            is_approved=True,
             is_cancelled=False,
         )
 
@@ -195,6 +210,7 @@ class EventraDynamicSyncTests(APITestCase):
             event_date=now,
             event_end_date=now + timedelta(hours=2),
             is_published=True,
+            is_approved=True,
             is_cancelled=False,
         )
         own_draft = Event.objects.create(
@@ -219,6 +235,7 @@ class EventraDynamicSyncTests(APITestCase):
             event_date=now + timedelta(days=2),
             event_end_date=now + timedelta(days=2, hours=2),
             is_published=True,
+            is_approved=True,
             is_cancelled=False,
         )
 
