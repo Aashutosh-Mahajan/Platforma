@@ -6,9 +6,11 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
 from decimal import Decimal
+import uuid
 
 from zesty.models import Restaurant, MenuItem, Order, OrderItem, DeliveryTracking, Review
 from zesty.serializers import RestaurantListSerializer, RestaurantDetailSerializer
+from datagen.generators.common import payment_object_id
 
 User = get_user_model()
 
@@ -24,6 +26,7 @@ class RestaurantSerializerTests(TestCase):
             role='restaurant_owner'
         )
         self.restaurant = Restaurant.objects.create(
+            is_verified=True,
             owner=self.user,
             name='Test Restaurant',
             description='A test restaurant',
@@ -91,7 +94,8 @@ class RestaurantViewSetTests(TestCase):
             email='customer@test.com',
             username='customer',
             password='testpass123',
-            role='customer'
+            role='customer',
+            is_email_verified=True
         )
         self.owner = User.objects.create_user(
             email='owner@test.com',
@@ -102,6 +106,7 @@ class RestaurantViewSetTests(TestCase):
         
         # Create test restaurants
         self.restaurant1 = Restaurant.objects.create(
+            is_verified=True,
             owner=self.owner,
             name='Pizza Palace',
             description='Best pizza in town',
@@ -115,6 +120,7 @@ class RestaurantViewSetTests(TestCase):
             is_active=True
         )
         self.restaurant2 = Restaurant.objects.create(
+            is_verified=True,
             owner=self.owner,
             name='Burger House',
             description='Delicious burgers',
@@ -128,6 +134,7 @@ class RestaurantViewSetTests(TestCase):
             is_active=True
         )
         self.restaurant3 = Restaurant.objects.create(
+            is_verified=True,
             owner=self.owner,
             name='Sushi Bar',
             description='Fresh sushi',
@@ -150,10 +157,17 @@ class RestaurantViewSetTests(TestCase):
             is_available=True
         )
 
-    def test_list_restaurants_requires_authentication(self):
-        """Test that listing restaurants requires authentication."""
+    def test_guests_can_browse_only_verified_restaurants(self):
+        """The catalog is public, but an unverified listing stays hidden."""
+        Restaurant.objects.create(
+            owner=self.owner, name='Not Yet Approved', cuisine_types='Thai', address='9 Hidden St',
+            is_active=True, is_verified=False,
+        )
         response = self.client.get('/api/v1/zesty/restaurants/')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        names = [r['name'] for r in response.data['results']]
+        self.assertNotIn('Not Yet Approved', names)
+        self.assertIn('Pizza Palace', names)
 
     def test_list_restaurants_authenticated(self):
         """Test listing restaurants when authenticated."""
@@ -249,6 +263,7 @@ class RestaurantViewSetTests(TestCase):
         # Create more restaurants to test pagination
         for i in range(25):
             Restaurant.objects.create(
+                is_verified=True,
                 owner=self.owner,
                 name=f'Restaurant {i}',
                 cuisine_types='Test',
@@ -282,6 +297,7 @@ class RestaurantViewSetTests(TestCase):
         # Create more restaurants
         for i in range(5):
             Restaurant.objects.create(
+                is_verified=True,
                 owner=self.owner,
                 name=f'Restaurant {i}',
                 cuisine_types='Test',
@@ -299,6 +315,7 @@ class RestaurantViewSetTests(TestCase):
         """Test that only active restaurants are returned."""
         # Create inactive restaurant
         Restaurant.objects.create(
+            is_verified=True,
             owner=self.owner,
             name='Inactive Restaurant',
             cuisine_types='Test',
@@ -321,6 +338,7 @@ class RestaurantViewSetTests(TestCase):
         """Test combining search and ordering filters."""
         # Create another Italian restaurant
         Restaurant.objects.create(
+            is_verified=True,
             owner=self.owner,
             name='Italian Bistro',
             cuisine_types='Italian',
@@ -348,7 +366,8 @@ class RestaurantMenuEndpointTests(TestCase):
             email='customer@test.com',
             username='customer',
             password='testpass123',
-            role='customer'
+            role='customer',
+            is_email_verified=True
         )
         self.owner = User.objects.create_user(
             email='owner@test.com',
@@ -358,6 +377,7 @@ class RestaurantMenuEndpointTests(TestCase):
         )
         
         self.restaurant = Restaurant.objects.create(
+            is_verified=True,
             owner=self.owner,
             name='Test Restaurant',
             cuisine_types='Italian',
@@ -432,7 +452,8 @@ class OrderCreationTests(TestCase):
             email='customer@test.com',
             username='customer',
             password='testpass123',
-            role='customer'
+            role='customer',
+            is_email_verified=True
         )
         self.owner = User.objects.create_user(
             email='owner@test.com',
@@ -442,6 +463,7 @@ class OrderCreationTests(TestCase):
         )
         
         self.restaurant = Restaurant.objects.create(
+            is_verified=True,
             owner=self.owner,
             name='Test Restaurant',
             cuisine_types='Italian',
@@ -497,7 +519,7 @@ class OrderCreationTests(TestCase):
         response = self.client.post('/api/v1/zesty/orders/', order_data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['status'], 'confirmed')
+        self.assertEqual(response.data['status'], 'pending')  # until the restaurant confirms
         self.assertEqual(len(response.data['items']), 2)
         self.assertEqual(response.data['special_instructions'], 'Extra cheese')
 
@@ -545,7 +567,7 @@ class OrderCreationTests(TestCase):
         
         # Verify payment was created
         from core.models import Payment
-        payment = Payment.objects.get(object_id=response.data['id'], content_type='order')
+        payment = Payment.objects.get(object_id=payment_object_id(uuid.UUID(response.data['id'])), content_type='order')
         self.assertEqual(payment.status, 'completed')
         self.assertEqual(payment.method, 'credit_card')
 
@@ -568,9 +590,9 @@ class OrderCreationTests(TestCase):
         
         # Verify notification was created
         from core.models import Notification
-        notification = Notification.objects.get(related_id=response.data['id'], related_type='order')
+        notification = Notification.objects.get(user=self.user, related_type='order')
         self.assertEqual(notification.type, 'order_status')
-        self.assertEqual(notification.title, 'Order Confirmed')
+        self.assertEqual(notification.title, 'Order Placed')
 
     def test_order_creates_delivery_tracking(self):
         """Test that order creation creates delivery tracking."""
@@ -592,7 +614,7 @@ class OrderCreationTests(TestCase):
         # Verify delivery tracking was created
         order = Order.objects.get(id=response.data['id'])
         self.assertTrue(hasattr(order, 'tracking'))
-        self.assertIsNotNone(order.tracking.eta)
+        self.assertEqual(order.tracking.status_timeline[0]['status'], 'pending')
 
     def test_cash_on_delivery_order_status_pending(self):
         """Test that COD orders start with pending status."""
@@ -654,7 +676,8 @@ class OrderListingTests(TestCase):
             email='customer@test.com',
             username='customer',
             password='testpass123',
-            role='customer'
+            role='customer',
+            is_email_verified=True
         )
         self.owner = User.objects.create_user(
             email='owner@test.com',
@@ -664,6 +687,7 @@ class OrderListingTests(TestCase):
         )
         
         self.restaurant = Restaurant.objects.create(
+            is_verified=True,
             owner=self.owner,
             name='Test Restaurant',
             cuisine_types='Italian',
@@ -735,7 +759,7 @@ class OrderListingTests(TestCase):
         response = self.client.get(f'/api/v1/zesty/orders/{self.order1.id}/')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['id'], self.order1.id)
+        self.assertEqual(response.data['id'], str(self.order1.id))
         self.assertEqual(len(response.data['items']), 1)
 
 
@@ -748,7 +772,8 @@ class OrderCancellationTests(TestCase):
             email='customer@test.com',
             username='customer',
             password='testpass123',
-            role='customer'
+            role='customer',
+            is_email_verified=True
         )
         self.owner = User.objects.create_user(
             email='owner@test.com',
@@ -758,6 +783,7 @@ class OrderCancellationTests(TestCase):
         )
         
         self.restaurant = Restaurant.objects.create(
+            is_verified=True,
             owner=self.owner,
             name='Test Restaurant',
             cuisine_types='Italian',
@@ -794,14 +820,24 @@ class OrderCancellationTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['status'], 'cancelled')
 
-    def test_cancel_confirmed_order(self):
-        """Test cancelling a confirmed order."""
+    def test_cannot_cancel_confirmed_order(self):
+        """Once the restaurant has confirmed, the customer can no longer cancel."""
+        order = Order.objects.create(user=self.user, restaurant=self.restaurant, status='confirmed')
+        self.client.force_authenticate(user=self.user)
+        response = self.client.patch(f'/api/v1/zesty/orders/{order.id}/cancel/')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        order.refresh_from_db()
+        self.assertEqual(order.status, 'confirmed')
+
+    def test_cancel_paid_pending_order_refunds_payment(self):
+        """Cancelling a paid order before confirmation refunds the payment."""
         from core.models import Payment
-        
+
         order = Order.objects.create(
             user=self.user,
             restaurant=self.restaurant,
-            status='confirmed'
+            status='pending',
+            payment_status='completed',
         )
         OrderItem.objects.create(
             order=order,
@@ -818,10 +854,10 @@ class OrderCancellationTests(TestCase):
             method='credit_card',
             status='completed',
             content_type='order',
-            object_id=order.id
+            # Payments reference orders by a 32-bit hash of the UUID (see
+            # OrderViewSet._payment_object_id), never the UUID itself.
+            object_id=payment_object_id(order.id)
         )
-        order.payment = payment
-        order.save()
         
         self.client.force_authenticate(user=self.user)
         response = self.client.patch(f'/api/v1/zesty/orders/{order.id}/cancel/')
@@ -875,8 +911,8 @@ class OrderCancellationTests(TestCase):
         
         # Verify notification was created
         from core.models import Notification
-        notification = Notification.objects.get(related_id=order.id, related_type='order')
-        self.assertEqual(notification.title, 'Order Cancelled')
+        notification = Notification.objects.get(user=self.user, related_type='order', title='Order Cancelled')
+        self.assertEqual(notification.type, 'order_status')
 
 
 class OrderTrackingTests(TestCase):
@@ -888,7 +924,8 @@ class OrderTrackingTests(TestCase):
             email='customer@test.com',
             username='customer',
             password='testpass123',
-            role='customer'
+            role='customer',
+            is_email_verified=True
         )
         self.owner = User.objects.create_user(
             email='owner@test.com',
@@ -898,6 +935,7 @@ class OrderTrackingTests(TestCase):
         )
         
         self.restaurant = Restaurant.objects.create(
+            is_verified=True,
             owner=self.owner,
             name='Test Restaurant',
             cuisine_types='Italian',
@@ -976,7 +1014,8 @@ class RestaurantReviewTests(TestCase):
             email='customer@test.com',
             username='customer',
             password='testpass123',
-            role='customer'
+            role='customer',
+            is_email_verified=True
         )
         self.owner = User.objects.create_user(
             email='owner@test.com',
@@ -986,6 +1025,7 @@ class RestaurantReviewTests(TestCase):
         )
         
         self.restaurant = Restaurant.objects.create(
+            is_verified=True,
             owner=self.owner,
             name='Test Restaurant',
             cuisine_types='Italian',
@@ -1117,7 +1157,8 @@ class RestaurantReviewTests(TestCase):
             email='customer2@test.com',
             username='customer2',
             password='testpass123',
-            role='customer'
+            role='customer',
+            is_email_verified=True
         )
         
         order1 = Order.objects.create(
