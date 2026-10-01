@@ -3,8 +3,12 @@ from .dimensions import (
     DimRestaurant, DimMenuItem, DimPromotion,
     DimEvent, DimVenue, DimTicketType,
 )
-from .facts import FactOrder, FactOrderItem, FactBooking, FactTicketSale
+from .facts import (
+    FactOrder, FactOrderItem, FactBooking, FactTicketSale,
+    FactOrderLifecycle, FactSeatInventorySnapshot, FactSearch, FactPayout,
+)
 from .audit import EtlRunAudit, EtlQuarantine
+from .quality import DataQualityCheck
 from .cuboids import (
     CbDailyOutletRevenue, CbDailyItemPerformance, CbMonthlyCustomerActivity,
     CbDailyEventSales, CbHourlyDemandProfile,
@@ -15,7 +19,8 @@ __all__ = [
     'DimRestaurant', 'DimMenuItem', 'DimPromotion',
     'DimEvent', 'DimVenue', 'DimTicketType',
     'FactOrder', 'FactOrderItem', 'FactBooking', 'FactTicketSale',
-    'EtlRunAudit', 'EtlQuarantine',
+    'FactOrderLifecycle', 'FactSeatInventorySnapshot', 'FactSearch', 'FactPayout',
+    'EtlRunAudit', 'EtlQuarantine', 'DataQualityCheck',
     'CbDailyOutletRevenue', 'CbDailyItemPerformance', 'CbMonthlyCustomerActivity',
     'CbDailyEventSales', 'CbHourlyDemandProfile',
 ]
