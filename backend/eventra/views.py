@@ -59,6 +59,10 @@ class EventViewSet(viewsets.ModelViewSet):
         return [IsAuthenticated()]
 
     def get_queryset(self):
+        # Lists render each event's venue; join it rather than fetching one per row.
+        return self._scoped_queryset().select_related('venue')
+
+    def _scoped_queryset(self):
         user = self.request.user
 
         # Organizers can opt into organizer-scoped browsing for dashboards.
@@ -424,7 +428,7 @@ class BookingViewSet(viewsets.ModelViewSet):
 
         qs = qs.select_related(
             'event', 'payment'
-        ).prefetch_related('booked_seats__seat', 'status_history')
+        ).prefetch_related('booked_seats__seat__ticket_type', 'status_history')
 
         booking_status = self.request.query_params.get('status')
         if booking_status:
