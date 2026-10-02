@@ -194,6 +194,8 @@ export interface Booking {
   booking_reference: string;
   event: number;
   event_name: string;
+  /** When the show starts (absent on older API responses). */
+  event_date?: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   total_tickets: number;
   subtotal: number;

@@ -128,15 +128,16 @@ class BookingStatusHistorySerializer(serializers.ModelSerializer):
 
 class BookingSerializer(serializers.ModelSerializer):
     event_name = serializers.CharField(source='event.name', read_only=True)
+    event_date = serializers.DateTimeField(source='event.event_date', read_only=True)
     booked_seats = BookingSeatSerializer(many=True, read_only=True)
     status_history = BookingStatusHistorySerializer(many=True, read_only=True)
 
     class Meta:
         model = Booking
-        fields = ['id', 'booking_reference', 'event', 'event_name', 'status',
+        fields = ['id', 'booking_reference', 'event', 'event_name', 'event_date', 'status',
                   'total_tickets', 'subtotal', 'tax', 'total', 'status_history',
                   'booked_seats', 'booking_date', 'confirmation_sent']
-        read_only_fields = ['id', 'booking_reference', 'subtotal', 'tax', 'total',
+        read_only_fields = ['id', 'booking_reference', 'event_date', 'subtotal', 'tax', 'total',
                             'status_history', 'booking_date', 'confirmation_sent']
 
 

@@ -211,10 +211,24 @@ export const eventAPI = {
 };
 
 export const bookingAPI = {
-  list: async (status?: string): Promise<PaginatedResponse<Booking>> => {
-    const params = status ? { status } : {};
+  list: async (
+    status?: string,
+    filters: { event?: number; limit?: number; page?: number } = {}
+  ): Promise<PaginatedResponse<Booking>> => {
+    const params = { ...(status ? { status } : {}), ...filters };
     const response = await apiClient.get('/eventra/bookings/', { params });
     return normalizePaginated(response.data, normalizeBooking);
+  },
+
+  /** Every booking for one event, page by page (an event's bookings are bounded by its seats). */
+  listForEvent: async (eventId: number, maxPages = 20): Promise<Booking[]> => {
+    const all: Booking[] = [];
+    for (let page = 1; page <= maxPages; page += 1) {
+      const data = await bookingAPI.list(undefined, { event: eventId, limit: 100, page });
+      all.push(...data.results);
+      if (!data.next) break;
+    }
+    return all;
   },
 
   create: async (data: BookingCreateData): Promise<Booking> => {

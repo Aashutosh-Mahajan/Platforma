@@ -429,6 +429,9 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking_status = self.request.query_params.get('status')
         if booking_status:
             qs = qs.filter(status=booking_status)
+        event_id = self.request.query_params.get('event')
+        if event_id and event_id.isdigit():
+            qs = qs.filter(event_id=int(event_id))
         return qs
 
     @transaction.atomic
