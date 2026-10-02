@@ -104,6 +104,8 @@ export const EventOrganizerDashboard: React.FC = () => {
   const [ticketTypes, setTicketTypes] = useState<TicketType[]>([]);
   const [seats, setSeats] = useState<Seat[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  // The id of the event whose bookings are in `bookings` (null while they load).
+  const [bookingsFor, setBookingsFor] = useState<number | null>(null);
   const [analytics, setAnalytics] = useState<Analytics>({ totalBookings: 0, revenue: 0, availableSeats: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -223,6 +225,7 @@ export const EventOrganizerDashboard: React.FC = () => {
     try {
       const eventBookings = await bookingAPI.listForEvent(selectedEvent.id);
       setBookings(eventBookings.filter((booking) => booking.event === selectedEvent.id));
+      setBookingsFor(selectedEvent.id);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load bookings');
     }
@@ -648,7 +651,7 @@ export const EventOrganizerDashboard: React.FC = () => {
       ledger={
         ['analytics', 'forecast', 'explore'].includes(activeTab) ? undefined : <KpiLedger
           world={W}
-          loading={loading}
+          loading={loading || (selectedEvent !== null && bookingsFor !== selectedEvent.id)}
           items={[
             { label: 'Box office', icon: IndianRupee, value: formatINR(analytics.revenue), hint: `${formatINR(seriesTotal)} in the charted fortnight` },
             { label: 'Bookings', icon: ClipboardList, value: formatInt(analytics.totalBookings), hint: `${formatInt(ticketsSold)} tickets issued` },
@@ -725,7 +728,9 @@ export const EventOrganizerDashboard: React.FC = () => {
               description="Refreshes every 15 seconds"
               action={<button type="button" onClick={() => setActiveTab('bookings')} className={t.btnGhost}>All bookings <ArrowRight className="h-4 w-4" aria-hidden="true" /></button>}
             >
-              {recentBookings.length === 0 ? (
+              {bookingsFor !== selectedEvent?.id ? (
+                <SkeletonRows world={W} rows={4} />
+              ) : recentBookings.length === 0 ? (
                 <EmptyState world={W} compact icon={ClipboardList} title="No bookings yet" body="Publish the event and add seats so fans can start booking." />
               ) : (
                 <ul className={`divide-y ${t.divide}`}>
@@ -984,7 +989,9 @@ export const EventOrganizerDashboard: React.FC = () => {
         <div>
           <SectionHeading world={W} title="Bookings" description={`${bookings.length} bookings for ${selectedEvent.name} · refreshes every 15 seconds`} />
           <Panel world={W} flush>
-            {recentBookings.length === 0 ? (
+            {bookingsFor !== selectedEvent.id ? (
+              <SkeletonRows world={W} rows={5} />
+            ) : recentBookings.length === 0 ? (
               <EmptyState world={W} icon={ClipboardList} title="No bookings yet" body="When fans book, each reservation shows here with its seats and total." />
             ) : (
               <ul className={`divide-y ${t.divide}`}>
