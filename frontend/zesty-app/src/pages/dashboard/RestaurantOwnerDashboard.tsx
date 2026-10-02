@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts';
 import { restaurantAPI, menuItemAPI, orderAPI, promotionAPI } from '../../api/zesty';
-import type { Promotion, PromotionCreateData, EarningsSummary } from '../../api/zesty';
+import type { Promotion, PromotionCreateData, EarningsSummary, RestaurantSummary } from '../../api/zesty';
 import type { Restaurant, MenuItem, Order } from '../../types';
 import { DashboardShell, type DashNavGroup } from '../../components/dashboard/DashboardShell';
 import {
@@ -49,7 +49,6 @@ import {
   StatusPill,
 } from '../../components/dashboard/primitives';
 import {
-  bucketByDay,
   formatDate,
   formatINR,
   formatInt,
@@ -63,6 +62,10 @@ import { fallbackFoodImage, ZESTY_HERO_IMAGES } from '../../utils/foodImagery';
 import ZestyAnalyticsView from './reports/ZestyReportsView';
 import RestaurantIntelView from './warehouse/RestaurantIntelView';
 import ExplorerView from './warehouse/ExplorerView';
+import { formatCuisines } from '../../utils/cuisine';
+
+// How many of the kitchen's latest orders the queue and orders table load.
+const RECENT_ORDERS = 100;
 
 interface RestaurantFormData {
   name: string;
@@ -98,11 +101,13 @@ export const RestaurantOwnerDashboard: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [earnings, setEarnings] = useState<EarningsSummary | null>(null);
+  const [summary, setSummary] = useState<RestaurantSummary | null>(null);
   const [analytics, setAnalytics] = useState<Analytics>({ totalOrders: 0, revenue: 0, averageRating: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'forecast' | 'explore' | 'restaurants' | 'menu' | 'orders' | 'promotions' | 'earnings'>('overview');
   const [orderFilter, setOrderFilter] = useState<'active' | 'delivered' | 'cancelled' | 'all'>('active');
+  const [orderFilterChosen, setOrderFilterChosen] = useState(false);
   const [menuQuery, setMenuQuery] = useState('');
 
   // Modal states
@@ -149,6 +154,7 @@ export const RestaurantOwnerDashboard: React.FC = () => {
 
   useEffect(() => {
     if (selectedRestaurant) {
+      setSummary(null);
       loadMenuItems();
       loadOrders();
       loadPromotions();
@@ -158,7 +164,7 @@ export const RestaurantOwnerDashboard: React.FC = () => {
 
   useEffect(() => {
     calculateAnalytics();
-  }, [orders, selectedRestaurant?.id]);
+  }, [summary, selectedRestaurant?.id]);
 
   useEffect(() => {
     if (!selectedRestaurant) return;
@@ -200,13 +206,13 @@ export const RestaurantOwnerDashboard: React.FC = () => {
   const loadOrders = async () => {
     if (!selectedRestaurant) return;
 
+    // The totals, chart and rankings come from the summary, which the server
+    // aggregates over every order; it renders as soon as it arrives.
+    restaurantAPI.getSummary(selectedRestaurant.id).then(setSummary, () => undefined);
     try {
-      const data = await orderAPI.list();
-      // Filter orders for selected restaurant
-      const restaurantOrders = data.results.filter(
-        (order) => order.restaurant === selectedRestaurant.id
-      );
-      setOrders(restaurantOrders);
+      // The kitchen's most recent orders feed the live queue and the orders table.
+      const data = await orderAPI.list(undefined, { restaurant: selectedRestaurant.id, limit: RECENT_ORDERS });
+      setOrders(data.results.filter((order) => order.restaurant === selectedRestaurant.id));
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load orders');
     }
@@ -286,12 +292,8 @@ export const RestaurantOwnerDashboard: React.FC = () => {
   const calculateAnalytics = () => {
     if (!selectedRestaurant) return;
 
-    const restaurantOrders = orders.filter(
-      (order) => order.restaurant === selectedRestaurant.id && order.status !== 'cancelled'
-    );
-
-    const totalOrders = restaurantOrders.length;
-    const revenue = restaurantOrders.reduce((sum, order) => sum + parseFloat(order.total.toString()), 0);
+    const totalOrders = summary?.orders ?? 0;
+    const revenue = summary?.revenue ?? 0;
     const averageRating = parseFloat(selectedRestaurant.rating.toString()) || 0;
     
     setAnalytics({ totalOrders, revenue, averageRating });
@@ -469,39 +471,30 @@ export const RestaurantOwnerDashboard: React.FC = () => {
 
   const ACTIVE_STATUSES = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery'];
   const liveOrders = orders.filter((order) => ACTIVE_STATUSES.includes(order.status));
-  const statusCounts = orders.reduce<Record<string, number>>((acc, order) => {
-    acc[order.status] = (acc[order.status] ?? 0) + 1;
-    return acc;
-  }, {});
-  const revenueSeries = bucketByDay(
-    orders.filter((order) => order.status !== 'cancelled'),
-    (order) => order.created_at,
-    (order) => toNumber(order.total)
-  );
+  const statusCounts = summary?.status_counts ?? {};
+  const revenueSeries = (summary?.daily ?? []).map((day) => ({
+    label: new Date(`${day.date}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+    value: day.revenue,
+  }));
   const seriesTotal = revenueSeries.reduce((sum, point) => sum + point.value, 0);
-  const bestSellers = Object.values(
-    orders
-      .filter((order) => order.status !== 'cancelled')
-      .flatMap((order) => order.items)
-      .reduce<Record<string, { label: string; value: number; qty: number }>>((acc, item) => {
-        const name = item.menu_item?.name || 'Menu item';
-        acc[name] = acc[name] ?? { label: name, value: 0, qty: 0 };
-        acc[name].value += toNumber(item.total);
-        acc[name].qty += toNumber(item.quantity);
-        return acc;
-      }, {})
-  )
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5)
-    .map((entry) => ({ label: entry.label, value: entry.value, sub: `${formatInt(entry.qty)} sold` }));
+  const bestSellers = (summary?.best_sellers ?? []).map((entry) => ({
+    label: entry.name,
+    value: entry.revenue,
+    sub: `${formatInt(entry.quantity)} sold`,
+  }));
 
+  // Opens on the kitchen's live orders; with none in progress (and no filter
+  // picked yet) it shows the recent history instead of an empty pass.
+  const shownFilter =
+    !orderFilterChosen && orderFilter === 'active' && liveOrders.length === 0 && orders.length > 0 ? 'all' : orderFilter;
+  const totalOrders = Object.values(statusCounts).reduce((sum, n) => sum + n, 0) || orders.length;
   const filteredOrders = [...orders]
     .filter((order) =>
-      orderFilter === 'all'
+      shownFilter === 'all'
         ? true
-        : orderFilter === 'active'
+        : shownFilter === 'active'
           ? ACTIVE_STATUSES.includes(order.status)
-          : order.status === orderFilter
+          : order.status === shownFilter
     )
     .sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
 
@@ -707,7 +700,7 @@ export const RestaurantOwnerDashboard: React.FC = () => {
             >
               <AreaChart world={W} data={revenueSeries} ariaLabel="Daily revenue" format={(v) => `₹${new Intl.NumberFormat('en-IN', { notation: 'compact' }).format(v)}`} />
             </Panel>
-            <Panel world={W} title="Order mix" description={`${orders.length} orders all time`}>
+            <Panel world={W} title="Order mix" description={`${formatInt(Object.values(statusCounts).reduce((sum, n) => sum + n, 0))} orders all time`}>
               <StatusBreakdown world={W} counts={statusCounts} />
               <dl className={`mt-6 grid grid-cols-2 gap-4 border-t pt-5 text-sm ${t.hairline}`}>
                 <div>
@@ -765,7 +758,7 @@ export const RestaurantOwnerDashboard: React.FC = () => {
                 </ul>
               )}
             </Panel>
-            <Panel world={W} className="xl:col-span-2" title="Best sellers" description="By revenue across all orders">
+            <Panel world={W} className="xl:col-span-2" title="Best sellers" description={`By revenue over the last ${summary?.best_seller_days ?? 30} days`}>
               {bestSellers.length === 0 ? (
                 <EmptyState world={W} compact icon={UtensilsCrossed} title="No sales yet" body="Your top dishes will rank here after the first orders." />
               ) : (
@@ -829,7 +822,7 @@ export const RestaurantOwnerDashboard: React.FC = () => {
                   </div>
                   <div className="p-5">
                     <h3 className={`${t.display} text-lg`}>{restaurant.name}</h3>
-                    <p className={`mt-0.5 text-sm ${t.muted}`}>{restaurant.cuisine_types}</p>
+                    <p className={`mt-0.5 text-sm ${t.muted}`}>{formatCuisines(restaurant.cuisine_types, 4)}</p>
                     <p className={`mt-3 line-clamp-2 text-sm ${t.muted}`}>{restaurant.description}</p>
                     <div className={`mt-4 flex items-center gap-4 text-xs ${t.muted}`}>
                       <span className="inline-flex items-center gap-1"><Bike className="h-3.5 w-3.5" aria-hidden="true" />{formatINR(restaurant.delivery_fee, true)}</span>
@@ -970,18 +963,21 @@ export const RestaurantOwnerDashboard: React.FC = () => {
           <SectionHeading
             world={W}
             title="Orders"
-            description="Move orders through the kitchen. The list refreshes every 15 seconds."
+            description={`Move orders through the kitchen. Shows the latest ${RECENT_ORDERS} orders and refreshes every 15 seconds.`}
             action={
               <Segmented
                 world={W}
                 label="Filter orders"
-                value={orderFilter}
-                onChange={setOrderFilter}
+                value={shownFilter}
+                onChange={(value) => {
+                  setOrderFilterChosen(true);
+                  setOrderFilter(value);
+                }}
                 options={[
                   { value: 'active', label: 'Active', count: liveOrders.length },
                   { value: 'delivered', label: 'Delivered', count: statusCounts.delivered ?? 0 },
                   { value: 'cancelled', label: 'Cancelled', count: statusCounts.cancelled ?? 0 },
-                  { value: 'all', label: 'All', count: orders.length },
+                  { value: 'all', label: 'All', count: totalOrders },
                 ]}
               />
             }
@@ -991,8 +987,8 @@ export const RestaurantOwnerDashboard: React.FC = () => {
               <EmptyState
                 world={W}
                 icon={ReceiptText}
-                title={orderFilter === 'active' ? 'No orders in progress' : `No ${orderFilter === 'all' ? '' : orderFilter + ' '}orders`}
-                body={orderFilter === 'active' ? 'When a customer checks out, the order appears here with its items and notes.' : 'Try a different filter.'}
+                title={shownFilter === 'active' ? 'No orders in progress' : `No ${shownFilter === 'all' ? '' : shownFilter + ' '}orders`}
+                body={shownFilter === 'active' ? 'When a customer checks out, the order appears here with its items and notes.' : 'Try a different filter.'}
               />
             </Panel>
           ) : (
