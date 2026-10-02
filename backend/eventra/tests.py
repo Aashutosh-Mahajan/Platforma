@@ -150,6 +150,12 @@ class EventraDynamicSyncTests(APITestCase):
         organizer_booking_ids = [booking['id'] for booking in organizer_booking_response.data['results']]
         self.assertIn(booking_id, organizer_booking_ids)
 
+        # The dashboard asks for one event's bookings at a time.
+        for_event = self.client.get('/api/v1/eventra/bookings/', {'event': event.id})
+        self.assertEqual([b['id'] for b in for_event.data['results']], [booking_id])
+        other = self.client.get('/api/v1/eventra/bookings/', {'event': event.id + 1000})
+        self.assertEqual(other.data['results'], [])
+
         self.assertTrue(
             Notification.objects.filter(
                 user=self.organizer,
