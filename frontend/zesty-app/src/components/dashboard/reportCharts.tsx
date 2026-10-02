@@ -561,6 +561,9 @@ export const labelOf = (value: string) => humanize(value);
 
 const PAYMENT_NAMES: Record<string, string> = {
   card: 'Card',
+  credit_card: 'Credit card',
+  debit_card: 'Debit card',
+  cod: 'Cash on delivery',
   cash_on_delivery: 'Cash on delivery',
   upi: 'UPI',
   wallet: 'Wallet',
