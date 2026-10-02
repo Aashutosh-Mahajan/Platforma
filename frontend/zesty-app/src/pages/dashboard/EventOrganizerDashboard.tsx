@@ -179,10 +179,13 @@ export const EventOrganizerDashboard: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await eventAPI.list({ page: 1, organizer_only: true });
+      const data = await eventAPI.list({ page: 1, limit: 100, organizer_only: true, ordering: 'event_date' });
       setEvents(data.results);
       if (data.results.length > 0) {
-        setSelectedEvent(data.results[0]);
+        // Open on the next show (the one selling now), else the latest past one.
+        const now = Date.now();
+        const next = data.results.find((event) => new Date(event.event_date).getTime() >= now);
+        setSelectedEvent(next ?? data.results[data.results.length - 1]);
       }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load events');
@@ -218,12 +221,8 @@ export const EventOrganizerDashboard: React.FC = () => {
     if (!selectedEvent) return;
 
     try {
-      const data = await bookingAPI.list();
-      // Filter bookings for selected event
-      const eventBookings = data.results.filter(
-        (booking) => booking.event === selectedEvent.id
-      );
-      setBookings(eventBookings);
+      const eventBookings = await bookingAPI.listForEvent(selectedEvent.id);
+      setBookings(eventBookings.filter((booking) => booking.event === selectedEvent.id));
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load bookings');
     }
