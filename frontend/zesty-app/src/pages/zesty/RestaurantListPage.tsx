@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { restaurantAPI, type RestaurantListParams } from '../../api/zesty';
 import type { Restaurant } from '../../types';
 import { useDebounce } from '../../hooks';
+import { formatCuisines } from '../../utils/cuisine';
 
 type ApiLikeError = {
   response?: {
@@ -283,7 +284,7 @@ const RestaurantListPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6" role="list" aria-label="Restaurant listings">
               {restaurants.map((restaurant) => {
                 const imageSrc = restaurant.image_url || restaurant.image;
-                const cuisineLabel = restaurant.cuisine || restaurant.cuisine_types;
+                const cuisineLabel = formatCuisines(restaurant.cuisine_types || restaurant.cuisine);
                 const ratingValue = toFiniteNumber(restaurant.rating, 0);
                 const priceRangeValue = Number(restaurant.price_range || 1);
                 const isOpen = typeof restaurant.is_open === 'boolean'
