@@ -6,6 +6,7 @@ import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { fallbackFoodImage } from '../../utils/foodImagery';
 import type { Restaurant, MenuItem, Review } from '../../types';
+import { formatCuisines } from '../../utils/cuisine';
 
 const toNumber = (value: unknown, fallback: number): number => {
   const parsed = Number(value);
@@ -346,7 +347,7 @@ const RestaurantDetailPage: React.FC = () => {
                 {restaurant.description}
               </p>
               <p className="mt-3 text-sm font-semibold text-zesty-red">
-                {restaurant.cuisine_types}
+                {formatCuisines(restaurant.cuisine_types || restaurant.cuisine, 6)}
               </p>
             </div>
 

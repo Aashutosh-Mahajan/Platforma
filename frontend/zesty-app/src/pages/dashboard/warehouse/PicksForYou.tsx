@@ -7,6 +7,7 @@ import { useLoad } from '../../../components/dashboard/intelligenceUtils';
 import { formatDate, humanize, themes } from '../../../components/dashboard/theme';
 import { eventImage } from '../../../components/eventra/BookingFlow';
 import { fallbackFoodImage } from '../../../utils/foodImagery';
+import { formatCuisines } from '../../../utils/cuisine';
 
 /**
  * Personal picks for a customer hub: restaurants on Zesty, upcoming events
@@ -45,7 +46,7 @@ const PicksForYou: React.FC<{ kind: 'food' | 'events' }> = ({ kind }) => {
                   <p className="truncate font-semibold">{r.name}</p>
                   <p className={`mt-0.5 flex items-center gap-1 text-xs ${t.muted}`}>
                     {Number(r.rating) > 0 && <><Star className="h-3 w-3 fill-current text-amber-500" aria-hidden="true" />{Number(r.rating).toFixed(1)} · </>}
-                    <span className="truncate">{r.cuisine || r.cuisine_types}</span>
+                    <span className="truncate">{formatCuisines(r.cuisine_types || r.cuisine, 2)}</span>
                   </p>
                   <p className={`mt-1.5 line-clamp-2 text-xs ${t.faint}`}>{r.reason}</p>
                 </div>

@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Star, Clock, Leaf } from "lucide-react";
 
 import { fallbackFoodImage } from "../utils/foodImagery";
+import { formatCuisines } from "../utils/cuisine";
 
 export default function RestaurantCard({ restaurant }) {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ export default function RestaurantCard({ restaurant }) {
   const rating = Number(restaurant.rating || 0) || 4;
   const numericRating = rating.toFixed(1);
   const restaurantId = Number(restaurant.id);
-  const cuisineLabel = restaurant.cuisine_types || restaurant.cuisine || "Multi-cuisine";
+  const cuisineLabel = formatCuisines(restaurant.cuisine_types || restaurant.cuisine);
   const priceRange = Number(restaurant.price_range || 2);
   const deliveryMin = restaurant.delivery_time_min ?? 20;
   const deliveryMax = restaurant.delivery_time_max ?? 40;

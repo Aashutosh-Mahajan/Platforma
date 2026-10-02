@@ -52,6 +52,7 @@ import {
   StatusPill,
 } from '../../components/dashboard/primitives';
 import { formatDate, formatINR, formatInt, greeting, humanize, themes, toNumber } from '../../components/dashboard/theme';
+import { formatCuisines } from '../../utils/cuisine';
 
 type Tab =
   | 'approvals' | 'users' | 'audit' | 'analytics' | 'zesty_analytics' | 'eventra_analytics' | 'payouts'
@@ -374,7 +375,7 @@ const AdminDashboardPage: React.FC = () => {
                     id: r.id,
                     name: r.name,
                     who: r.owner_email,
-                    lines: [r.address, place(r.city, r.state) || 'No city or state set', r.cuisine_types ? `Cuisines: ${r.cuisine_types}` : ''],
+                    lines: [r.address, place(r.city, r.state) || 'No city or state set', r.cuisine_types ? `Cuisines: ${formatCuisines(r.cuisine_types, 6)}` : ''],
                     onApprove: () => handleVerifyRestaurant(r.id, true),
                     onReject: () => handleVerifyRestaurant(r.id, false),
                   })),
