@@ -87,7 +87,9 @@ def _segment(run, vertical, domain):
     if len(customer_ids) < 10:
         return [], {'skipped': True, 'reason': 'not enough customers with transactions'}
 
-    X_raw = np.column_stack([recency, frequency, monetary])
+    # Frequency and spend are heavy-tailed; on a log scale a handful of big
+    # spenders can't claim a cluster of their own.
+    X_raw = np.column_stack([recency, np.log1p(frequency), np.log1p(monetary)])
     X = StandardScaler().fit_transform(X_raw)
 
     best_k, silhouette, labels, model_name = _best_k(X)

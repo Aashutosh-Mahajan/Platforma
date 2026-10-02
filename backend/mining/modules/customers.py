@@ -28,7 +28,10 @@ from mining.modules import data, ml
 
 HORIZON = 90
 MIN_CUSTOMERS = 50
-NUMERIC = ['recency', 'tenure', 'n_30', 'n_90', 'n_180', 'spend_90', 'spend_180', 'spend_all', 'n_all',
+# Money enters the models on a log scale: spend is heavy-tailed, and a
+# log-spend model fed raw rupees would exponentiate big spenders into
+# absurd predictions.
+NUMERIC = ['recency', 'tenure', 'n_30', 'n_90', 'n_180', 'log_spend_90', 'log_spend_180', 'log_spend_all', 'n_all',
            'avg_gap', 'trend', 'uses_zesty', 'uses_eventra']
 
 
@@ -56,6 +59,8 @@ def features_as_of(purchases, as_of):
     f['spend_90'] = window(90, how='sum')
     f['spend_180'] = window(180, how='sum')
     f = f.fillna(0)
+    for col in ('spend_90', 'spend_180', 'spend_all'):
+        f[f'log_{col}'] = np.log1p(f[col])
     f['avg_gap'] = np.where(f['n_all'] > 1, f['tenure'] / (f['n_all'] - 1).clip(lower=1), f['tenure'] + 30)
     earlier = (f['n_180'] - f['n_90']).clip(lower=0)
     f['trend'] = (f['n_90'] + 1) / (earlier + 1)
@@ -73,7 +78,12 @@ def labels_after(purchases, as_of, horizon):
 
 
 def spend_model(fit, test, columns):
-    """Typical spend of a customer who buys. Returns (model, smearing) or (None, None)."""
+    """Typical spend of a customer who buys. Returns (model, smearing, metrics).
+
+    The model is wrapped so its log-spend predictions stay within the range
+    of spends actually seen: a linear model extrapolating for an extreme
+    customer would otherwise exponentiate into absurd amounts.
+    """
     buyers_fit, buyers_test = fit[fit['future_spend'] > 0], test[test['future_spend'] > 0]
     if len(buyers_fit) < 10 or len(buyers_test) < 3:
         return None, None, {'skipped': True, 'reason': 'too few repeat buyers to model spend'}
@@ -82,8 +92,20 @@ def spend_model(fit, test, columns):
     model, metrics = ml.select_regressor(X_fit, np.log(buyers_fit['future_spend']),
                                          X_test, np.log(buyers_test['future_spend']))
     buyers = pd.concat([buyers_fit, buyers_test])
-    residuals = np.log(buyers['future_spend']) - model.predict(ml.design(buyers, NUMERIC, [], columns=columns))
+    log_spend = np.log(buyers['future_spend'])
+    model = _Bounded(model, float(log_spend.min()), float(log_spend.max()))
+    residuals = log_spend - model.predict(ml.design(buyers, NUMERIC, [], columns=columns))
     return model, float(np.mean(np.exp(residuals))), metrics
+
+
+class _Bounded:
+    """A regressor whose predictions are clipped to [lo, hi]."""
+
+    def __init__(self, model, lo, hi):
+        self.model, self.lo, self.hi = model, lo, hi
+
+    def predict(self, X):
+        return np.clip(self.model.predict(X), self.lo, self.hi)
 
 
 def expected_value(X, churn_model, spend, smearing, base_buy_rate):
