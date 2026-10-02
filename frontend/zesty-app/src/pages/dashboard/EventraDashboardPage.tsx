@@ -24,7 +24,7 @@ const EventraDashboardPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await bookingAPI.list();
+      const response = await bookingAPI.list(undefined, { limit: 100 });
       setBookings(response.results || []);
     } catch (_error) {
       setError('Unable to load your Eventra dashboard right now.');
@@ -39,8 +39,11 @@ const EventraDashboardPage: React.FC = () => {
 
   const sorted = useMemo(() => [...bookings].sort((a, b) => +new Date(b.booking_date) - +new Date(a.booking_date)), [bookings]);
   const totalSpend = useMemo(() => bookings.reduce((sum, b) => sum + toNumber(b.total), 0), [bookings]);
-  const open = sorted.filter((b) => b.status === 'pending' || b.status === 'confirmed');
-  const past = sorted.filter((b) => b.status === 'completed' || b.status === 'cancelled');
+  // A confirmed booking for a show that has already happened is history, not "coming up".
+  const isUpcoming = (b: Booking) =>
+    (b.status === 'pending' || b.status === 'confirmed') && (!b.event_date || new Date(b.event_date).getTime() >= Date.now());
+  const open = sorted.filter(isUpcoming);
+  const past = sorted.filter((b) => !isUpcoming(b));
   const tickets = bookings.filter((b) => b.status !== 'cancelled').reduce((sum, b) => sum + toNumber(b.total_tickets), 0);
   const spendSeries = bucketByDay(bookings.filter((b) => b.status !== 'cancelled'), (b) => b.booking_date, (b) => toNumber(b.total), 30);
   const byEvent = Object.values(

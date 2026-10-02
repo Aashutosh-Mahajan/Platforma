@@ -13,6 +13,8 @@ import type { Booking, Order } from '../../types';
 const W = 'platforma' as const;
 const t = themes[W];
 
+// How many recent orders and bookings the hub loads (spend and activity use these).
+const HISTORY_LIMIT = 100;
 const ACTIVE_ORDER = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery'];
 
 type Activity =
@@ -26,14 +28,18 @@ const UserDashboardPage: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  // Totals from the API; the lists hold the latest HISTORY_LIMIT of each.
+  const [orderCount, setOrderCount] = useState(0);
+  const [bookingCount, setBookingCount] = useState(0);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
 
   const fetchOrders = async () => {
     setOrdersLoading(true);
     try {
-      const response = await orderAPI.list();
+      const response = await orderAPI.list(undefined, { limit: HISTORY_LIMIT });
       setOrders(response.results || []);
+      setOrderCount(response.count ?? response.results?.length ?? 0);
       setOrderError(null);
     } catch {
       setOrderError('Unable to load Zesty orders right now.');
@@ -45,8 +51,9 @@ const UserDashboardPage: React.FC = () => {
   const fetchBookings = async () => {
     setBookingsLoading(true);
     try {
-      const response = await bookingAPI.list();
+      const response = await bookingAPI.list(undefined, { limit: HISTORY_LIMIT });
       setBookings(response.results || []);
+      setBookingCount(response.count ?? response.results?.length ?? 0);
       setBookingError(null);
     } catch {
       setBookingError('Unable to load Eventra bookings right now.');
@@ -128,8 +135,8 @@ const UserDashboardPage: React.FC = () => {
           loading={loading}
           items={[
             { label: 'Total spent', icon: Wallet, value: formatINR(zestySpend + eventraSpend), hint: 'Across Zesty and Eventra' },
-            { label: 'Food orders', icon: UtensilsCrossed, value: formatInt(orders.length), hint: `${formatINR(zestySpend)} spent` },
-            { label: 'Event bookings', icon: Ticket, value: formatInt(bookings.length), hint: `${formatINR(eventraSpend)} spent` },
+            { label: 'Food orders', icon: UtensilsCrossed, value: formatInt(orderCount), hint: `${formatINR(zestySpend)} spent` },
+            { label: 'Event bookings', icon: Ticket, value: formatInt(bookingCount), hint: `${formatINR(eventraSpend)} spent` },
             { label: 'In progress', icon: Hourglass, value: formatInt(activeOrders.length + openBookings.length), hint: `${activeOrders.length} orders · ${openBookings.length} bookings` },
           ]}
         />
@@ -154,7 +161,7 @@ const UserDashboardPage: React.FC = () => {
             button: 'bg-[#e23744] hover:bg-[#b7122a]',
             nameClass: 'font-zesty-display font-extrabold',
             last: lastOrder,
-            count: `${orders.length} orders`,
+            count: `${formatInt(orderCount)} ${orderCount === 1 ? 'order' : 'orders'}`,
           },
           {
             key: 'eventra',
@@ -169,7 +176,7 @@ const UserDashboardPage: React.FC = () => {
             button: 'bg-[#c4621a] hover:bg-[#d8712a]',
             nameClass: 'font-eventra-display italic',
             last: lastBooking,
-            count: `${bookings.length} bookings`,
+            count: `${formatInt(bookingCount)} ${bookingCount === 1 ? 'booking' : 'bookings'}`,
           },
         ].map((door) => (
           <article key={door.key} className="group relative isolate flex min-h-[300px] flex-col justify-end overflow-hidden rounded-3xl text-white">

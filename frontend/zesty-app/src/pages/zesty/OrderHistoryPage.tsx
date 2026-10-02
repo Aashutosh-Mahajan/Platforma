@@ -28,7 +28,7 @@ const OrderHistoryPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await orderAPI.list();
+      const response = await orderAPI.list(undefined, { limit: 100 });
       setOrders(response.results);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load orders');
