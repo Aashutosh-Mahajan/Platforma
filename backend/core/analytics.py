@@ -19,8 +19,8 @@ from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.db.models import Avg, Count, DecimalField, ExpressionWrapper, F, Min, Q, Sum
-from django.db.models.functions import ExtractHour, ExtractIsoWeekDay, TruncDay, TruncMonth, TruncWeek
+from django.db.models import Avg, Count, DecimalField, DurationField, ExpressionWrapper, F, Min, OuterRef, Q, Subquery, Sum
+from django.db.models.functions import Coalesce, ExtractHour, ExtractIsoWeekDay, TruncDay, TruncMonth, TruncWeek
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
@@ -272,7 +272,7 @@ def zesty_numbers(orders):
     n = agg['n'] or 0
     gmv = _f(agg['gmv'])
     items = OrderItem.objects.filter(order__in=live).aggregate(q=Sum('quantity'))['q'] or 0
-    per_user = Counter(live.values_list('user_id', flat=True))
+    per_user = user_counts(live)
     customers = len(per_user)
     return {
         'gmv': gmv,
@@ -291,6 +291,16 @@ def zesty_numbers(orders):
         '_users': per_user,
         '_cancelled': agg['cancelled'],
     }
+
+
+def user_counts(qs):
+    """{user_id: purchases} counted in the database: one row per customer
+    instead of one per order (the reports' database is remote, and moving
+    tens of thousands of rows was most of their load time)."""
+    return Counter(dict(qs.order_by().values('user_id').annotate(n=Count('id')).values_list('user_id', 'n')))
+
+
+LEAD = ExpressionWrapper(F('event__event_date') - F('booking_date'), output_field=DurationField())
 
 
 def _merge_payment_rows(rows, field, into=None):
@@ -353,27 +363,28 @@ def zesty_sections(orders, window, *, include_restaurants=True):
     for r in items.values('menu_item__is_vegetarian').annotate(q=Sum('quantity')):
         veg[bool(r['menu_item__is_vegetarian'])] += r['q'] or 0
 
-    basket = Counter()
-    for q in live.annotate(q=Sum('items__quantity')).values_list('q', flat=True):
-        q = q or 0
-        basket['1 item' if q <= 1 else '2 items' if q == 2 else '3–4 items' if q <= 4 else '5+ items'] += 1
+    order_qty = Subquery(
+        OrderItem.objects.filter(order=OuterRef('pk')).order_by().values('order').annotate(s=Sum('quantity')).values('s')[:1]
+    )
+    sizes = live.annotate(q=Coalesce(order_qty, 0)).aggregate(
+        one=Count('id', filter=Q(q__lte=1)), two=Count('id', filter=Q(q=2)),
+        few=Count('id', filter=Q(q__gte=3, q__lte=4)), many=Count('id', filter=Q(q__gte=5)),
+    )
+    basket = {'1 item': sizes['one'], '2 items': sizes['two'], '3–4 items': sizes['few'], '5+ items': sizes['many']}
 
     # New vs returning: an order is "new" when it is the customer's first
     # non-cancelled order ever.
-    firsts = dict(
-        Order.objects.exclude(status='cancelled')
-        .filter(user_id__in=live.values('user_id'))
-        .order_by().values('user_id').annotate(f=Min('created_at')).values_list('user_id', 'f')
+    first_order = Subquery(
+        Order.objects.filter(user_id=OuterRef('user_id')).exclude(status='cancelled')
+        .order_by().values('user_id').annotate(f=Min('created_at')).values('f')[:1]
     )
-    new_orders = returning_orders = 0
-    new_value = returning_value = 0.0
-    for user_id, created, total in live.values_list('user_id', 'created_at', 'total'):
-        if firsts.get(user_id) == created:
-            new_orders += 1
-            new_value += _f(total)
-        else:
-            returning_orders += 1
-            returning_value += _f(total)
+    is_first = Q(created_at=F('first'))
+    split = live.annotate(first=first_order).aggregate(
+        new_n=Count('id', filter=is_first), new_v=Sum('total', filter=is_first),
+        old_n=Count('id', filter=~is_first), old_v=Sum('total', filter=~is_first),
+    )
+    new_orders, returning_orders = split['new_n'], split['old_n']
+    new_value, returning_value = _f(split['new_v']), _f(split['old_v'])
 
     cuisines = defaultdict(lambda: {'value': 0.0, 'count': 0})
     for r in live.values('restaurant__cuisine', 'restaurant__cuisine_types').annotate(v=Sum('total'), n=Count('id')):
@@ -487,13 +498,8 @@ def eventra_numbers(bookings, events, *, with_snapshot=True):
     n = agg['n'] or 0
     revenue = _f(agg['rev'])
     tickets = agg['tickets'] or 0
-    rows = list(bookings.filter(live_q).values_list('user_id', 'booking_date', 'event__event_date'))
-    per_user = Counter(r[0] for r in rows)
-    leads = [
-        (event_date - booked).total_seconds() / 86400
-        for _, booked, event_date in rows
-        if event_date and booked and event_date >= booked
-    ]
+    per_user = user_counts(bookings.filter(live_q))
+    avg_lead = bookings.filter(live_q, event__event_date__gte=F('booking_date')).aggregate(a=Avg(LEAD))['a']
     checkin = Ticket.objects.filter(
         booking__in=bookings.filter(live_q), booking__event__event_date__lt=timezone.now()
     ).aggregate(issued=Count('id'), scanned=Count('id', filter=Q(is_scanned=True)))
@@ -511,7 +517,7 @@ def eventra_numbers(bookings, events, *, with_snapshot=True):
         'customers': len(per_user),
         'repeat_rate': _pct(sum(1 for c in per_user.values() if c >= 2), len(per_user)),
         'cancellation_rate': _pct(agg['cancelled'], agg['all_n']),
-        'avg_lead_days': round(sum(leads) / len(leads), 1) if leads else None,
+        'avg_lead_days': round(avg_lead.total_seconds() / 86400, 1) if avg_lead is not None else None,
         'checkin_rate': _pct(checkin['scanned'], checkin['issued']),
         'sell_through': sell_through,
         '_users': per_user,
@@ -585,12 +591,14 @@ def eventra_sections(bookings, events, window, *, include_organizers=True):
         .values('seat__ticket_type__name').annotate(n=Count('id'), v=Sum('seat__ticket_type__price')).order_by('-n')[:8]
     ]
 
-    lead = Counter()
-    for booked, event_date in live.values_list('booking_date', 'event__event_date'):
-        if not (booked and event_date):
-            continue
-        days = (event_date - booked).total_seconds() / 86400
-        lead['Same day' if days < 1 else '1–3 days' if days < 4 else '4–7 days' if days < 8 else '1–4 weeks' if days < 31 else '1 month+'] += 1
+    d = lambda n: timedelta(days=n)  # noqa: E731
+    lead_rows = live.filter(event__event_date__isnull=False).annotate(lead=LEAD).aggregate(
+        same=Count('id', filter=Q(lead__lt=d(1))), soon=Count('id', filter=Q(lead__gte=d(1), lead__lt=d(4))),
+        week=Count('id', filter=Q(lead__gte=d(4), lead__lt=d(8))), month=Count('id', filter=Q(lead__gte=d(8), lead__lt=d(31))),
+        later=Count('id', filter=Q(lead__gte=d(31))),
+    )
+    lead = {'Same day': lead_rows['same'], '1–3 days': lead_rows['soon'], '4–7 days': lead_rows['week'],
+            '1–4 weeks': lead_rows['month'], '1 month+': lead_rows['later']}
 
     event_weekdays = [{'label': d, 'count': 0, 'value': 0.0} for d in WEEKDAYS]
     for r in live.annotate(wd=ExtractIsoWeekDay('event__event_date', tzinfo=_tz())).values('wd').annotate(n=Count('id'), v=Sum('total')):
@@ -786,9 +794,9 @@ class PlatformAnalyticsView(APIView):
         # Lifetime customer funnel.
         all_live_o = orders.order_by().exclude(status='cancelled')
         all_live_b = bookings.order_by().exclude(status='cancelled')
-        lifetime = Counter(all_live_o.values_list('user_id', flat=True))
-        lifetime.update(all_live_b.values_list('user_id', flat=True))
-        both = set(all_live_o.values_list('user_id', flat=True)) & set(all_live_b.values_list('user_id', flat=True))
+        food, events_ = user_counts(all_live_o), user_counts(all_live_b)
+        lifetime = food + events_
+        both = set(food) & set(events_)
         funnel = [
             {'label': 'Registered customers', 'count': users.filter(role='customer').count()},
             {'label': 'Made a purchase', 'count': len(lifetime)},
