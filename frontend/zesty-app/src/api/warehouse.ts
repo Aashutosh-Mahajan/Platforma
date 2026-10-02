@@ -200,7 +200,7 @@ export interface SequenceRule {
 
 export interface CustomerScores {
   model: ModelInfo;
-  totals?: { customers: number; predicted_90d_value: number | null; high_risk_value: number | null };
+  totals?: { customers: number; predicted_90d_value: number | null; at_risk_value: number | null };
   matrix: { value_band: string; churn_band: string; customers: number; predicted_value: number | null }[];
   at_risk: {
     customer_id: number; customer: { name: string; email: string } | null; churn_probability: number | null;
