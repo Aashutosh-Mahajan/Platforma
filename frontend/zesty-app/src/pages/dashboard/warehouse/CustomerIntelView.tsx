@@ -2,7 +2,7 @@ import React from 'react';
 import { HeartCrack, Repeat2, Users } from 'lucide-react';
 import { miningAPI } from '../../../api/warehouse';
 import { CATEGORY_COLORS, DataTable, Donut } from '../../../components/dashboard/reportCharts';
-import { ErrorBanner, Panel, SkeletonRows, StatusPill } from '../../../components/dashboard/primitives';
+import { ErrorBanner, Panel, SkeletonRows } from '../../../components/dashboard/primitives';
 import { ModelBadge, NotReady, ProbabilityBar, VerticalSwitch } from '../../../components/dashboard/intelligence';
 import { aucQuality, useLoad, type Vertical } from '../../../components/dashboard/intelligenceUtils';
 import { formatINR, formatInt, humanize, themes } from '../../../components/dashboard/theme';
@@ -58,7 +58,8 @@ const CustomerIntelView: React.FC<{ vertical: Vertical; onVerticalChange: (v: Ve
             <StatTile world={W} label="Customers scored" value={formatInt(data.totals?.customers)} />
             <StatTile world={W} label="Expected spend, next 90 days" value={formatINR(data.totals?.predicted_90d_value)}
               note={valueMetrics ? `Typical error ${formatINR(valueMetrics.mae_rupees)} vs ${formatINR(valueMetrics.baseline_mae_rupees)} for "same as last quarter"` : undefined} />
-            <StatTile world={W} label="Spend at high risk" value={formatINR(data.totals?.high_risk_value)} tone={data.totals?.high_risk_value ? 'warn' : 'default'} />
+            <StatTile world={W} label="Spend at risk" value={formatINR(data.totals?.at_risk_value)} tone={data.totals?.at_risk_value ? 'warn' : 'default'}
+              note="What medium- and high-risk customers would spend in 90 days if they stay" />
             <StatTile world={W} label="Churn rate last quarter" value={churnMetrics ? `${Math.round((data.model.metrics?.churn_rate ?? 0) * 100)}%` : '—'}
               note="Customers who bought nothing in the 90 days after the cutoff" />
           </div>
@@ -95,12 +96,12 @@ const CustomerIntelView: React.FC<{ vertical: Vertical; onVerticalChange: (v: Ve
             </Panel>
 
             <Panel world={W} flush className="xl:col-span-3" title={<span className="inline-flex items-center gap-2"><HeartCrack className="h-5 w-5 text-rose-500" aria-hidden="true" />Valuable customers drifting away</span>}
-              description="Platinum and gold customers with a medium or high chance of not coming back. Worth a personal offer.">
+              description="Your biggest spenders with a medium or high chance of not coming back. Worth a personal offer.">
               <DataTable
                 world={W}
                 rows={data.at_risk}
                 rowKey={(r) => r.customer_id}
-                empty="No high-value customers are at risk right now."
+                empty="No customers are at risk right now."
                 columns={[
                   { key: 'who', label: 'Customer', render: (r) => (
                     <div className="min-w-0">
@@ -108,7 +109,7 @@ const CustomerIntelView: React.FC<{ vertical: Vertical; onVerticalChange: (v: Ve
                       <p className={`truncate text-xs ${t.muted}`}>{r.reason}</p>
                     </div>
                   ) },
-                  { key: 'band', label: 'Value', render: (r) => <StatusPill world={W} tone={r.value_band === 'platinum' ? 'info' : 'neutral'} label={humanize(r.value_band)} /> },
+                  { key: 'spent', label: 'Spent so far', align: 'right', render: (r) => formatINR(r.historic_value) },
                   { key: 'value', label: 'Next 90 days', align: 'right', render: (r) => formatINR(r.predicted_90d_value) },
                   { key: 'risk', label: 'Risk of leaving', render: (r) => <ProbabilityBar world={W} value={r.churn_probability ?? 0} /> },
                 ]}

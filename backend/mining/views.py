@@ -12,7 +12,7 @@ and how good the model behind it was.
 """
 import datetime
 
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Sum
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -609,17 +609,27 @@ class CustomerScoresView(APIView):
                 customers=Count('id'), predicted_value=Sum('predicted_90d_value'),
             ).order_by()
         )
+        # "Valuable" is judged on what they've spent so far: predicted value
+        # already discounts for the chance of leaving, so a likely churner
+        # almost never lands in a high predicted-value band.
         at_risk = list(
-            qs.filter(churn_band__in=['high', 'medium'], value_band__in=['platinum', 'gold'])
-            .order_by('-predicted_90d_value')[:25]
+            qs.filter(churn_band__in=['high', 'medium'])
+            .order_by('-historic_value')[:25]
         )
         people = _people({c.customer_id for c in at_risk})
-        totals = qs.aggregate(predicted=Sum('predicted_90d_value'),
-                              at_risk_value=Sum('predicted_90d_value', filter=Q(churn_band='high')))
+        totals = qs.aggregate(predicted=Sum('predicted_90d_value'))
+        # What the medium- and high-risk customers would spend if they stay:
+        # predicted value is P(buy) x spend, so spend = predicted / P(buy).
+        at_risk_value = sum(
+            float(value) / max(0.05, 1 - float(p))
+            for value, p in qs.filter(churn_band__in=['high', 'medium'])
+            .values_list('predicted_90d_value', 'churn_probability')
+            if value is not None and p is not None
+        )
         return Response({
             'model': model, 'vertical': vertical,
             'totals': {'customers': qs.count(), 'predicted_90d_value': _f(totals['predicted']),
-                       'high_risk_value': _f(totals['at_risk_value'])},
+                       'at_risk_value': round(at_risk_value, 2)},
             'matrix': [{**m, 'predicted_value': _f(m['predicted_value'])} for m in matrix],
             'at_risk': [
                 {'customer_id': c.customer_id, 'customer': people.get(c.customer_id),
