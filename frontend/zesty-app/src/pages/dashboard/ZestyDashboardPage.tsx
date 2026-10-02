@@ -44,7 +44,7 @@ const ZestyDashboardPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await orderAPI.list();
+      const response = await orderAPI.list(undefined, { limit: 100 });
       setOrders(response.results || []);
     } catch (_error) {
       setError('Unable to load your Zesty dashboard right now.');

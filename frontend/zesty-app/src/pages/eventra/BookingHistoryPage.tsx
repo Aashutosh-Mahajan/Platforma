@@ -20,7 +20,7 @@ const BookingHistoryPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await bookingAPI.list(statusFilter || undefined);
+      const response = await bookingAPI.list(statusFilter || undefined, { limit: 100 });
       setBookings(response.results);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load bookings');
