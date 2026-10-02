@@ -170,6 +170,29 @@ export interface EarningsSummary {
   payouts: Payout[];
 }
 
+/** The owner overview's numbers for one kitchen, aggregated server-side. */
+export interface RestaurantSummary {
+  orders: number;
+  revenue: number;
+  status_counts: Record<string, number>;
+  daily: { date: string; orders: number; revenue: number }[];
+  best_seller_days: number;
+  best_sellers: { menu_item: number; name: string; revenue: number; quantity: number }[];
+}
+
+const normalizeSummary = (raw: RestaurantSummary): RestaurantSummary => ({
+  orders: toNumber(raw.orders, 0),
+  revenue: toNumber(raw.revenue, 0),
+  status_counts: raw.status_counts ?? {},
+  daily: (raw.daily ?? []).map((d) => ({ date: d.date, orders: toNumber(d.orders, 0), revenue: toNumber(d.revenue, 0) })),
+  best_seller_days: toNumber(raw.best_seller_days, 30),
+  best_sellers: (raw.best_sellers ?? []).map((b) => ({
+    ...b,
+    revenue: toNumber(b.revenue, 0),
+    quantity: toNumber(b.quantity, 0),
+  })),
+});
+
 const normalizePayout = (raw: Payout): Payout => ({
   ...raw,
   gross_revenue: toNumber(raw.gross_revenue, 0),
@@ -269,6 +292,11 @@ export const restaurantAPI = {
     const response = await apiClient.get(`/zesty/restaurants/${id}/earnings/`);
     return normalizeEarnings(response.data);
   },
+
+  getSummary: async (id: number): Promise<RestaurantSummary> => {
+    const response = await apiClient.get(`/zesty/restaurants/${id}/summary/`);
+    return normalizeSummary(response.data);
+  },
 };
 
 export const menuItemAPI = {
@@ -322,8 +350,11 @@ export const menuItemAPI = {
 };
 
 export const orderAPI = {
-  list: async (status?: string): Promise<PaginatedResponse<Order>> => {
-    const params = status ? { status } : {};
+  list: async (
+    status?: string,
+    filters: { restaurant?: number; limit?: number } = {}
+  ): Promise<PaginatedResponse<Order>> => {
+    const params = { ...(status ? { status } : {}), ...filters };
     const response = await apiClient.get('/zesty/orders/', { params });
     return {
       ...response.data,
