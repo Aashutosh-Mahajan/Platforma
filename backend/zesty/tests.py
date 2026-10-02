@@ -1409,3 +1409,54 @@ class RestaurantReviewTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn('user_name', response.data)
         self.assertEqual(response.data['user_name'], self.user.email)
+
+
+class RestaurantSummaryTests(TestCase):
+    """The owner overview's numbers come from the database, not a page of orders."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.owner = User.objects.create_user(email='own@test.com', username='own', password='testpass123',
+                                              role='restaurant_owner')
+        self.customer = User.objects.create_user(email='cust@test.com', username='cust', password='testpass123',
+                                                 role='customer')
+        self.kitchens = [
+            Restaurant.objects.create(is_verified=True, owner=self.owner, name=name, cuisine_types='Indian',
+                                      address='1 Test Rd', delivery_fee=Decimal('30.00'), is_active=True)
+            for name in ('First', 'Second')
+        ]
+        self.dish = MenuItem.objects.create(restaurant=self.kitchens[0], name='Dal', price=Decimal('100.00'),
+                                            category='Mains', is_available=True)
+        # 30 orders at the first kitchen (more than a page), 2 cancelled; 25 at the second.
+        for i in range(30):
+            order = Order.objects.create(user=self.customer, restaurant=self.kitchens[0],
+                                         status='cancelled' if i < 2 else 'delivered', total=Decimal('100.00'))
+            OrderItem.objects.create(order=order, menu_item=self.dish, quantity=1, unit_price=Decimal('100.00'),
+                                     total=Decimal('100.00'))
+        for _ in range(25):
+            Order.objects.create(user=self.customer, restaurant=self.kitchens[1], status='delivered',
+                                 total=Decimal('50.00'))
+
+    def test_summary_aggregates_every_order(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.get(f'/api/v1/zesty/restaurants/{self.kitchens[0].id}/summary/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data
+        self.assertEqual(data['orders'], 28)
+        self.assertEqual(Decimal(data['revenue']), Decimal('2800.00'))
+        self.assertEqual(data['status_counts'], {'delivered': 28, 'cancelled': 2})
+        self.assertEqual(len(data['daily']), 14)
+        self.assertEqual(data['daily'][-1]['orders'], 28)
+        self.assertEqual(data['best_sellers'][0]['name'], 'Dal')
+        self.assertEqual(data['best_sellers'][0]['quantity'], 28)
+
+    def test_summary_is_private_to_the_owner(self):
+        self.client.force_authenticate(user=self.customer)
+        response = self.client.get(f'/api/v1/zesty/restaurants/{self.kitchens[0].id}/summary/')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_orders_can_be_filtered_by_restaurant(self):
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.get('/api/v1/zesty/orders/', {'restaurant': self.kitchens[1].id, 'limit': 100})
+        self.assertEqual(response.data['count'], 25)
+        self.assertTrue(all(o['restaurant'] == self.kitchens[1].id for o in response.data['results']))

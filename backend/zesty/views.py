@@ -9,6 +9,7 @@ from rest_framework.exceptions import PermissionDenied
 from django.http import Http404
 from django.utils import timezone
 from django.db import transaction, models
+from django.db.models.functions import TruncDate
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 import zlib
@@ -257,6 +258,63 @@ class RestaurantViewSet(viewsets.ModelViewSet):
             'payouts': PayoutSerializer(payouts, many=True).data,
         })
 
+    SUMMARY_DAYS = 14
+    BEST_SELLER_DAYS = 30
+
+    @action(detail=True, methods=['get'])
+    def summary(self, request, pk=None):
+        """GET /restaurants/{id}/summary — the owner overview's numbers,
+        aggregated in the database: all-time orders and revenue (cancelled
+        orders excluded), orders by status, daily revenue for the last
+        SUMMARY_DAYS days and the best sellers of the last BEST_SELLER_DAYS.
+        """
+        restaurant = self.get_object()
+        user = request.user
+        is_owner = user.is_authenticated and user.role == 'restaurant_owner' and restaurant.owner_id == user.id
+        if not (user.is_staff or user.role == 'admin' or is_owner):
+            raise PermissionDenied("You don't have access to this restaurant's numbers.")
+
+        orders = Order.objects.filter(restaurant=restaurant)
+        kept = orders.exclude(status='cancelled')
+        totals = kept.aggregate(count=models.Count('id'), revenue=models.Sum('total'))
+        status_counts = dict(orders.values_list('status').annotate(n=models.Count('id')).values_list('status', 'n'))
+
+        today = timezone.localdate()
+        first_day = today - timedelta(days=self.SUMMARY_DAYS - 1)
+        by_day = {
+            row['day']: row
+            for row in kept.filter(created_at__date__gte=first_day)
+            .annotate(day=TruncDate('created_at'))
+            .values('day').annotate(orders=models.Count('id'), revenue=models.Sum('total'))
+        }
+        daily = []
+        for offset in range(self.SUMMARY_DAYS):
+            day = first_day + timedelta(days=offset)
+            row = by_day.get(day, {})
+            daily.append({'date': day, 'orders': row.get('orders', 0), 'revenue': row.get('revenue') or Decimal('0')})
+
+        since = timezone.now() - timedelta(days=self.BEST_SELLER_DAYS)
+        best_sellers = list(
+            OrderItem.objects.filter(order__restaurant=restaurant, order__created_at__gte=since)
+            .exclude(order__status='cancelled')
+            .values('menu_item_id', 'menu_item__name')
+            .annotate(revenue=models.Sum('total'), quantity=models.Sum('quantity'))
+            .order_by('-revenue')[:5]
+        )
+
+        return Response({
+            'orders': totals['count'],
+            'revenue': totals['revenue'] or Decimal('0'),
+            'status_counts': status_counts,
+            'daily': daily,
+            'best_seller_days': self.BEST_SELLER_DAYS,
+            'best_sellers': [
+                {'menu_item': b['menu_item_id'], 'name': b['menu_item__name'], 'revenue': b['revenue'],
+                 'quantity': b['quantity']}
+                for b in best_sellers
+            ],
+        })
+
     @action(detail=True, methods=['get', 'post'])
     def reviews(self, request, pk=None):
         """Get or create reviews for a restaurant."""
@@ -379,6 +437,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = OrderSerializer
     STANDARD_DELIVERY_MINUTES = 15
+    FINISHED_STATUSES = ('delivered', 'cancelled')
     STATUS_SEQUENCE = [
         'pending',
         'confirmed',
@@ -516,6 +575,9 @@ class OrderViewSet(viewsets.ModelViewSet):
         order_status = self.request.query_params.get('status')
         if order_status:
             qs = qs.filter(status=order_status)
+        restaurant_id = self.request.query_params.get('restaurant')
+        if restaurant_id and restaurant_id.isdigit():
+            qs = qs.filter(restaurant_id=int(restaurant_id))
         return qs
 
     def get_serializer_class(self):
@@ -530,18 +592,23 @@ class OrderViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
+        # Only orders still in progress can move on; finished ones are left
+        # alone here (each sync costs a few queries, and an owner's list is
+        # mostly delivered history). Opening an order still syncs it fully.
         page = self.paginate_queryset(queryset)
         if page is not None:
             page_orders = list(page)
             for order in page_orders:
-                self._sync_standard_tracking(order)
+                if order.status not in self.FINISHED_STATUSES:
+                    self._sync_standard_tracking(order)
 
             serializer = self.get_serializer(page_orders, many=True)
             return self.get_paginated_response(serializer.data)
 
         orders = list(queryset)
         for order in orders:
-            self._sync_standard_tracking(order)
+            if order.status not in self.FINISHED_STATUSES:
+                self._sync_standard_tracking(order)
 
         serializer = self.get_serializer(orders, many=True)
         return Response(serializer.data)
