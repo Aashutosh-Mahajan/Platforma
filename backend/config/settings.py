@@ -128,10 +128,12 @@ def _build_postgres_database_config(env_var='DATABASE_URL', required=True):
     }
 
     # Neon's pooled endpoint ('-pooler' host) runs PgBouncer in transaction
-    # mode, which can't reliably hold the server-side cursors .iterator()
-    # opens. Applied to the warehouse connection only: the main database's
-    # behaviour is left exactly as it was (its ETL extract relies on them).
-    if env_var != 'DATABASE_URL' and '-pooler' in (parsed.hostname or ''):
+    # mode: a server-side cursor opened by .iterator() lives on one backend
+    # connection, and the next fetch can land on another ("cursor ... does
+    # not exist" once a result spans more than one chunk, e.g. the ETL
+    # extracting a few thousand orders). Django's advice for transaction
+    # pooling is to turn them off; .iterator() then streams client-side.
+    if '-pooler' in (parsed.hostname or ''):
         db_config['DISABLE_SERVER_SIDE_CURSORS'] = True
 
     options = dict(parse_qsl(parsed.query, keep_blank_values=False))
