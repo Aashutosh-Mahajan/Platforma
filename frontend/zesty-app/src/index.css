@@ -52,6 +52,13 @@
 @layer base {
   * {
     box-sizing: border-box;
+    /* No visible scrollbars anywhere; every area still scrolls (wheel, touch, keys). */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
   }
 
   html,
@@ -329,22 +336,9 @@
     animation: fadeIn 0.45s ease;
   }
 
+  /* Kept for the components that use it; scrollbars are hidden site-wide. */
   .eventra-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: #c9beff transparent;
-  }
-
-  .eventra-scrollbar::-webkit-scrollbar {
-    height: 8px;
-  }
-
-  .eventra-scrollbar::-webkit-scrollbar-thumb {
-    border-radius: 999px;
-    background: #c9beff;
-  }
-
-  .eventra-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
+    scrollbar-width: none;
   }
 
   /* Progress bar on the "You're verified" screen. */
@@ -466,7 +460,8 @@
 
 /* Smooth in-page anchor jumps (e.g. home "About" / "Contact"), unless the user prefers reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
-  html {
+  html,
+  * {
     scroll-behavior: smooth;
   }
 }
