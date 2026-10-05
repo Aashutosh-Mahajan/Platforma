@@ -1,7 +1,10 @@
 from django.urls import path
-from mining import views
+from mining import lab_views, views
 
 urlpatterns = [
+    path('mumbai-map', lab_views.MumbaiMapView.as_view(), name='insights-mumbai-map'),
+    path('lab/export/<str:dataset>', lab_views.LabExportView.as_view(), name='insights-lab-export'),
+    path('lab/<str:key>', lab_views.LabArtifactView.as_view(), name='insights-lab'),
     path('combos', views.InsightsCombosView.as_view(), name='insights-combos'),
     path('segments', views.InsightsSegmentsView.as_view(), name='insights-segments'),
     path('models', views.ModelRunsView.as_view(), name='insights-models'),
