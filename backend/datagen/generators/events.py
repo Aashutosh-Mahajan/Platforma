@@ -6,7 +6,7 @@ from django.utils import timezone
 from core.models import User
 from eventra.models import Event, Venue, TicketType, Seat
 from .common import (
-    FIRST_NAMES, LAST_NAMES, AREAS, EVENT_CATEGORIES, EVENT_NAME_POOL,
+    FIRST_NAMES, LAST_NAMES, AREAS, mumbai_point, EVENT_CATEGORIES, EVENT_NAME_POOL,
     SYNTHETIC_PASSWORD_HASH, growth_curve_dates,
 )
 from datagen.planted import PLANTED_CROSS_DOMAIN_GENRE
@@ -22,8 +22,7 @@ def generate_venues(n, np_rng, run_tag):
             name=f"{area} {'Arena' if i % 3 == 0 else 'Hall' if i % 3 == 1 else 'Grounds'} {run_tag}{i}",
             address=f"{random.randint(1, 100)}, {area}, {city}",
             area=area, city=city,
-            latitude=round(random.uniform(12.8, 28.7), 6),
-            longitude=round(random.uniform(72.8, 88.4), 6),
+            latitude=mumbai_point(area)[0], longitude=mumbai_point(area)[1],
             capacity=int(np_rng.integers(200, 5000)),
             is_indoor=bool(np_rng.random() < 0.7),
         ))

@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from core.models import User, Address
 from .common import (
-    FIRST_NAMES, LAST_NAMES, AREAS, SYNTHETIC_PASSWORD_HASH, growth_curve_dates,
+    FIRST_NAMES, LAST_NAMES, AREAS, MUMBAI_AREAS, mumbai_point, SYNTHETIC_PASSWORD_HASH, growth_curve_dates,
     bulk_create_with_timestamps,
 )
 
@@ -59,10 +59,8 @@ def generate_customers(n, start, end, np_rng, run_tag):
         addresses.append(Address(
             user=user, label=random.choice(['home', 'work', 'other']),
             street=f"{random.randint(1, 999)}, {area} Road",
-            city=city, state='Maharashtra' if city == 'Mumbai' else 'Karnataka' if city == 'Bengaluru' else 'Delhi',
-            postal_code=str(random.randint(400001, 700001)),
-            latitude=round(random.uniform(12.8, 28.7), 6),
-            longitude=round(random.uniform(72.8, 88.4), 6),
+            city=city, state='Maharashtra', postal_code=MUMBAI_AREAS[area]['pincode'],
+            latitude=mumbai_point(area)[0], longitude=mumbai_point(area)[1],
             is_default=True,
         ))
     Address.objects.bulk_create(addresses, batch_size=1000)

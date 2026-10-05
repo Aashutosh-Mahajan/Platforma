@@ -43,11 +43,7 @@ SYNTHETIC_EMAIL_SUFFIX = '@synthetic.platforma.dev'
 SEARCH_SESSION_PREFIX = 'syn-'
 BATCH = 5000
 
-CITY_CENTRES = {
-    'Mumbai': (19.0760, 72.8777), 'Bengaluru': (12.9716, 77.5946), 'Delhi': (28.6139, 77.2090),
-    'Hyderabad': (17.3850, 78.4867), 'Pune': (18.5204, 73.8567), 'Chennai': (13.0827, 80.2707),
-    'Kolkata': (22.5726, 88.3639), 'Ahmedabad': (23.0225, 72.5714), 'Jaipur': (26.9124, 75.7873),
-}
+CITY_CENTRES = {'Mumbai': (19.0760, 72.8777)}
 
 
 def _rng(*parts):
@@ -75,6 +71,11 @@ def restaurant_distance(restaurant_id):
 # ---------------------------------------------------------------------------
 
 def _place(city, area, row_id):
+    from core.mumbai import AREAS as MUMBAI_AREAS
+    if area in MUMBAI_AREAS:
+        a = MUMBAI_AREAS[area]
+        row_rng = _rng('row', row_id)
+        return round(a['lat'] + row_rng.gauss(0, 0.005), 6), round(a['lng'] + abs(row_rng.gauss(0, 0.005)), 6)
     centre = CITY_CENTRES.get(city)
     if centre is None:
         return None
