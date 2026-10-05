@@ -4,6 +4,7 @@ from eventra.models import (
     BookingStatusHistory, EventReview, EventAnalytics
 )
 from eventra.event_types import category_for
+from utils.validators import mumbai_location
 
 
 class VenueSerializer(serializers.ModelSerializer):
@@ -11,6 +12,9 @@ class VenueSerializer(serializers.ModelSerializer):
         model = Venue
         fields = ['id', 'name', 'address', 'area', 'city', 'latitude', 'longitude',
                   'capacity', 'is_indoor']
+
+    def validate(self, attrs):
+        return mumbai_location(attrs, self.instance)
 
 
 class TicketTypeSerializer(serializers.ModelSerializer):
@@ -94,6 +98,11 @@ class EventListSerializer(EventTypeMixin, serializers.ModelSerializer):
                   'is_published', 'is_approved', 'is_cancelled']
         read_only_fields = ['id', 'organizer', 'rating', 'review_count', 'total_seats',
                              'available_seats', 'is_approved', 'is_cancelled']
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        # Events happen in Mumbai: a pinned location must be inside the city.
+        return mumbai_location(attrs, self.instance, area_field=None, with_city=False)
 
 
 class EventDetailSerializer(EventTypeMixin, serializers.ModelSerializer):
