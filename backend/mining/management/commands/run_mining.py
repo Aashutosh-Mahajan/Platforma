@@ -25,6 +25,13 @@ MODULES = {
     'search': 'mining.modules.search.run_search_mining',
     'promos': 'mining.modules.promos.run_promo_effects',
     'pricing': 'mining.modules.pricing.run_price_elasticity',
+    # Mumbai map + admin analytics pages
+    'areas': 'mining.modules.areas.run_area_clustering',
+    'lab_eda': 'mining.modules.lab_eda.run_lab_eda',
+    'lab_regression': 'mining.modules.lab_regression.run_lab_regression',
+    'lab_classification': 'mining.modules.lab_classification.run_lab_classification',
+    'lab_customer_kmeans': 'mining.modules.lab_clustering.run_customer_kmeans',
+    'lab_apriori': 'mining.modules.lab_apriori.run_lab_apriori',
 }
 
 

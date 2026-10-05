@@ -34,6 +34,7 @@ from mining.registry import latest_successful_run
 MODULES = [
     'basket', 'segments', 'customers', 'anomaly', 'risk', 'forecast', 'sellout', 'recommend',
     'sequences', 'delivery', 'hotspots', 'search', 'promos', 'pricing',
+    'areas', 'lab_eda', 'lab_regression', 'lab_classification', 'lab_customer_kmeans', 'lab_apriori',
 ]
 
 # Which verticals each module's output covers, for the Both / Zesty / Eventra switch.
@@ -43,6 +44,8 @@ MODULE_VERTICALS = {
     'sellout': ['eventra'], 'recommend': ['zesty', 'eventra'], 'sequences': ['zesty', 'eventra'],
     'delivery': ['zesty'], 'hotspots': ['zesty', 'eventra'], 'search': ['zesty', 'eventra'],
     'promos': ['zesty'], 'pricing': ['eventra'],
+    'areas': ['zesty', 'eventra'], 'lab_eda': ['zesty'], 'lab_regression': ['zesty'],
+    'lab_classification': ['zesty', 'eventra'], 'lab_customer_kmeans': ['zesty', 'eventra'], 'lab_apriori': ['zesty'],
 }
 VERTICALS = ('all', 'zesty', 'eventra')
 
