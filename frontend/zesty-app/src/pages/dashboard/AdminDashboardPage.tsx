@@ -1,9 +1,21 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useCallback } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
   Activity,
+  BarChart3,
+  Boxes,
+  Brain,
   CalendarDays,
+  Database,
+  GitBranch,
+  Map as MapIcon,
+  Network,
+  Shapes,
+  ShoppingBasket,
+  Target,
+  Timer,
+  Wrench,
   Check,
   CheckCircle2,
   Landmark,
@@ -54,12 +66,30 @@ import {
 import { formatDate, formatINR, formatInt, greeting, humanize, themes, toNumber } from '../../components/dashboard/theme';
 import { formatCuisines } from '../../utils/cuisine';
 
+// Map, warehouse and mining pages pull in Leaflet and Recharts, so they load on demand.
+const MumbaiMapView = lazy(() => import('./lab/MumbaiMapView'));
+const SchemaLabView = lazy(() => import('./lab/SchemaLabView'));
+const OlapLabView = lazy(() => import('./lab/OlapLabView'));
+const PreparationView = lazy(() => import('./lab/PreparationView'));
+const VisualizationLabView = lazy(() => import('./lab/VisualizationLabView'));
+const RegressionLabView = lazy(() => import('./lab/RegressionLabView'));
+const DecisionTreeLabView = lazy(() => import('./lab/DecisionTreeLabView'));
+const NaiveBayesLabView = lazy(() => import('./lab/NaiveBayesLabView'));
+const KMeansLabView = lazy(() => import('./lab/KMeansLabView'));
+const AgglomerativeLabView = lazy(() => import('./lab/AgglomerativeLabView'));
+const SegmentsView = lazy(() => import('./lab/SegmentsView'));
+const AprioriLabView = lazy(() => import('./lab/AprioriLabView'));
+
 type Tab =
   | 'approvals' | 'users' | 'audit' | 'analytics' | 'zesty_analytics' | 'eventra_analytics' | 'payouts'
-  | 'explorer' | 'customers_intel' | 'demand' | 'review' | 'pipeline';
+  | 'explorer' | 'customers_intel' | 'demand' | 'review' | 'pipeline' | 'mumbai_map'
+  | 'wh_schema' | 'wh_olap' | 'wh_prep'
+  | 'dm_insights' | 'dm_regression' | 'dm_tree' | 'dm_bayes' | 'dm_clusters' | 'dm_hierarchy' | 'dm_segments' | 'dm_basket';
 // Tabs that bring their own headline numbers, so the banner ledger is hidden on them.
 const ANALYTICS_TABS: Tab[] = [
   'analytics', 'zesty_analytics', 'eventra_analytics', 'explorer', 'customers_intel', 'demand', 'review', 'pipeline',
+  'mumbai_map', 'wh_schema', 'wh_olap', 'wh_prep', 'dm_insights', 'dm_regression', 'dm_tree', 'dm_bayes',
+  'dm_clusters', 'dm_hierarchy', 'dm_segments', 'dm_basket',
 ];
 
 // The admin API returns geo and commission fields the shared Restaurant type omits.
@@ -281,11 +311,33 @@ const AdminDashboardPage: React.FC = () => {
     {
       label: 'Intelligence',
       items: [
+        { key: 'mumbai_map', label: 'Mumbai map', icon: MapIcon, onClick: () => setActiveTab('mumbai_map') },
         { key: 'explorer', label: 'Data explorer', icon: Table2, onClick: () => setActiveTab('explorer') },
         { key: 'customers_intel', label: 'Customers', icon: Users, onClick: () => setActiveTab('customers_intel') },
         { key: 'demand', label: 'Demand', icon: Sparkles, onClick: () => setActiveTab('demand') },
         { key: 'review', label: 'Review queue', icon: ShieldAlert, onClick: () => setActiveTab('review'), badge: openAnomalies || undefined },
         { key: 'pipeline', label: 'Pipeline', icon: Activity, onClick: () => setActiveTab('pipeline') },
+      ],
+    },
+    {
+      label: 'Warehouse',
+      items: [
+        { key: 'wh_schema', label: 'Schema & marts', icon: Database, onClick: () => setActiveTab('wh_schema') },
+        { key: 'wh_olap', label: 'OLAP cube', icon: Boxes, onClick: () => setActiveTab('wh_olap') },
+        { key: 'wh_prep', label: 'Data preparation', icon: Wrench, onClick: () => setActiveTab('wh_prep') },
+      ],
+    },
+    {
+      label: 'Data mining',
+      items: [
+        { key: 'dm_insights', label: 'Order insights', icon: BarChart3, onClick: () => setActiveTab('dm_insights') },
+        { key: 'dm_regression', label: 'Delivery & value models', icon: Timer, onClick: () => setActiveTab('dm_regression') },
+        { key: 'dm_tree', label: 'Churn prediction', icon: GitBranch, onClick: () => setActiveTab('dm_tree') },
+        { key: 'dm_bayes', label: 'Naïve Bayes classifiers', icon: Brain, onClick: () => setActiveTab('dm_bayes') },
+        { key: 'dm_clusters', label: 'Area & customer clusters', icon: Shapes, onClick: () => setActiveTab('dm_clusters') },
+        { key: 'dm_hierarchy', label: 'Locality hierarchy', icon: Network, onClick: () => setActiveTab('dm_hierarchy') },
+        { key: 'dm_segments', label: 'Segments & campaigns', icon: Target, onClick: () => setActiveTab('dm_segments') },
+        { key: 'dm_basket', label: 'Ordered together', icon: ShoppingBasket, onClick: () => setActiveTab('dm_basket') },
       ],
     },
     {
@@ -362,6 +414,21 @@ const AdminDashboardPage: React.FC = () => {
           {activeTab === 'demand' && <DemandIntelView vertical={vertical} onVerticalChange={setVertical} />}
           {activeTab === 'review' && <AnomalyQueueView onCountChange={setOpenAnomalies} vertical={vertical} onVerticalChange={setVertical} />}
           {activeTab === 'pipeline' && <PipelineHealthView vertical={vertical} onVerticalChange={setVertical} />}
+
+          <Suspense fallback={<Panel world={W}><SkeletonRows world={W} rows={6} /></Panel>}>
+            {activeTab === 'mumbai_map' && <MumbaiMapView />}
+            {activeTab === 'wh_schema' && <SchemaLabView />}
+            {activeTab === 'wh_olap' && <OlapLabView />}
+            {activeTab === 'wh_prep' && <PreparationView />}
+            {activeTab === 'dm_insights' && <VisualizationLabView />}
+            {activeTab === 'dm_regression' && <RegressionLabView />}
+            {activeTab === 'dm_tree' && <DecisionTreeLabView />}
+            {activeTab === 'dm_bayes' && <NaiveBayesLabView />}
+            {activeTab === 'dm_clusters' && <KMeansLabView />}
+            {activeTab === 'dm_hierarchy' && <AgglomerativeLabView />}
+            {activeTab === 'dm_segments' && <SegmentsView />}
+            {activeTab === 'dm_basket' && <AprioriLabView />}
+          </Suspense>
 
           {/* Approvals */}
           {activeTab === 'approvals' && (
