@@ -58,7 +58,7 @@ const TermList: React.FC<{ terms: SearchTerm[]; empty: string; show: 'zero' | 't
           <span className={`shrink-0 tabular-nums ${t.muted}`}>
             {formatInt(term.searches)} searches ·{' '}
             {show === 'zero'
-              ? <span className="font-semibold text-rose-600">{pct(term.zero_result_rate)} found nothing</span>
+              ? <span className="font-semibold text-rose-600">{pct(term.zero_result_rate)} found nothing lately</span>
               : <span className="font-semibold text-emerald-600">{term.trend.toFixed(1)}× usual</span>}
           </span>
         </li>
@@ -132,7 +132,7 @@ const DemandIntelView: React.FC<{ vertical: Vertical; onVerticalChange: (v: Vert
 
       <div className="grid gap-6 xl:grid-cols-2">
         <Panel world={W} title={<span className="inline-flex items-center gap-2"><SearchX className="h-5 w-5 text-rose-500" aria-hidden="true" />Searched for, not found</span>}
-          description="Demand nobody on the platform serves yet">
+          description="Demand nobody on the platform serves yet. Found-nothing share is over the last 30 days, so a term clears once someone starts serving it.">
           <TermList terms={search.data?.unmet ?? []} empty={search.data?.model.reason ?? 'Every popular search finds something.'} show="zero" />
         </Panel>
         <Panel world={W} title={<span className="inline-flex items-center gap-2"><Flame className="h-5 w-5 text-amber-500" aria-hidden="true" />Trending searches</span>}
