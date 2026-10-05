@@ -311,11 +311,17 @@ class AddressManagementTests(TestCase):
         create_response = self.client.post(self.addresses_url, self.address_data, format='json')
         address_id = create_response.data['id']
 
-        update_data = {'street': '789 New St', 'city': 'Delhi'}
+        update_data = {'street': '789 Hill Road, Bandra West', 'city': 'Mumbai'}
         response = self.client.patch(f'{self.addresses_url}{address_id}/', update_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['street'], '789 New St')
-        self.assertEqual(response.data['city'], 'Delhi')
+        self.assertEqual(response.data['street'], '789 Hill Road, Bandra West')
+        self.assertEqual(response.data['city'], 'Mumbai')
+
+    def test_address_outside_mumbai_rejected(self):
+        """Platforma serves Mumbai only."""
+        response = self.client.post(self.addresses_url, {**self.address_data, 'city': 'Delhi'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Mumbai only', str(response.data))
 
     def test_delete_address(self):
         """Test deleting an address."""
