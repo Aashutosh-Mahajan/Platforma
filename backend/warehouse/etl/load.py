@@ -154,9 +154,34 @@ def _bulk_scd2_load(model, natural_id_field, key_field, tracked_fields, natural_
     return key_by_id
 
 
+def customer_home_areas(customer_ids):
+    """{user_id: Mumbai locality} from each customer's default address
+    (falling back to any address): the nearest gazetteer area to its
+    coordinates, else the locality named in its street line."""
+    from core.models import Address
+    out = {}
+    rows = (Address.objects.filter(user_id__in=customer_ids)
+            .order_by('user_id', '-is_default', 'id')
+            .values_list('user_id', 'latitude', 'longitude', 'street'))
+    for user_id, lat, lng, street in rows:
+        if user_id in out:
+            continue
+        area = mumbai.nearest_area(lat, lng) if lat is not None else None
+        if area is None:
+            area = mumbai.canonical_area((street or '').split(',')[-1])
+        if area:
+            out[user_id] = area
+    return out
+
+
 def load_customers(customers, run_id):
-    """dim_customer, SCD-2. tenure_band/rfm_segment are tracked attributes."""
+    """dim_customer, SCD-2. tenure_band/rfm_segment are tracked attributes;
+    home_area is overwritten in place."""
     today = timezone.localdate()
+    homes = {}
+    ids = [c.id for c in customers]
+    for i in range(0, len(ids), 5000):
+        homes.update(customer_home_areas(ids[i:i + 5000]))
     incoming_by_id = {}
     for c in customers:
         signup_date = _local(c.created_at).date()
@@ -165,6 +190,7 @@ def load_customers(customers, run_id):
             'signup_cohort': signup_date.strftime('%Y-%m'),
             'tenure_band': tf.tenure_band(days_since),
             'rfm_segment': '',  # populated later by the mining segmentation module (§8.4)
+            'home_area': homes.get(c.id, ''),
         }
     return _bulk_scd2_load(
         DimCustomer, 'customer_id', 'customer_key', ['tenure_band', 'rfm_segment'],
@@ -318,7 +344,7 @@ def load_locations(restaurants):
         }
         existing = current_by_area.get(area)
         if existing is None:
-            existing = DimLocation.objects.create(area=area, zone='', region='', **incoming)
+            existing = DimLocation.objects.create(area=area, **incoming)
         else:
             changed = [f for f, v in incoming.items() if _differs(getattr(existing, f), v)]
             if changed:
