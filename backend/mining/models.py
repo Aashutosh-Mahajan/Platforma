@@ -307,7 +307,7 @@ class MiningSearchTerm(models.Model):
     searches = models.IntegerField()
     searches_7d = models.IntegerField(default=0)
     trend = models.FloatField()  # last 7 days vs the 4 weeks before, 1.0 = flat
-    zero_result_rate = models.FloatField(null=True, blank=True)
+    zero_result_rate = models.FloatField(null=True, blank=True)  # over the last 30 days (search.RATE_WINDOW_DAYS)
     click_rate = models.FloatField(null=True, blank=True)
     flag = models.CharField(max_length=20, blank=True)  # unmet | trending | unmet_trending | ''
     model_version = models.CharField(max_length=20)

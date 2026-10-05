@@ -3,12 +3,17 @@ and what's taking off.
 
 Per normalised term: volume, last-7-days volume, trend (last 7 days vs the
 weekly average of the 28 days before, smoothed), click-through and the
-share of searches that found nothing. Spelling variants are grouped with
+share of searches that found nothing over the last RATE_WINDOW_DAYS. The
+found-nothing share is recent on purpose: once a restaurant adds the dish
+(or an event is listed), new searches succeed and the term drops off the
+unmet list within days, instead of carrying its old failures forever.
+Volume still counts all history, so it ranks how big the demand is. Spelling variants are grouped with
 TF-IDF character n-grams + agglomerative clustering (cosine), so 'chiken
 biryani' and 'chicken biryani' count as one demand signal.
 
 Flags:
-  unmet           >= 50% of its searches found nothing (and enough of them)
+  unmet           >= 50% of its searches in the last RATE_WINDOW_DAYS found
+                  nothing (and at least MIN_SEARCHES of them)
   trending        >= 2x its usual weekly volume in the last 7 days
   unmet_trending  both: demand spiking for something nobody offers
 """
@@ -21,6 +26,7 @@ from mining.registry import execute
 from mining.modules import data
 
 MIN_SEARCHES = 5
+RATE_WINDOW_DAYS = 30
 MAX_TERMS = 400
 CLUSTER_DISTANCE = 0.45
 
@@ -29,14 +35,17 @@ def term_stats(df, today):
     today = pd.Timestamp(today)
     last7 = df['date'] > today - pd.Timedelta(days=7)
     prior28 = (df['date'] <= today - pd.Timedelta(days=7)) & (df['date'] > today - pd.Timedelta(days=35))
+    recent = df['date'] > today - pd.Timedelta(days=RATE_WINDOW_DAYS)
     g = df.groupby('term')
     stats = pd.DataFrame({
         'searches': g.size(),
         'searches_7d': df[last7].groupby('term').size(),
         'prior_28d': df[prior28].groupby('term').size(),
+        'searches_recent': df[recent].groupby('term').size(),
         'clicks': g['clicked'].sum(),
     }).fillna(0)
-    known = df[df['has_results'].notna()]
+    # A term nobody searched for recently has no current rate (NaN), so it is not flagged.
+    known = df[recent & df['has_results'].notna()]
     zero = known.assign(zero=~known['has_results'].astype(bool)).groupby('term')['zero'].agg(['sum', 'count'])
     stats['zero_result_rate'] = (zero['sum'] / zero['count']).reindex(stats.index)
     stats['click_rate'] = stats['clicks'] / stats['searches']
@@ -66,7 +75,8 @@ def cluster_terms(terms):
 
 
 def flag(row):
-    unmet = row['searches'] >= MIN_SEARCHES and pd.notna(row['zero_result_rate']) and row['zero_result_rate'] >= 0.5
+    unmet = (row['searches_recent'] >= MIN_SEARCHES and pd.notna(row['zero_result_rate'])
+             and row['zero_result_rate'] >= 0.5)
     trending = row['searches_7d'] >= MIN_SEARCHES and row['trend'] >= 2.0
     if unmet and trending:
         return 'unmet_trending'  # demand spiking for something the platform doesn't have
@@ -102,4 +112,5 @@ def run_search_mining():
             'trending_terms': keep.index[keep['flag'].str.endswith('trending')].tolist()[:10],
         }
 
-    return execute('search', {'min_searches': MIN_SEARCHES, 'cluster_distance': CLUSTER_DISTANCE}, body)
+    return execute('search', {'min_searches': MIN_SEARCHES, 'cluster_distance': CLUSTER_DISTANCE,
+                              'rate_window_days': RATE_WINDOW_DAYS}, body)
