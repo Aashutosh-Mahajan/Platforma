@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.password_validation import validate_password
 from core.models import Address, Payment, Notification
+from utils.validators import mumbai_location
 
 User = get_user_model()
 
@@ -166,6 +167,10 @@ class AddressSerializer(serializers.ModelSerializer):
         fields = ['id', 'label', 'street', 'city', 'state', 'postal_code',
                   'latitude', 'longitude', 'is_default', 'created_at']
         read_only_fields = ['id', 'created_at']
+
+    def validate(self, attrs):
+        # Delivery addresses must be in Mumbai, the only city Platforma serves.
+        return mumbai_location(attrs, self.instance, area_field=None)
 
 
 class PaymentSerializer(serializers.ModelSerializer):

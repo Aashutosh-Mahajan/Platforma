@@ -150,6 +150,9 @@ class AddressSerializer(serializers.ModelSerializer):
         model = Address
         fields = ['id', 'label', 'street', 'city', 'state', 'postal_code', 'is_default']
 
+    def validate(self, attrs):
+        return mumbai_location(attrs, self.instance, area_field=None)
+
 
 class OrderListSerializer(serializers.ModelSerializer):
     """Summary view for order listings."""
