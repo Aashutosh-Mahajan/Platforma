@@ -281,7 +281,12 @@ class Builder:
         demo_customer = self._demo(cfg.demo_customer_email)
         if demo_customer:
             customers.append(demo_customer)
-            self.home_area[demo_customer.id] = 'Bandra'
+            self.home_area[demo_customer.id] = 'Bandra West'
+            if not Address.objects.filter(user=demo_customer).exists():
+                lat, lng = _place('Bandra West', 'home-demo')
+                Address.objects.create(user=demo_customer, label='home', street='14, Hill Road, Bandra West',
+                                       city=CITY, state=STATE, postal_code=MUMBAI_AREAS['Bandra West']['pincode'],
+                                       latitude=lat, longitude=lng, is_default=True)
 
         # Long-tailed activity: most customers order now and then, a few daily.
         self.customers = customers
