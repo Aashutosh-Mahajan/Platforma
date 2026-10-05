@@ -19,7 +19,7 @@ PRICE_RANGE_BY_BAND = {'budget': 1, 'mid': 2, 'premium': 4}
 
 # "High density" areas get a premium price-band skew (PRD §10: "price band
 # correlates with density").
-HIGH_DENSITY_AREAS = {'Bandra', 'Koramangala', 'Connaught Place', 'Banjara Hills'}
+HIGH_DENSITY_AREAS = {'Bandra West', 'Andheri West', 'Lower Parel', 'Powai'}
 
 RESTAURANT_NAME_PREFIXES = ['The', 'Royal', 'Spice', 'Urban', 'Green', 'Golden', 'Corner', 'Classic']
 RESTAURANT_NAME_SUFFIXES = ['Kitchen', 'Diner', 'Bistro', 'Cafe', 'House', 'Grill', 'Eatery', 'Table']

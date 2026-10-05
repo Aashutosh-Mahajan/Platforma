@@ -4,6 +4,7 @@ from contextlib import contextmanager
 import zlib
 import numpy as np
 from django.contrib.auth.hashers import make_password
+from core.mumbai import AREAS as MUMBAI_AREAS, AREA_NAMES as MUMBAI_AREA_NAMES, CITY as MUMBAI_CITY
 
 MAX_PAYMENT_OBJECT_ID = 2_147_483_647
 
@@ -35,14 +36,16 @@ LAST_NAMES = [
     'Joshi', 'Rao', 'Reddy', 'Nair', 'Iyer', 'Agarwal', 'Bansal', 'Malhotra',
     'Kapoor', 'Chopra', 'Desai', 'Pandey', 'Mishra', 'Yadav', 'Jain', 'Bhatt',
 ]
-AREAS = [
-    ('Andheri', 'Mumbai'), ('Bandra', 'Mumbai'), ('Powai', 'Mumbai'),
-    ('Versova', 'Mumbai'), ('Malad', 'Mumbai'), ('Juhu', 'Mumbai'),
-    ('Koramangala', 'Bengaluru'), ('Indiranagar', 'Bengaluru'), ('Whitefield', 'Bengaluru'),
-    ('Hauz Khas', 'Delhi'), ('Connaught Place', 'Delhi'), ('Saket', 'Delhi'),
-    ('Banjara Hills', 'Hyderabad'), ('Gachibowli', 'Hyderabad'),
-    ('Viman Nagar', 'Pune'), ('Koregaon Park', 'Pune'),
-]
+# Platforma serves Mumbai only: every synthetic place is a gazetteer locality.
+AREAS = [(name, MUMBAI_CITY) for name in MUMBAI_AREA_NAMES]
+
+
+def mumbai_point(area, rng=random):
+    """A point near a Mumbai locality's centre."""
+    a = MUMBAI_AREAS[area]
+    return round(a['lat'] + rng.gauss(0, 0.005), 6), round(a['lng'] + abs(rng.gauss(0, 0.005)), 6)
+
+
 CUISINES = [
     'North Indian', 'South Indian', 'Chinese', 'Italian', 'Continental',
     'Mexican', 'Thai', 'Japanese', 'Fast Food', 'Desserts', 'Bakery', 'Mughlai',
