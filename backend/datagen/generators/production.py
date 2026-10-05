@@ -36,33 +36,33 @@ from core.models import Address, AuditLog, Notification, Payment, SearchLog, Use
 from eventra.models import Booking, BookingSeat, BookingStatusHistory, Event, EventReview, Seat, Ticket, TicketType, Venue
 from zesty.models import MenuItem, Order, OrderItem, OrderStatusHistory, Payout, Promotion, Restaurant, Review
 from datagen.planted import cancellation_probability, no_show_probability, prep_minutes, transit_minutes
+from core.mumbai import AREAS as MUMBAI_AREAS, CITY, STATE, neighbours
 from .common import FIRST_NAMES, LAST_NAMES, historical_timestamps, payment_object_id
 
 EMAIL_DOMAIN = 'example.com'
 BATCH = 2000
 
-# Locality centres (approximate) for the areas the restaurant data uses.
-AREA_CENTRES = {
-    'Bandra': (19.0596, 72.8295), 'Andheri': (19.1197, 72.8468), 'Juhu': (19.1075, 72.8263),
-    'Colaba': (18.9067, 72.8147), 'Dadar': (19.0178, 72.8478), 'Powai': (19.1176, 72.9060),
-    'Worli': (19.0176, 72.8162), 'Churchgate': (18.9322, 72.8264), 'Thane': (19.2183, 72.9781),
-    'Borivali': (19.2307, 72.8567),
-}
+# Every place in the dataset sits in one of the gazetteer's Mumbai localities.
+AREA_CENTRES = {name: (a['lat'], a['lng']) for name, a in MUMBAI_AREAS.items()}
 
-# (name, area, capacity, indoor)
+# (name, area, capacity, indoor) - Mumbai venues only.
 VENUES = [
-    ('NSCI Dome', 'Worli', 4500, True), ('Jio World Garden', 'Bandra', 6000, False),
-    ('Royal Opera House', 'Churchgate', 570, True), ('NCPA Tata Theatre', 'Churchgate', 1000, True),
-    ('Prithvi Theatre', 'Juhu', 220, True), ("St. Andrew's Auditorium", 'Bandra', 750, True),
-    ('Wankhede Stadium', 'Churchgate', 33000, False), ('DY Patil Stadium', 'Thane', 45000, False),
-    ('Bombay Exhibition Centre', 'Andheri', 8000, True), ('Canvas Laugh Club', 'Worli', 180, True),
-    ('The Habitat', 'Juhu', 150, True), ('Phoenix Marketcity Atrium', 'Powai', 1200, True),
-    ('Nehru Centre Auditorium', 'Worli', 900, True), ('Shanmukhananda Hall', 'Dadar', 2700, True),
-    ('Rangsharda Auditorium', 'Bandra', 900, True), ('Dome SVP Stadium', 'Worli', 4000, True),
-    ('Hiranandani Gardens Amphitheatre', 'Powai', 1500, False), ('Mahalaxmi Racecourse Lawns', 'Worli', 10000, False),
-    ('G5A Foundation', 'Worli', 300, True), ('Bal Gandharva Rang Mandir', 'Bandra', 600, True),
-    ('Kashinath Ghanekar Natyagruha', 'Thane', 1000, True), ('Prabodhankar Thackeray Natyagruha', 'Borivali', 900, True),
-    ('The Comedy Store Mumbai', 'Andheri', 200, True), ('PVR ICON Phoenix', 'Andheri', 320, True),
+    ('NSCI Dome', 'Worli', 4500, True), ('Jio World Garden', 'BKC', 6000, False),
+    ('Jio World Convention Centre', 'BKC', 3000, True),
+    ('Royal Opera House', 'Girgaon', 570, True), ('NCPA Tata Theatre', 'Churchgate', 1000, True),
+    ('Prithvi Theatre', 'Juhu', 220, True), ("St. Andrew's Auditorium", 'Bandra West', 750, True),
+    ('Wankhede Stadium', 'Churchgate', 33000, False), ('Brabourne Stadium', 'Churchgate', 20000, False),
+    ('Bombay Exhibition Centre', 'Goregaon', 8000, True), ('Canvas Laugh Club', 'Lower Parel', 180, True),
+    ('The Habitat', 'Khar', 150, True), ('Phoenix Marketcity Atrium', 'Kurla', 1200, True),
+    ('Nehru Centre Auditorium', 'Worli', 900, True), ('Shanmukhananda Hall', 'Matunga', 2700, True),
+    ('Rangsharda Auditorium', 'Bandra West', 900, True), ('Dome SVP Stadium', 'Worli', 4000, True),
+    ('Hiranandani Gardens Amphitheatre', 'Powai', 1500, False), ('Mahalaxmi Racecourse Lawns', 'Tardeo', 10000, False),
+    ('G5A Foundation', 'Lower Parel', 300, True), ('Bal Gandharva Rang Mandir', 'Bandra West', 600, True),
+    ('Dinanath Mangeshkar Natyagriha', 'Vile Parle', 1000, True), ('Prabodhankar Thackeray Natyagruha', 'Borivali', 900, True),
+    ('The Comedy Store Mumbai', 'Andheri West', 200, True), ('PVR ICON Infiniti', 'Andheri West', 320, True),
+    ('Kalidas Natya Mandir', 'Mulund', 1000, True), ('R City Atrium', 'Ghatkopar', 900, True),
+    ('Fine Arts Society Auditorium', 'Chembur', 800, True), ('Juhu Beach Promenade', 'Juhu', 2500, False),
+    ('Phoenix Palladium Atrium', 'Lower Parel', 1200, True), ('Bhaidas Auditorium', 'Vile Parle', 1100, True),
 ]
 
 EVENT_NAMES = {
@@ -170,9 +170,12 @@ def _aware(day, hour, minute):
 
 
 def _place(area, seed):
-    lat, lng = AREA_CENTRES.get(area, (19.0760, 72.8777))
+    """A point within roughly 600 m of the locality's centre. Westward
+    scatter is damped so points in the coastal localities stay on land."""
+    lat, lng = AREA_CENTRES[area]
     r = random.Random(zlib.crc32(seed.encode()))
-    return round(lat + r.gauss(0, 0.009), 6), round(lng + r.gauss(0, 0.009), 6)
+    dlat, dlng = r.gauss(0, 0.0055), r.gauss(0, 0.0055)
+    return round(lat + dlat, 6), round(lng + (dlng if dlng > 0 else dlng * 0.3), 6)
 
 
 @dataclass
@@ -690,8 +693,9 @@ class Builder:
         venues = []
         for name, area, capacity, indoor in VENUES:
             lat, lng = _place(area, f"venue{name}")
-            venues.append(Venue(name=name, address=f"{name}, {area}, Mumbai", area=area, city='Mumbai',
-                                state='Maharashtra', latitude=lat, longitude=lng, capacity=capacity, is_indoor=indoor))
+            venues.append(Venue(name=name, address=f"{name}, {area}, Mumbai {MUMBAI_AREAS[area]['pincode']}", area=area,
+                                city=CITY, state=STATE, latitude=lat, longitude=lng, capacity=capacity,
+                                is_indoor=indoor))
         venues = Venue.objects.bulk_create(venues)
 
         demo_org = self._demo(self.cfg.demo_organizer_email)
