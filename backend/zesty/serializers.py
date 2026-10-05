@@ -4,6 +4,7 @@ from zesty.models import (
     OrderStatusHistory, Promotion, Payout
 )
 from core.models import Address
+from utils.validators import mumbai_location
 
 
 class MenuItemSerializer(serializers.ModelSerializer):
@@ -43,6 +44,9 @@ class RestaurantListSerializer(serializers.ModelSerializer):
                   'delivery_fee', 'delivery_time_min', 'delivery_time_max',
                   'image', 'rating', 'review_count', 'is_active', 'is_verified', 'commission_rate']
         read_only_fields = ['id', 'slug', 'rating', 'review_count', 'is_verified', 'commission_rate']
+
+    def validate(self, attrs):
+        return mumbai_location(attrs, self.instance)
 
 
 class CartItemSerializer(serializers.ModelSerializer):
@@ -126,6 +130,9 @@ class RestaurantDetailSerializer(serializers.ModelSerializer):
                   'delivery_time_max', 'image', 'banner', 'phone',
                   'rating', 'review_count', 'is_active', 'is_verified', 'commission_rate', 'menu_items']
         read_only_fields = ['id', 'slug', 'rating', 'review_count', 'is_verified', 'commission_rate']
+
+    def validate(self, attrs):
+        return mumbai_location(attrs, self.instance)
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
