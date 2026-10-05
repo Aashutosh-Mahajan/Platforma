@@ -356,3 +356,23 @@ class MiningPriceElasticity(models.Model):
 
     class Meta:
         db_table = 'mining_price_elasticity'
+
+
+class MiningLabArtifact(models.Model):
+    """One computed result of the admin analytics (the area clusters behind
+    the Mumbai map, a regression's coefficients and residuals, a decision
+    tree, a dendrogram...), stored as JSON because each analysis's shape
+    is different and the admin console only ever reads it whole. Keyed by
+    `key`; the serving layer reads the newest successful run's copy.
+    """
+    run = models.ForeignKey(MiningRun, on_delete=models.CASCADE, related_name='lab_artifacts')
+    key = models.CharField(max_length=50)
+    payload = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'mining_lab_artifact'
+        indexes = [models.Index(fields=['key', 'created_at'])]
+
+    def __str__(self):
+        return f"{self.key} (run {self.run_id})"
