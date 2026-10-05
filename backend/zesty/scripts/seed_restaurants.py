@@ -4,18 +4,7 @@ import re
 from pathlib import Path
 
 
-AREA_CHOICES = (
-    "Bandra",
-    "Andheri",
-    "Juhu",
-    "Colaba",
-    "Dadar",
-    "Powai",
-    "Worli",
-    "Churchgate",
-    "Thane",
-    "Borivali",
-)
+from core.mumbai import AREA_NAMES as AREA_CHOICES, area_for_location
 
 # Keep this deterministic so repeated seeds are reproducible.
 MIXED_SELECTION_SEED = 20260408
@@ -25,19 +14,6 @@ SOURCE_JSON_CANDIDATES = (
     Path(__file__).with_name("zesty_mumbai_restaurants.json"),
     Path(__file__).resolve().parents[4] / "zesty_mumbai_restaurants.json",
 )
-
-LOCATION_AREA_KEYWORDS = {
-    "Bandra": ("bandra", "khar", "pali", "linking", "hill road", "turner"),
-    "Andheri": ("andheri", "lokhandwala", "versova", "jogeshwari", "dn nagar"),
-    "Juhu": ("juhu", "ville parle", "santacruz"),
-    "Colaba": ("colaba", "fort", "cuffe parade", "nariman", "marine drive"),
-    "Dadar": ("dadar", "matunga", "mahim", "sion", "prabhadevi"),
-    "Powai": ("powai", "chandivali", "saki vihar", "hiranandani", "vikhroli"),
-    "Worli": ("worli", "lower parel", "parel", "elphinstone"),
-    "Churchgate": ("churchgate", "marine lines", "charni", "grant road"),
-    "Thane": ("thane", "ghodbunder", "mira road", "kalwa", "dombivli"),
-    "Borivali": ("borivali", "kandivali", "malad", "dahisar", "eksar"),
-}
 
 TAG_ALIASES = {
     "deserts": "dessert",
@@ -159,15 +135,9 @@ def _parse_float(value, default):
 
 
 def _infer_area(location, name):
-    location_text = _normalize_spaces(location).lower()
-    for area_name, keywords in LOCATION_AREA_KEYWORDS.items():
-        if any(keyword in location_text for keyword in keywords):
-            return area_name
-
-    # Deterministic fallback for unknown localities.
-    seed_text = location_text or _normalize_spaces(name).lower()
-    seed_value = sum(ord(char) for char in seed_text) if seed_text else 0
-    return AREA_CHOICES[seed_value % len(AREA_CHOICES)]
+    """Gazetteer area for a source locality; None when it lies outside
+    Mumbai (Thane, Navi Mumbai, Vasai-Virar...), which drops the record."""
+    return area_for_location(_normalize_spaces(location))
 
 
 def _to_price_range(cost_for_two):
@@ -351,6 +321,9 @@ def build_seed_restaurants():
     for index, source in enumerate(source_records):
         name = _normalize_spaces(source.get("name") or f"Restaurant #{index + 1}")
         location = _normalize_spaces(source.get("location") or source.get("area") or "Mumbai")
+        area = _infer_area(location, name)
+        if area is None:
+            continue  # Platforma serves Mumbai only
         primary_cuisine = _normalize_spaces(source.get("primary_cuisine") or source.get("cuisine") or "Indian")
         cuisines = _extract_cuisine_tags(source)
         if _normalize_tag(primary_cuisine) not in cuisines:
@@ -374,7 +347,7 @@ def build_seed_restaurants():
         compiled.append(
             {
                 "name": name,
-                "area": _infer_area(location, name),
+                "area": area,
                 "cuisine": primary_cuisine,
                 "primary_cuisine": primary_cuisine,
                 "cuisines": cuisines,
@@ -395,7 +368,7 @@ def build_seed_restaurants():
                 "image_url": _normalize_spaces(source.get("image_url")),
                 "menu": menu,
                 "location": location,
-                "city": _normalize_spaces(source.get("city") or "Mumbai"),
+                "city": "Mumbai",
                 "delivery_time": _normalize_spaces(source.get("delivery_time") or "30-40 mins"),
             }
         )
