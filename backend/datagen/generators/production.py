@@ -264,15 +264,17 @@ class Builder:
             organisers = User.objects.bulk_create(organisers, batch_size=BATCH)
 
         addresses = []
-        areas = list(AREA_CENTRES)
+        # Where customers live follows each locality's population.
+        areas = list(MUMBAI_AREAS)
+        pop = np.array([MUMBAI_AREAS[a]['population'] for a in areas])
         self.home_area = {}
         for u in customers:
-            area = random.choice(areas)
+            area = areas[int(self.rng.choice(len(areas), p=pop / pop.sum()))]
             self.home_area[u.id] = area
             lat, lng = _place(area, f"home{u.id}")
             addresses.append(Address(user=u, label=random.choice(['home', 'home', 'work']),
-                                     street=f"{random.randint(1, 450)}, {area}", city='Mumbai', state='Maharashtra',
-                                     postal_code=str(random.randint(400001, 400104)), latitude=lat, longitude=lng,
+                                     street=f"{random.randint(1, 450)}, {area}", city=CITY, state=STATE,
+                                     postal_code=MUMBAI_AREAS[area]['pincode'], latitude=lat, longitude=lng,
                                      is_default=True))
         Address.objects.bulk_create(addresses, batch_size=BATCH)
 
@@ -286,6 +288,9 @@ class Builder:
         self.joined = np.array([(u.created_at if hasattr(u, 'created_at') and u.created_at else self.now) for u in customers])
         # Long tail, capped: regulars order a few times a week, not hourly.
         self.activity = np.clip(self.rng.lognormal(0, 0.9, len(customers)), None, 12.0)
+        # Wealthier localities order more often.
+        self.affluence = np.array([MUMBAI_AREAS[self.home_area[u.id]]['affluence'] for u in customers])
+        self.activity *= 0.6 + 0.8 * self.affluence
         if demo_customer:
             self.activity[-1] = np.quantile(self.activity, 0.97)
             self.joined[-1] = _aware(self.start - datetime.timedelta(days=60), 12, 0)  # a long-time customer
@@ -542,7 +547,7 @@ class Builder:
         order = Order(
             id=uuid.uuid4(), user=customer, restaurant=restaurant, status=status,
             delivery_address={'street': f"{random.randint(1, 450)}, {self.home_area.get(customer.id, 'Bandra')}",
-                              'city': 'Mumbai'},
+                              'city': CITY},
             subtotal=subtotal, delivery_fee=restaurant.delivery_fee, tax=tax, discount=discount,
             promo_code=promo.code if promo else '', total=subtotal + restaurant.delivery_fee + tax - discount,
             payment_method=method,
