@@ -68,6 +68,8 @@ class DimCustomer(Scd2Mixin):
     signup_cohort = models.CharField(max_length=7)  # 'YYYY-MM'
     tenure_band = models.CharField(max_length=20)  # new|growing|established|loyal
     rfm_segment = models.CharField(max_length=30, blank=True)
+    # Untracked (type-1 in place): the Mumbai locality of the default address.
+    home_area = models.CharField(max_length=100, blank=True)
 
     class Meta:
         db_table = 'dim_customer'
