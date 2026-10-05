@@ -1,5 +1,5 @@
 from .dimensions import (
-    DimDate, DimTime, DimCustomer, DimLocation, DimPayment,
+    DimDate, DimTime, DimCustomer, DimZone, DimLocation, DimPayment,
     DimRestaurant, DimMenuItem, DimPromotion,
     DimEvent, DimVenue, DimTicketType,
 )
@@ -15,7 +15,7 @@ from .cuboids import (
 )
 
 __all__ = [
-    'DimDate', 'DimTime', 'DimCustomer', 'DimLocation', 'DimPayment',
+    'DimDate', 'DimTime', 'DimCustomer', 'DimZone', 'DimLocation', 'DimPayment',
     'DimRestaurant', 'DimMenuItem', 'DimPromotion',
     'DimEvent', 'DimVenue', 'DimTicketType',
     'FactOrder', 'FactOrderItem', 'FactBooking', 'FactTicketSale',

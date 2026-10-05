@@ -83,11 +83,30 @@ class DimCustomer(Scd2Mixin):
         ]
 
 
+class DimZone(models.Model):
+    """SCD 0 — the outer level of the snowflaked location hierarchy
+    (area -> zone -> district/city). Mumbai's four zones, loaded from the
+    gazetteer (core/mumbai.py).
+    """
+    zone_key = models.BigAutoField(primary_key=True)
+    zone = models.CharField(max_length=50, unique=True)  # South Mumbai | Central Mumbai | ...
+    district = models.CharField(max_length=50, blank=True)  # Mumbai City | Mumbai Suburban
+    city = models.CharField(max_length=100, default='Mumbai')
+    state = models.CharField(max_length=100, default='Maharashtra')
+
+    class Meta:
+        db_table = 'dim_zone'
+
+
 class DimLocation(models.Model):
     """SCD 1 — location attributes are overwritten in place; history isn't
-    meaningful here (a pincode's city doesn't change).
+    meaningful here (a pincode's city doesn't change). Snowflaked: the zone,
+    district and city live in dim_zone, reached through `zone_ref`. The
+    plain `zone` and `city` columns are kept as denormalised copies for the
+    star-schema queries that predate the snowflake.
     """
     location_key = models.BigAutoField(primary_key=True)
+    zone_ref = models.ForeignKey(DimZone, on_delete=models.PROTECT, db_column='zone_key', null=True, blank=True)
     area = models.CharField(max_length=100)
     zone = models.CharField(max_length=50, blank=True)
     city = models.CharField(max_length=100)
