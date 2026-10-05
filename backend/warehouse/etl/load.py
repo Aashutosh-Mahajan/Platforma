@@ -20,8 +20,10 @@ from decimal import Decimal
 
 from django.utils import timezone
 
+from core import mumbai
+
 from warehouse.models import (
-    DimCustomer, DimLocation, DimPayment, DimRestaurant, DimMenuItem,
+    DimCustomer, DimLocation, DimZone, DimPayment, DimRestaurant, DimMenuItem,
     DimPromotion, DimEvent, DimVenue, DimTicketType, DimDate, DimTime,
     FactOrder, FactOrderItem, FactBooking, FactTicketSale,
     FactOrderLifecycle, FactSeatInventorySnapshot, FactSearch, FactPayout,
@@ -269,11 +271,23 @@ def load_ticket_types(ticket_types, run_id):
     )
 
 
+def load_zones():
+    """dim_zone from the gazetteer. Returns {zone: zone_key}."""
+    keys = {}
+    for zone, meta in mumbai.ZONES.items():
+        row, _ = DimZone.objects.update_or_create(
+            zone=zone, defaults={'district': meta['district'], 'city': mumbai.CITY, 'state': mumbai.STATE})
+        keys[zone] = row.zone_key
+    return keys
+
+
 def load_locations(restaurants):
-    """One location per restaurant area, centred on the mean coordinates of
-    the restaurants in it and banded by how many restaurants it has.
-    Returns {area: location_key}.
+    """One location per Mumbai locality in the gazetteer (whether or not a
+    restaurant is there yet), snowflaked to dim_zone, banded by how many
+    restaurants it has. An area outside the gazetteer (legacy rows) still
+    gets a location so its facts keep a key. Returns {area: location_key}.
     """
+    zone_keys = load_zones()
     by_area = {}
     for r in restaurants:
         area = tf.restaurant_area(r)
@@ -285,15 +299,22 @@ def load_locations(restaurants):
         if r.latitude is not None and r.longitude is not None:
             entry['lats'].append(float(r.latitude))
             entry['lngs'].append(float(r.longitude))
+    for area in mumbai.AREA_NAMES:
+        by_area.setdefault(area, {'city': mumbai.CITY, 'lats': [], 'lngs': [], 'n': 0})
 
     current_by_area = {row.area: row for row in DimLocation.objects.filter(area__in=list(by_area))}
     key_by_area = {}
     for area, entry in by_area.items():
+        g = mumbai.AREAS.get(area)
         incoming = {
-            'city': entry['city'],
-            'latitude': round(sum(entry['lats']) / len(entry['lats']), 6) if entry['lats'] else None,
-            'longitude': round(sum(entry['lngs']) / len(entry['lngs']), 6) if entry['lngs'] else None,
+            'city': g['city'] if g else entry['city'],
+            'latitude': g['lat'] if g else (round(sum(entry['lats']) / len(entry['lats']), 6) if entry['lats'] else None),
+            'longitude': g['lng'] if g else (round(sum(entry['lngs']) / len(entry['lngs']), 6) if entry['lngs'] else None),
             'density_band': tf.density_band(entry['n']),
+            'zone': g['zone'] if g else '',
+            'region': g['district'] if g else '',
+            'pincode': g['pincode'] if g else '',
+            'zone_ref_id': zone_keys.get(g['zone']) if g else None,
         }
         existing = current_by_area.get(area)
         if existing is None:
