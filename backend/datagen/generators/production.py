@@ -405,16 +405,24 @@ class Builder:
         by_area = {}
         for idx, r in enumerate(self.live_restaurants):
             by_area.setdefault(r.area, []).append(idx)
+        # "Local" is the home locality plus the ones within delivery range.
+        nearby = {a: [i for b in neighbours(a) for i in by_area.get(b, [])] for a in MUMBAI_AREAS}
+        price = np.array([r.price_range or 2 for r in self.live_restaurants], dtype=float)
         self.favourites = []
-        for u in self.customers:
-            local = by_area.get(self.home_area[u.id], [])
+        for ci, u in enumerate(self.customers):
+            local = nearby.get(self.home_area[u.id], [])
+            # Affluent customers lean to pricier kitchens, others to cheaper ones.
+            fit = np.exp(-((price - (1 + 3 * self.affluence[ci])) ** 2) / 2.0)
+            global_p = self.popularity * fit
+            global_p /= global_p.sum()
+            local_p = fit[local] / fit[local].sum() if local else None
             picks = set()
             k = int(self.rng.integers(3, 6))
             while len(picks) < k:
-                if local and self.rng.random() < 0.65:
-                    picks.add(random.choice(local))
+                if local and self.rng.random() < 0.7:
+                    picks.add(local[int(self.rng.choice(len(local), p=local_p))])
                 else:
-                    picks.add(int(self.rng.choice(len(self.live_restaurants), p=self.popularity)))
+                    picks.add(int(self.rng.choice(len(self.live_restaurants), p=global_p)))
             self.favourites.append(list(picks))
 
     # ------------------------------------------------------------------
