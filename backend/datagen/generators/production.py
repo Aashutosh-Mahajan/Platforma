@@ -512,7 +512,7 @@ class Builder:
                 return i
         return len(self.customers) - 1 if self.joined[-1] <= when else 0
 
-    def _basket(self, restaurant):
+    def _basket(self, restaurant, affluence=0.5):
         dishes = self.menu.get(restaurant.id, [])
         if not dishes:
             return []
@@ -533,7 +533,7 @@ class Builder:
             if by_cat.get(cat) and self.rng.random() < p:
                 d = random.choice(by_cat[cat])
                 basket.setdefault(d.id, (d, 1))
-        if self.rng.random() < 0.15:
+        if self.rng.random() < 0.05 + 0.25 * affluence:
             extra = random.choice(mains)
             basket.setdefault(extra.id, (extra, 1))
         return list(basket.values())
@@ -612,7 +612,7 @@ class Builder:
                     restaurant = live[random.choice(self.favourites[ci])]
                 else:
                     restaurant = live[int(self.rng.choice(len(live), p=self.popularity))]
-                rows = self._basket(restaurant)
+                rows = self._basket(restaurant, float(self.affluence[ci]))
                 if not rows:
                     continue
                 promo = None
