@@ -1,7 +1,7 @@
 from django.urls import path
 from warehouse.olap.views import (
     OlapCatalogView, OlapRevenueView, OlapBreakdownView, OlapSliceView, OlapDiceView,
-    OlapPivotView, OlapCrossDomainView, WarehouseHealthView,
+    OlapPivotView, OlapCrossDomainView, WarehouseHealthView, OlapCubeView, WarehouseSchemaView, OltpVsOlapView,
 )
 
 urlpatterns = [
@@ -13,4 +13,7 @@ urlpatterns = [
     path('pivot', OlapPivotView.as_view(), name='olap-pivot'),
     path('cross-domain', OlapCrossDomainView.as_view(), name='olap-cross-domain'),
     path('health', WarehouseHealthView.as_view(), name='olap-health'),
+    path('cube', OlapCubeView.as_view(), name='olap-cube'),
+    path('schema', WarehouseSchemaView.as_view(), name='olap-schema'),
+    path('oltp-vs-olap', OltpVsOlapView.as_view(), name='olap-oltp-vs-olap'),
 ]

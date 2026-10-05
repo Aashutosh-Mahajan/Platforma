@@ -226,3 +226,54 @@ class WarehouseHealthView(APIView):
             'last_run': {'run_id': last.run_id, 'started_at': last.started_at} if last else None,
             'tables': tables, 'checks': checks, 'history': history, 'row_counts': sizes,
         })
+
+
+# ---------------------------------------------------------------------------
+# Admin analytics: hierarchical cube and warehouse schema
+# ---------------------------------------------------------------------------
+
+class OlapCubeView(APIView):
+    """GET /olap/cube?fact=orders&measure=revenue&rows=time.month&cols=location.zone
+    &filters={"location.zone": ["Western Suburbs"]}
+
+    Without `rows`, returns the catalogue of facts, measures and hierarchies.
+    """
+    permission_classes = [IsPlatformAdmin]
+
+    def get(self, request):
+        from warehouse.olap import cube
+        rows = request.query_params.get('rows')
+        if not rows:
+            return Response({'cubes': cube.catalog()})
+        try:
+            filters = json.loads(request.query_params.get('filters') or '{}')
+        except json.JSONDecodeError:
+            raise ValidationError({'filters': 'Must be a JSON object.'})
+        if not isinstance(filters, dict):
+            raise ValidationError({'filters': 'Must be a JSON object.'})
+        try:
+            result = cube.query(
+                request.query_params.get('fact', 'orders'), request.query_params.get('measure', 'revenue'),
+                rows, request.query_params.get('cols') or None, filters,
+            )
+        except (ValueError, KeyError) as exc:
+            raise ValidationError({'detail': str(exc)})
+        return Response(result)
+
+
+class WarehouseSchemaView(APIView):
+    """GET /olap/schema — tables, keys, measures, schema patterns, ETL status."""
+    permission_classes = [IsPlatformAdmin]
+
+    def get(self, request):
+        from warehouse.olap import schema
+        return Response(schema.schema())
+
+
+class OltpVsOlapView(APIView):
+    """GET /olap/oltp-vs-olap — the same question against OLTP, star and cuboid, timed."""
+    permission_classes = [IsPlatformAdmin]
+
+    def get(self, request):
+        from warehouse.olap import schema
+        return Response(schema.oltp_vs_olap())
