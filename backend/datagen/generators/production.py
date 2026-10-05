@@ -184,7 +184,7 @@ class Config:
     # leaving room to grow: ~120 MB operational, ~140 MB warehouse.
     months: int = 6
     customers: int = 10000
-    restaurants: int = 200
+    restaurants: int = 240
     orders: int = 45000
     events: int = 220
     bookings: int = 21000
@@ -310,7 +310,14 @@ class Builder:
     def build_restaurants(self):
         from zesty.scripts.seed_restaurants import RESTAURANTS
         pool = sorted(RESTAURANTS, key=lambda r: -int(r.get('total_ratings') or 0))
-        chosen = pool[: self.cfg.restaurants]
+        # The best-known few in every locality, then the most-rated of the rest,
+        # so each part of the city has some supply but it stays uneven.
+        chosen, taken = [], set()
+        for area in MUMBAI_AREAS:
+            for rec in [r for r in pool if r['area'] == area][:3]:
+                chosen.append(rec)
+                taken.add(rec['name'])
+        chosen += [r for r in pool if r['name'] not in taken][: max(0, self.cfg.restaurants - len(chosen))]
         random.shuffle(chosen)
 
         demo_owner = self._demo(self.cfg.demo_owner_email)
@@ -330,7 +337,8 @@ class Builder:
             r = Restaurant(
                 owner=owner, name=rec['name'], slug=slugify(rec['name'])[:240] or f"restaurant-{i}",
                 description=rec['description'], cuisine_types=cuisines, cuisine=rec['primary_cuisine'],
-                address=f"{rec['location']}, {area}, Mumbai", area=area, city='Mumbai', state='Maharashtra',
+                address=f"{rec['location']}, {area}, Mumbai {MUMBAI_AREAS[area]['pincode']}", area=area,
+                city=CITY, state=STATE,
                 latitude=lat, longitude=lng, price_range=rec['price_range'], veg_only=rec['veg_only'],
                 hours=rec['hours'], is_open=True, data_source='seed', delivery_fee=Decimal(fee),
                 delivery_time_min=dmin, delivery_time_max=dmax, rating=Decimal(str(rec['rating'])),
