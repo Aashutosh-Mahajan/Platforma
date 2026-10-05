@@ -16,6 +16,9 @@ const MODULE_NAMES: Record<string, string> = {
   sellout: 'Event sell-out', recommend: 'Recommendations', sequences: 'Cross-vertical habits',
   delivery: 'Delivery-time estimates', hotspots: 'Demand hotspots', search: 'Search demand',
   promos: 'Promotion effectiveness', pricing: 'Ticket price elasticity',
+  areas: 'Mumbai area clusters', lab_eda: 'Order insights & data preparation',
+  lab_regression: 'Delivery & value regression', lab_classification: 'Churn tree & Naive Bayes',
+  lab_customer_kmeans: 'Customer segments (K-Means)', lab_apriori: 'Ordered together (Apriori)',
 };
 
 /** The single most telling number for each module, in words. */
